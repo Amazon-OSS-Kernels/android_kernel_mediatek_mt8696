@@ -243,6 +243,8 @@ struct video_buffer_info {
 	/* passed from HWC, VDP need to wait before use this buffer */
 	int acquire_fence_fd;
 
+	struct dma_fence *sync_fence;
+
 	/* return to HWC, VDP should signal after release this buffer */
 	int release_fence_fd;
 

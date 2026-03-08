@@ -52,6 +52,12 @@ int log_timer_to_vitals(enum android_log_priority priority,
 #endif /* CONFIG_AMAZON_METRICS_LOG */
 
 #if IS_ENABLED(CONFIG_AMAZON_MINERVA_METRICS_LOG)
+
+/* Add GROUP_ID */
+#define METRICS_THERMAL_GROUP_ID "o3cc69de"
+#define METRICS_THERMISTOR_SCHEMA_ID "ol8z/2/02330431"
+#define MINERVA_PREDEFINED_REQUIRED_FIELDS "_deviceId=;SY,_deviceType=;SY,_softwareVersion=;SY,_platform=;SY,_marketPlaceId=;SY,_countryOfResidence=;SY,_otaGroupName=;SY,_osFileTag=;SY"
+
 int log_to_metrics(enum android_log_priority priority,
         const char *domain, char *logmsg);
 

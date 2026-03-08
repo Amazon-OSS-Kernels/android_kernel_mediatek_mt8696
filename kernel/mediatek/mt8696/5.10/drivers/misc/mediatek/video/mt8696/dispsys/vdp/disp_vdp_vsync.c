@@ -2199,8 +2199,7 @@ static int vdp_routine(void *data)
 
 /*wait for the buffer write operation done */
 			if (buf->acquire_fence_fd != -1) {
-				sync_fence = sync_file_get_fence(
-							buf->acquire_fence_fd);
+				sync_fence = buf->sync_fence;
 			if (sync_fence != NULL) {
 				ret = dma_fence_wait_timeout(
 							sync_fence,

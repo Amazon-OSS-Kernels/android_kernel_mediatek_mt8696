@@ -1460,6 +1460,9 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 	buf_info->is_seamless = config->is_seamless;
 	buf_info->is_ufo = config->is_ufo;
 	buf_info->acquire_fence_fd = config->acquire_fence_fd;
+	if (buf_info->acquire_fence_fd != -1)
+		buf_info->sync_fence =
+			sync_file_get_fence(buf_info->acquire_fence_fd);
 	buf_info->src_fmt = config->src_fmt;
 	buf_info->video_type = config->video_type;
 	buf_info->ofst_y = config->ofst_y;
