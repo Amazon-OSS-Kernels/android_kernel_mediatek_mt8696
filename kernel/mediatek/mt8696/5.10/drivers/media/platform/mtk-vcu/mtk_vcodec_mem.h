@@ -74,6 +74,7 @@ struct mtk_vcu_queue {
 	void *vcu;
 	struct mutex mmap_lock;
 	struct device *dev;
+	struct mutex dev_lock;
 	struct device *cmdq_dev;
 	struct cmdq_client *cmdq_clt;
 	unsigned int num_buffers;

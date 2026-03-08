@@ -796,6 +796,7 @@ static void vcu_set_gce_cmd(struct cmdq_pkt *pkt,
 				__func__, data);
 	break;
 	case CMD_MEM_MV:
+		mutex_lock(&q->mmap_lock);
 		if ((vcu_check_reg_base(vcu, addr, 4) == 0 ||
 			vcu_check_gce_pa_base(q, addr, 4) != NULL) &&
 			vcu_check_gce_pa_base(q, data, 4) != NULL)
@@ -804,8 +805,10 @@ static void vcu_set_gce_cmd(struct cmdq_pkt *pkt,
 		else
 			pr_info("[VCU] CMD_MEM_MV wrong addr/data: 0x%llx 0x%llx\n",
 				addr, data);
+		mutex_unlock(&q->mmap_lock);
 	break;
 	case CMD_POLL_ADDR:
+		mutex_lock(&q->mmap_lock);
 		if (vcu_check_reg_base(vcu, addr, 4) == 0 ||
 			vcu_check_gce_pa_base(q, addr, 4) != NULL)
 			cmdq_pkt_poll_timeout(pkt, data, SUBSYS_NO_SUPPORT,
@@ -813,6 +816,7 @@ static void vcu_set_gce_cmd(struct cmdq_pkt *pkt,
 		else
 			pr_info("[VCU] CMD_POLL_REG wrong addr: 0x%llx 0x%llx 0x%x\n",
 				addr, data, mask);
+		mutex_unlock(&q->mmap_lock);
 	break;
 	default:
 		pr_info("[VCU] unknown GCE cmd %d\n", cmd);
@@ -895,12 +899,14 @@ static void vcu_gce_timeout_callback(struct cmdq_cb_data data)
 	else if (buff->cmdq_buff.codec_type == VCU_VDEC)
 		mtk_vcodec_gce_timeout_dump(vcu->curr_ctx[VCU_VDEC]);
 
+	mutex_lock(&vcu_queue->mmap_lock);
 	list_for_each_safe(p, q, &vcu_queue->pa_pages.list) {
 		tmp = list_entry(p, struct vcu_pa_pages, list);
 		pr_info("%s: vcu_pa_pages %lx kva %lx data %lx\n",
 			__func__, tmp->pa, tmp->kva,
 			*(unsigned long *)tmp->kva);
 	}
+	mutex_unlock(&vcu_queue->mmap_lock);
 
 }
 static int vcu_gce_cmd_flush(struct mtk_vcu *vcu,
@@ -1865,6 +1871,7 @@ static long mtk_vcu_unlocked_ioctl(struct file *file, unsigned int cmd,
 			return -EINVAL;
 		}
 
+		mutex_lock(&vcu_queue->dev_lock);
 		if (cmd == VCU_MVA_ALLOCATION) {
 			mem_priv =
 				mtk_vcu_get_buffer(vcu_queue, &mem_buff_data);
@@ -1872,6 +1879,7 @@ static long mtk_vcu_unlocked_ioctl(struct file *file, unsigned int cmd,
 			mem_priv =
 				mtk_vcu_get_page(vcu_queue, &mem_buff_data);
 		}
+		mutex_unlock(&vcu_queue->dev_lock);
 		if (IS_ERR_OR_NULL(mem_priv) == true) {
 			mem_buff_data.va = (unsigned long)-1;
 			mem_buff_data.pa = (unsigned long)-1;
@@ -1912,6 +1920,7 @@ static long mtk_vcu_unlocked_ioctl(struct file *file, unsigned int cmd,
 			return -EINVAL;
 		}
 
+		mutex_lock(&vcu_queue->dev_lock);
 		if (cmd == VCU_MVA_FREE) {
 			if (vcu_dev->iommu_padding)
 				mem_buff_data.iova |= IOMMU_PADDING;
@@ -1919,6 +1928,7 @@ static long mtk_vcu_unlocked_ioctl(struct file *file, unsigned int cmd,
 		} else {
 			ret = mtk_vcu_free_page(vcu_queue, &mem_buff_data);
 		}
+		mutex_unlock(&vcu_queue->dev_lock);
 
 		if (ret != 0L) {
 			pr_debug("[VCU] VCU_FREE failed %d va %llx, pa %llx, iova %llx\n",

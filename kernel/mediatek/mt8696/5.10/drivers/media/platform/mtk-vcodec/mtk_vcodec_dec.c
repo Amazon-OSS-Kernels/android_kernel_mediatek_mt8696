@@ -371,6 +371,10 @@ static dma_addr_t create_meta_buffer_info(struct mtk_vcodec_ctx *ctx, int fd)
 
 	dmabuf = dma_buf_get(fd);
 	mtk_v4l2_debug(5, "%s, dmabuf:%p", __func__, dmabuf);
+	if (dmabuf == NULL) {
+		mtk_v4l2_debug(0, "invalid meta fd %d\n", fd);
+		return 0;
+	}
 
 	buf_att = dma_buf_attach(
 		dmabuf,
@@ -446,7 +450,10 @@ static int *create_general_buffer_info(struct mtk_vcodec_ctx *ctx, int fd)
 
 	dmabuf = dma_buf_get(fd);
 	mtk_v4l2_debug(5, "%s, dmabuf:%p", __func__, dmabuf);
-
+	if (dmabuf == NULL) {
+		mtk_v4l2_debug(0, "invalid general fd %d\n", fd);
+		return 0;
+	}
 	dma_buf_begin_cpu_access(dmabuf, DMA_TO_DEVICE);
 	va = dma_buf_vmap(dmabuf);
 	buf_att = dma_buf_attach(

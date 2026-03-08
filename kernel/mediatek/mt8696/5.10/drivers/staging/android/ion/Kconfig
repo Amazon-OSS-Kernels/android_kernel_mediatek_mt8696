@@ -4,7 +4,6 @@ menuconfig ION
 	depends on HAS_DMA && MMU
 	select GENERIC_ALLOCATOR
 	select DMA_SHARED_BUFFER
-	select MTK_ION_DEBUG
 	help
 	  Choose this option to enable the ION Memory Manager,
 	  used by Android to efficiently allocate buffers
