@@ -2911,7 +2911,7 @@ void mtk_p2p_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
 			}
 			break;
 		default:
-			DBGLOG(P2P, ERROR, "Ask frog to add code for mgmt:%x\n", frame_type);
+			DBGLOG(P2P, ERROR, "unsupported frame type:%x\n", frame_type);
 			break;
 		}
 
@@ -3534,10 +3534,12 @@ int mtk_p2p_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy, IN void *data, IN i
 	DBGLOG(P2P, TRACE, "--> %s()\n", __func__);
 #endif
 
-	if (data && len)
+	if (len < sizeof(struct _NL80211_DRIVER_SW_CMD_PARAMS))
+		rstatus = WLAN_STATUS_INVALID_LENGTH;
+	else if (!data)
+		rstatus = WLAN_STATUS_INVALID_DATA;
+	else {
 		prParams = (P_NL80211_DRIVER_SW_CMD_PARAMS) data;
-
-	if (prParams) {
 		if (prParams->set == 1) {
 			rstatus = kalIoctl(prGlueInfo,
 					   (PFN_OID_HANDLER_FUNC) wlanoidSetSwCtrlWrite,

@@ -1407,6 +1407,16 @@ struct _ADAPTER_T {
 #endif
 	WIFI_FEM_CFG_T rWifiFemCfg;
 	struct CSI_DATA_T rCsiData;
+
+	ENUM_TX_RESULT_CODE_T r1xTxDoneStatus;
+	/*
+		fgIsTest1xTx
+		= 0 for default and no simulation
+		= 1 for "packet have not sent to queue" simulation
+		= 2 for "packet stuck in queue" simulation
+	*/
+	UINT_8 fgIsTest1xTx;
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

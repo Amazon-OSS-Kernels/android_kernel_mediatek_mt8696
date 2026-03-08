@@ -6330,6 +6330,11 @@ wlanoidSetSwCtrlWrite(IN P_ADAPTER_T prAdapter,
 		ucChannelWidth = (UINT_8)((u4Data & BITS(4, 7)) >> 4);
 		ucBssIndex = (UINT_8) u2SubId;
 
+		if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+			DBGLOG(RLM, ERROR, "Invalid bssidx:%d\n", ucBssIndex);
+			break;
+		}
+
 		/* ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz */
 		DBGLOG(REQ, INFO, "Change BSS[%d] OpMode to BW[%d] Nss[%d]\n",
 			ucBssIndex, ucChannelWidth, ucNss);
@@ -6721,7 +6726,11 @@ wlanoidSetKeyCfg(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Se
 
 	wlanInitFeatureOption(prAdapter);
 #if CFG_SUPPORT_EASY_DEBUG
+#if CFG_SUPPORT_SEND_ONLY_ONE_CFG
+	wlanFeatureToFwOnlyOneCfg(prAdapter, prKeyCfgInfo->aucKey, prKeyCfgInfo->aucValue);
+#else
 	wlanFeatureToFw(prAdapter);
+#endif
 #endif
 
 	return rWlanStatus;

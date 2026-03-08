@@ -73,12 +73,6 @@
 */
 extern VOID wlanUpdateChannelTable(P_GLUE_INFO_T prGlueInfo);
 
-#if CFG_SUPPORT_WAPI
-extern UINT_8 keyStructBuf[1024];	/* add/remove key shared buffer */
-#else
-extern UINT_8 keyStructBuf[100];	/* add/remove key shared buffer */
-#endif
-
 /* for IE Searching */
 extern BOOLEAN
 wextSrchDesiredWPAIE(IN PUINT_8 pucIEStart,

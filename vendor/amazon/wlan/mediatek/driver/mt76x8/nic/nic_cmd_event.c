@@ -334,7 +334,10 @@ VOID nicCmdEventPfmuTagRead(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo,
 	g_rPfmuTag1 = prPfumTagRead->ru4TxBfPFMUTag1;
 	g_rPfmuTag2 = prPfumTagRead->ru4TxBfPFMUTag2;
 
-	kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery, u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	if(prCmdInfo->fgIsOid){
+		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery, u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+		prCmdInfo->fgIsOid = FALSE;
+	}
 
 	DBGLOG(INIT, INFO, "========================== (R)Tag1 info ==========================\n");
 
@@ -3379,6 +3382,26 @@ VOID nicEventBeaconTimeout(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent, 
 
 		if (prEventBssBeaconTimeout->ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex) {
 #if CFG_SUPPORT_CFG80211_AUTH
+#ifdef CFG_STR_DEAUTH_DELAY
+#ifdef CONFIG_PM_SLEEP
+			if (prEventBssBeaconTimeout->ucReasonCode ==
+					BEACON_TIMEOUT_EVENT_DUE_2_RX_DEAUTH_IN_STR) {
+				int iCount = 0;
+				DBGLOG(AIS, STATE, "[STR]: Deauth From STR (%d) \r\n",
+						kalPmResumeState());
+				netif_carrier_off(prAdapter->prGlueInfo->prDevHandler);
+
+				while ((kalPmResumeState() != 1) && (iCount < 400)) {
+					kalMsleep(20);
+					iCount++;
+				}
+
+				DBGLOG(AIS, STATE, "[STR]: PM Resume State (%d, %d)\r\n",
+						kalPmResumeState(), iCount);
+			}
+#endif
+#endif
+
 			if (!timerPendingTimer(&prAdapter->rWifiVar.rAisFsmInfo.rBeaconLostTimer))
 				cnmTimerStartTimer(prAdapter,
 							&prAdapter->rWifiVar.rAisFsmInfo.rBeaconLostTimer,
