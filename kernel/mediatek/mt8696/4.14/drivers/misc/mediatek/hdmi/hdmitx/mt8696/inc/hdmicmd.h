@@ -17,8 +17,7 @@
 #include "hdmihdcp.h"
 
 extern unsigned char cDstStr[50];
-extern unsigned char _bEdidData2[256];
-extern bool new_edid;
+
 extern void hdmi_InfoframeSetting(unsigned char i1typemode,
 	unsigned char i1typeselect);
 extern void hdmi_fmtsetting(unsigned int resolutionmode);

@@ -140,9 +140,6 @@ extern struct disp_mix_context_t disp_mix;
 	#define MIX_CK_EN (0x1 << 7)
 	#define BG_CLR_CK_EN (0x1 << 9)
 
-extern int no_mix_fhd;
-extern int no_mix_uhd;
-
 struct disp_mix_init_param {
 	uintptr_t disp_mix_reg_base;
 };

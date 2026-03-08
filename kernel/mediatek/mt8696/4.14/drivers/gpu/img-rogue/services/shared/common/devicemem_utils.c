@@ -50,12 +50,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "devicemem_utils.h"
 #include "client_mm_bridge.h"
 
-#if defined(__KERNEL__)
-#include "srvcore.h"
-#else
-#include "srvcore_intern.h"
-#endif
-
 /*
 	SVM heap management support functions for CPU (un)mapping
  */
@@ -359,12 +353,8 @@ IMG_BOOL _DevmemImportStructRelease(DEVMEM_IMPORT *psImport)
 
 	if (iRefCount == 0)
 	{
-		PVRSRV_ERROR eError = DestroyServerResource(psImport->hDevConnection,
-		                                            NULL,
-		                                            BridgePMRUnrefPMR,
-		                                            psImport->hPMR);
-		PVR_ASSERT(eError == PVRSRV_OK);
-
+		BridgePMRUnrefPMR(GetBridgeHandle(psImport->hDevConnection),
+				psImport->hPMR);
 		OSLockDestroy(psImport->sCPUImport.hLock);
 		OSLockDestroy(psImport->sDeviceImport.hLock);
 		OSLockDestroy(psImport->hLock);
@@ -944,17 +934,13 @@ void _DevmemImportStructDevUnmap(DEVMEM_IMPORT *psImport)
 
 		if (psDeviceImport->bMapped)
 		{
-			eError = DestroyServerResource(psImport->hDevConnection,
-			                               NULL,
-			                               BridgeDevmemIntUnmapPMR,
-			                               psDeviceImport->hMapping);
+			eError = BridgeDevmemIntUnmapPMR(GetBridgeHandle(psImport->hDevConnection),
+					psDeviceImport->hMapping);
 			PVR_ASSERT(eError == PVRSRV_OK);
 		}
 
-		eError = DestroyServerResource(psImport->hDevConnection,
-		                               NULL,
-		                               BridgeDevmemIntUnreserveRange,
-		                               psDeviceImport->hReservation);
+		eError = BridgeDevmemIntUnreserveRange(GetBridgeHandle(psImport->hDevConnection),
+				psDeviceImport->hReservation);
 		PVR_ASSERT(eError == PVRSRV_OK);
 
 		psDeviceImport->bMapped = IMG_FALSE;

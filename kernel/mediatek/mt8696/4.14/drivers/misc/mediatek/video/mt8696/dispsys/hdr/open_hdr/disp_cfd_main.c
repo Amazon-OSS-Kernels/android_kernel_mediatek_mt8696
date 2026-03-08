@@ -275,17 +275,17 @@ int disp_cfd_set_clk_enable(uint32_t layer_id, uint32_t enable)
 void disp_cfd_set_sof(uint32_t layer_id)
 {
 	if (layer_id == 0)
-		fmt_hal_set_sof(FMT_SOF_6_M_HDR_FE_STA,
-		FMT_SOF_6_M_HDR_FE_END, 0x00010002, 0x00010033);
+		fmt_hal_set_sof(FMT_SOF_6_M_DOLBY_FE_STA,
+		FMT_SOF_6_M_DOLBY_FE_END, 0x00010002, 0x00010033);
 	else if (layer_id == 1)
-		fmt_hal_set_sof(FMT_SOF_13_S_HDR_FE_STA,
-		FMT_SOF_13_S_HDR_FE_END, 0x00010002, 0x00010033);
+		fmt_hal_set_sof(FMT_SOF_13_S_DOLBY_FE_STA,
+		FMT_SOF_13_S_DOLBY_FE_END, 0x00010002, 0x00010033);
 	else if (layer_id == 2)
-		fmt_hal_set_sof(FMT_SOF_19_FHD_HDR_FE_STA,
-		FMT_SOF_19_FHD_HDR_FE_END, 0x00010002, 0x00010033);
+		fmt_hal_set_sof(FMT_SOF_19_FHD_DOLBY_FE_STA,
+		FMT_SOF_19_FHD_DOLBY_FE_END, 0x00010002, 0x00010033);
 	else if (layer_id == 3)
-		fmt_hal_set_sof(FMT_SOF_16_UHD_HDR_FE_STA,
-		FMT_SOF_16_UHD_HDR_FE_END, 0x00050002, 0x00050033);
+		fmt_hal_set_sof(FMT_SOF_16_UHD_DOLBY_FE_STA,
+		FMT_SOF_16_UHD_DOLBY_FE_END, 0x00050002, 0x00050033);
 }
 
 void disp_cfd_path_sel(uint32_t layer_id, bool fg_on)

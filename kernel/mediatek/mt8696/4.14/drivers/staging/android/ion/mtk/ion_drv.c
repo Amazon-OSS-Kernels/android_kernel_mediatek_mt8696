@@ -146,13 +146,8 @@ static void __ion_cache_mmp_end(enum ION_CACHE_SYNC_TYPE sync_type,
 static int vma_is_ion_node(struct vm_area_struct *vma)
 {
 	struct dma_buf *dmabuf;
-	struct file *file;
 
 	if (unlikely(!vma))
-		return 0;
-
-	file = vma->vm_file;
-	if (!file || !is_dma_buf_file(file))
 		return 0;
 
 	dmabuf = vma->vm_private_data;
@@ -179,10 +174,12 @@ static int ion_check_user_va(unsigned long va, size_t size)
 	if (unlikely(va_end < va_start))
 		return 0;
 
+	down_read(&current->mm->mmap_sem);
 	vma = find_vma(current->mm, va_start);
 	if (vma && va_start >= vma->vm_start &&
 	    va_end <= vma->vm_end)
 		ret = vma_is_ion_node(vma);
+	up_read(&current->mm->mmap_sem);
 
 	return ret;
 }
@@ -213,6 +210,10 @@ static int __ion_is_user_va(unsigned long va, size_t size)
 			ret = 1;
 		}
 	}
+
+	/* add more check */
+	if (ret)
+		ret = ion_check_user_va(va, size);
 
 	return ret;
 }
@@ -286,31 +287,20 @@ static int __cache_sync_by_range(struct ion_client *client,
 				 unsigned long start, unsigned long size,
 				 int from_kernel)
 {
-	bool is_kernel_addr = !!from_kernel;
-	bool lock_vma = false;
 	char ion_name[200];
-	int ret = 0;
+	int is_user_va = 0;
 
 	if (!from_kernel) {
 		/* userspace va check */
-		ret  = __ion_is_user_va(start, size);
-		if (ret) {
-			lock_vma = true;
-			down_read(&current->mm->mmap_sem);
-			ret = ion_check_user_va(start, size);
-		}
-
-		if (!ret) {
-			if (lock_vma) {
-				up_read(&current->mm->mmap_sem);
-				lock_vma = false;
-			}
+		is_user_va  = __ion_is_user_va(start, size);
+		if (!is_user_va) {
 			scnprintf(ion_name, 199,
-			  "CRDISPATCH_KEY(%s),(%d) sz %lu is_kernel_addr:%d",
+				  "CRDISPATCH_KEY(%s),(%d) addr|sz %lx|%lx from user",
 				  (*client->dbg_name) ?
 				  client->dbg_name : client->name,
-				  (unsigned int)current->pid, size, is_kernel_addr);
-			IONMSG("%s %s\n", __func__, ion_name);
+				  current->pid, start, size);
+			IONMSG("%s(%d) sync kernel addr|sz %lx|%lx from user\n",
+			       __func__, current->pid, start, size);
 			return -EFAULT;
 		}
 	} else {
@@ -321,28 +311,24 @@ static int __cache_sync_by_range(struct ion_client *client,
 
 	switch (sync_type) {
 	case ION_CACHE_CLEAN_BY_RANGE:
-		if (!is_kernel_addr)
+		if (is_user_va)
 			__clean_dcache_user_area((void *)start, size);
 		else
 			__clean_dcache_area_poc((void *)start, size);
 		break;
 	case ION_CACHE_FLUSH_BY_RANGE:
-		if (!is_kernel_addr)
+		if (is_user_va)
 			__flush_dcache_user_area((void *)start, size);
 		else
 			__flush_dcache_area((void *)start, size);
 		break;
 	case ION_CACHE_INVALID_BY_RANGE:
-		if (!is_kernel_addr)
+		if (is_user_va)
 			__inval_dcache_user_area((void *)start, size);
 		else
 			__inval_dcache_area((void *)start, size);
 		break;
 	default:
-		if (lock_vma) {
-			up_read(&current->mm->mmap_sem);
-			lock_vma = false;
-		}
 		smp_inner_dcache_flush_all();
 		aee_kernel_warning(
 			"ION",
@@ -352,10 +338,6 @@ static int __cache_sync_by_range(struct ion_client *client,
 		break;
 	}
 
-	if (lock_vma) {
-		up_read(&current->mm->mmap_sem);
-		lock_vma = false;
-	}
 	__ion_cache_mmp_end(sync_type, size);
 
 	return 0;

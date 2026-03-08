@@ -16,13 +16,13 @@
 #include <linux/ratelimit.h>
 
 #define LOG_TAG "VDP_CLI"
-//#include "disp_cli.h" //for dovi idk
+//#include "disp_cli.h" 8696 review
 #include "disp_hw_log.h"
 #include "disp_hw_mgr.h"
 #include "disp_vdp_cli.h"
 #include "disp_vdp_sec.h"
 
-#if 0 //open for dovi idk
+#if 0 // 8696 review
 
 struct vdp_cli_setting_struct cli_setting = {
 	.enable_mva_debug = false,

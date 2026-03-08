@@ -316,7 +316,7 @@ struct compat_mtk_disp_buffer {
 
 	/* if buffer_info is video plane, should fill video info */
 	bool is_ufo;
-	bool is_dovi;
+	bool is_dolby;
 	bool is_progressive;
 	bool is_10bit;
 	bool is_10bit_lbs2bit_tile_mode;
@@ -342,7 +342,8 @@ struct compat_mtk_disp_buffer {
 	uint32_t buffer_size;
 
 	unsigned int meta_data_size;
-	struct compat_mtk_disp_dovi_md_s dovi_info;
+	struct compat_mtk_disp_dovi_md_s dolby_info;
+
 	struct mtk_disp_film_grain_md_t film_grain_info;
 
 	uint32_t meta_data;
@@ -350,8 +351,6 @@ struct compat_mtk_disp_buffer {
 	uint32_t src_base_addr;
 	uint32_t src_phy_addr;
 	uint32_t res_mode;
-	/*hdmi ALLM enable flag*/
-	bool allm_en;
 };
 
 struct compat_mtk_disp_config {
@@ -388,11 +387,11 @@ void compat_assignment(struct mtk_disp_config *config,
 		memcpy(&(config->buffer_info[i]),
 		       &(compat_config->buffer_info[i]),
 		       sizeof(struct compat_mtk_disp_buffer));
-		memcpy(&(config->buffer_info[i].dovi_info),
-		       &(compat_config->buffer_info[i].dovi_info),
+		memcpy(&(config->buffer_info[i].dolby_info),
+		       &(compat_config->buffer_info[i].dolby_info),
 		       sizeof(struct compat_mtk_disp_dovi_md_s));
-		config->buffer_info[i].dovi_info.addr = (void *)((
-			long)(compat_config->buffer_info[i].dovi_info.addr &
+		config->buffer_info[i].dolby_info.addr = (void *)((
+			long)(compat_config->buffer_info[i].dolby_info.addr &
 			      0xffffffff));
 		config->buffer_info[i].meta_data = (void *)((
 			long)(compat_config->buffer_info[i].meta_data &

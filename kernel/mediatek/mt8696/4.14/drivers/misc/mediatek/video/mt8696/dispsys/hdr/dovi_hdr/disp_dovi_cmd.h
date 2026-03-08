@@ -14,6 +14,18 @@
 #ifndef __DISP_DOVI_CMD_H__
 #define __DISP_DOVI_CMD_H__
 
+enum VIDEO_BIT_MODE {
+	VIDEOIN_BITMODE_8 = 8,
+	VIDEOIN_BITMODE_10 = 10,
+	VIDEOIN_BITMODE_12 = 12
+};
+
+enum VIDEOIN_YCbCr_FORMAT {
+	VIDEOIN_FORMAT_420,
+	VIDEOIN_FORMAT_422,
+	VIDEOIN_FORMAT_444
+};
+
 extern bool dump_rpu_enable;
 extern uint32_t dump_md_enable;
 extern uint32_t reg_test_enable;
@@ -25,26 +37,17 @@ extern bool dovi_mute;
 extern bool fhd_scale_to_uhd;
 extern enum VIDEO_BIT_MODE idk_dump_bpp;
 extern bool dovi_idk_dump;
-extern bool dovi_force_output;
-extern enum dovi_signal_format_t dovi_force_out_format;
+extern bool dolby_force_output;
+extern enum dovi_signal_format_t dolby_force_out_format;
 extern uint32_t dovi_idk_disp_cnt;
-extern unsigned int g_force_dovi;
+extern unsigned int g_force_dolby;
 extern unsigned int g_force_open_hdr;
 extern unsigned int g_dovi_efuse;
 extern unsigned int g_hdr_type;
 extern unsigned int g_out_format;
 extern bool b_comp_enable;
 extern uint32_t _subv_type;
-extern int no_mix_fhd;
-extern int no_mix_uhd;
 extern uint32_t f_graphic_off_cmd;
-extern uint32_t idk_vsem;
-extern uint32_t sdk_vsem;
-extern uint32_t set_vsvdb;
-extern bool dovi_hdmi_brightness_en;
-extern uint32_t dovi_hdmi_brightness;
-extern uint32_t dovi_get_ext_md;
-
 
 void dovi_debug_init(void);
 

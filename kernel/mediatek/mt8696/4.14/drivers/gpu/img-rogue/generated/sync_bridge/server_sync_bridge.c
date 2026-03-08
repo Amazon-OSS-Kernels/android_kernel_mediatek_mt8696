@@ -145,7 +145,7 @@ PVRSRVBridgeAllocSyncPrimitiveBlock(IMG_UINT32 ui32DispatchTableEntry,
 			LockHandle(psConnection->psHandleBase);
 
 			eError =
-			    PVRSRVDestroyHandleUnlocked(psConnection->
+			    PVRSRVReleaseHandleUnlocked(psConnection->
 							psHandleBase,
 							(IMG_HANDLE)
 							psAllocSyncPrimitiveBlockOUT->
@@ -193,7 +193,7 @@ PVRSRVBridgeFreeSyncPrimitiveBlock(IMG_UINT32 ui32DispatchTableEntry,
 	LockHandle(psConnection->psHandleBase);
 
 	psFreeSyncPrimitiveBlockOUT->eError =
-	    PVRSRVDestroyHandleUnlocked(psConnection->psHandleBase,
+	    PVRSRVReleaseHandleUnlocked(psConnection->psHandleBase,
 					(IMG_HANDLE)
 					psFreeSyncPrimitiveBlockIN->hSyncHandle,
 					PVRSRV_HANDLE_TYPE_SYNC_PRIMITIVE_BLOCK);
@@ -268,7 +268,6 @@ PVRSRVBridgeSyncPrimSet(IMG_UINT32 ui32DispatchTableEntry,
 }
 
 #if defined(SUPPORT_SERVER_SYNC_IMPL)
-
 static IMG_INT
 PVRSRVBridgeServerSyncPrimSet(IMG_UINT32 ui32DispatchTableEntry,
 			      PVRSRV_BRIDGE_IN_SERVERSYNCPRIMSET *
@@ -325,10 +324,6 @@ PVRSRVBridgeServerSyncPrimSet(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(SUPPORT_SERVER_SYNC_IMPL)
-
-static_assert(SYNC_MAX_CLASS_NAME_LEN <= IMG_UINT32_MAX,
-	      "SYNC_MAX_CLASS_NAME_LEN must not be larger than IMG_UINT32_MAX");
-
 static IMG_INT
 PVRSRVBridgeServerSyncAlloc(IMG_UINT32 ui32DispatchTableEntry,
 			    PVRSRV_BRIDGE_IN_SERVERSYNCALLOC *
@@ -346,10 +341,8 @@ PVRSRVBridgeServerSyncAlloc(IMG_UINT32 ui32DispatchTableEntry,
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
 #endif
 
-	IMG_UINT32 ui32BufferSize = 0;
-	IMG_UINT64 ui64BufferSize =
-	    ((IMG_UINT64) psServerSyncAllocIN->ui32ClassNameSize *
-	     sizeof(IMG_CHAR)) + 0;
+	IMG_UINT32 ui32BufferSize =
+	    (psServerSyncAllocIN->ui32ClassNameSize * sizeof(IMG_CHAR)) + 0;
 
 	if (unlikely
 	    (psServerSyncAllocIN->ui32ClassNameSize > SYNC_MAX_CLASS_NAME_LEN))
@@ -358,15 +351,6 @@ PVRSRVBridgeServerSyncAlloc(IMG_UINT32 ui32DispatchTableEntry,
 		    PVRSRV_ERROR_BRIDGE_ARRAY_SIZE_TOO_BIG;
 		goto ServerSyncAlloc_exit;
 	}
-
-	if (ui64BufferSize > IMG_UINT32_MAX)
-	{
-		psServerSyncAllocOUT->eError =
-		    PVRSRV_ERROR_BRIDGE_BUFFER_TOO_SMALL;
-		goto ServerSyncAlloc_exit;
-	}
-
-	ui32BufferSize = (IMG_UINT32) ui64BufferSize;
 
 	if (ui32BufferSize != 0)
 	{
@@ -473,10 +457,7 @@ PVRSRVBridgeServerSyncAlloc(IMG_UINT32 ui32DispatchTableEntry,
 	}
 
 	/* Allocated space should be equal to the last updated offset */
-#ifdef PVRSRV_NEED_PVR_ASSERT
-	if (psServerSyncAllocOUT->eError == PVRSRV_OK)
-		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
-#endif /* PVRSRV_NEED_PVR_ASSERT */
+	PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 
 #if defined(INTEGRITY_OS)
 	if (pArrayArgsBuffer)
@@ -493,7 +474,6 @@ PVRSRVBridgeServerSyncAlloc(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(SUPPORT_SERVER_SYNC_IMPL)
-
 static IMG_INT
 PVRSRVBridgeServerSyncFree(IMG_UINT32 ui32DispatchTableEntry,
 			   PVRSRV_BRIDGE_IN_SERVERSYNCFREE * psServerSyncFreeIN,
@@ -505,7 +485,7 @@ PVRSRVBridgeServerSyncFree(IMG_UINT32 ui32DispatchTableEntry,
 	LockHandle(psConnection->psHandleBase);
 
 	psServerSyncFreeOUT->eError =
-	    PVRSRVDestroyHandleUnlocked(psConnection->psHandleBase,
+	    PVRSRVReleaseHandleUnlocked(psConnection->psHandleBase,
 					(IMG_HANDLE) psServerSyncFreeIN->
 					hSyncHandle,
 					PVRSRV_HANDLE_TYPE_SERVER_SYNC_PRIMITIVE);
@@ -533,7 +513,6 @@ PVRSRVBridgeServerSyncFree(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(SUPPORT_SERVER_SYNC_IMPL)
-
 static IMG_INT
 PVRSRVBridgeServerSyncQueueHWOp(IMG_UINT32 ui32DispatchTableEntry,
 				PVRSRV_BRIDGE_IN_SERVERSYNCQUEUEHWOP *
@@ -594,10 +573,6 @@ PVRSRVBridgeServerSyncQueueHWOp(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(SUPPORT_SERVER_SYNC_IMPL)
-
-static_assert(PVRSRV_MAX_SYNC_PRIMS <= IMG_UINT32_MAX,
-	      "PVRSRV_MAX_SYNC_PRIMS must not be larger than IMG_UINT32_MAX");
-
 static IMG_INT
 PVRSRVBridgeServerSyncGetStatus(IMG_UINT32 ui32DispatchTableEntry,
 				PVRSRV_BRIDGE_IN_SERVERSYNCGETSTATUS *
@@ -619,20 +594,14 @@ PVRSRVBridgeServerSyncGetStatus(IMG_UINT32 ui32DispatchTableEntry,
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
 #endif
 
-	IMG_UINT32 ui32BufferSize = 0;
-	IMG_UINT64 ui64BufferSize =
-	    ((IMG_UINT64) psServerSyncGetStatusIN->ui32SyncCount *
+	IMG_UINT32 ui32BufferSize =
+	    (psServerSyncGetStatusIN->ui32SyncCount *
 	     sizeof(SERVER_SYNC_PRIMITIVE *)) +
-	    ((IMG_UINT64) psServerSyncGetStatusIN->ui32SyncCount *
-	     sizeof(IMG_HANDLE)) +
-	    ((IMG_UINT64) psServerSyncGetStatusIN->ui32SyncCount *
-	     sizeof(IMG_UINT32)) +
-	    ((IMG_UINT64) psServerSyncGetStatusIN->ui32SyncCount *
-	     sizeof(IMG_UINT32)) +
-	    ((IMG_UINT64) psServerSyncGetStatusIN->ui32SyncCount *
-	     sizeof(IMG_UINT32)) +
-	    ((IMG_UINT64) psServerSyncGetStatusIN->ui32SyncCount *
-	     sizeof(IMG_UINT32)) + 0;
+	    (psServerSyncGetStatusIN->ui32SyncCount * sizeof(IMG_HANDLE)) +
+	    (psServerSyncGetStatusIN->ui32SyncCount * sizeof(IMG_UINT32)) +
+	    (psServerSyncGetStatusIN->ui32SyncCount * sizeof(IMG_UINT32)) +
+	    (psServerSyncGetStatusIN->ui32SyncCount * sizeof(IMG_UINT32)) +
+	    (psServerSyncGetStatusIN->ui32SyncCount * sizeof(IMG_UINT32)) + 0;
 
 	if (unlikely
 	    (psServerSyncGetStatusIN->ui32SyncCount > PVRSRV_MAX_SYNC_PRIMS))
@@ -649,15 +618,6 @@ PVRSRVBridgeServerSyncGetStatus(IMG_UINT32 ui32DispatchTableEntry,
 	    psServerSyncGetStatusIN->pui32CurrentOp;
 	psServerSyncGetStatusOUT->pui32NextOp =
 	    psServerSyncGetStatusIN->pui32NextOp;
-
-	if (ui64BufferSize > IMG_UINT32_MAX)
-	{
-		psServerSyncGetStatusOUT->eError =
-		    PVRSRV_ERROR_BRIDGE_BUFFER_TOO_SMALL;
-		goto ServerSyncGetStatus_exit;
-	}
-
-	ui32BufferSize = (IMG_UINT32) ui64BufferSize;
 
 	if (ui32BufferSize != 0)
 	{
@@ -698,9 +658,6 @@ PVRSRVBridgeServerSyncGetStatus(IMG_UINT32 ui32DispatchTableEntry,
 		psSyncHandleInt =
 		    (SERVER_SYNC_PRIMITIVE **) (((IMG_UINT8 *) pArrayArgsBuffer)
 						+ ui32NextOffset);
-		OSCachedMemSet(psSyncHandleInt, 0,
-			       psServerSyncGetStatusIN->ui32SyncCount *
-			       sizeof(SERVER_SYNC_PRIMITIVE *));
 		ui32NextOffset +=
 		    psServerSyncGetStatusIN->ui32SyncCount *
 		    sizeof(SERVER_SYNC_PRIMITIVE *);
@@ -796,11 +753,6 @@ PVRSRVBridgeServerSyncGetStatus(IMG_UINT32 ui32DispatchTableEntry,
 					pui32UIDInt,
 					pui32FWAddrInt,
 					pui32CurrentOpInt, pui32NextOpInt);
-	/* Exit early if bridged call fails */
-	if (unlikely(psServerSyncGetStatusOUT->eError != PVRSRV_OK))
-	{
-		goto ServerSyncGetStatus_exit;
-	}
 
 	if ((psServerSyncGetStatusIN->ui32SyncCount * sizeof(IMG_UINT32)) > 0)
 	{
@@ -882,7 +834,7 @@ PVRSRVBridgeServerSyncGetStatus(IMG_UINT32 ui32DispatchTableEntry,
 		{
 
 			/* Unreference the previously looked up handle */
-			if (psSyncHandleInt[i])
+			if (hSyncHandleInt2[i])
 			{
 				PVRSRVReleaseHandleUnlocked(psConnection->
 							    psHandleBase,
@@ -895,10 +847,7 @@ PVRSRVBridgeServerSyncGetStatus(IMG_UINT32 ui32DispatchTableEntry,
 	UnlockHandle(psConnection->psHandleBase);
 
 	/* Allocated space should be equal to the last updated offset */
-#ifdef PVRSRV_NEED_PVR_ASSERT
-	if (psServerSyncGetStatusOUT->eError == PVRSRV_OK)
-		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
-#endif /* PVRSRV_NEED_PVR_ASSERT */
+	PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 
 #if defined(INTEGRITY_OS)
 	if (pArrayArgsBuffer)
@@ -915,14 +864,6 @@ PVRSRVBridgeServerSyncGetStatus(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(SUPPORT_SERVER_SYNC_IMPL)
-
-static_assert(PVRSRV_MAX_SYNC_PRIMS <= IMG_UINT32_MAX,
-	      "PVRSRV_MAX_SYNC_PRIMS must not be larger than IMG_UINT32_MAX");
-static_assert(PVRSRV_MAX_SYNC_PRIMS <= IMG_UINT32_MAX,
-	      "PVRSRV_MAX_SYNC_PRIMS must not be larger than IMG_UINT32_MAX");
-static_assert(PVRSRV_MAX_SYNC_PRIMS <= IMG_UINT32_MAX,
-	      "PVRSRV_MAX_SYNC_PRIMS must not be larger than IMG_UINT32_MAX");
-
 static IMG_INT
 PVRSRVBridgeSyncPrimOpCreate(IMG_UINT32 ui32DispatchTableEntry,
 			     PVRSRV_BRIDGE_IN_SYNCPRIMOPCREATE *
@@ -945,20 +886,16 @@ PVRSRVBridgeSyncPrimOpCreate(IMG_UINT32 ui32DispatchTableEntry,
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
 #endif
 
-	IMG_UINT32 ui32BufferSize = 0;
-	IMG_UINT64 ui64BufferSize =
-	    ((IMG_UINT64) psSyncPrimOpCreateIN->ui32SyncBlockCount *
+	IMG_UINT32 ui32BufferSize =
+	    (psSyncPrimOpCreateIN->ui32SyncBlockCount *
 	     sizeof(SYNC_PRIMITIVE_BLOCK *)) +
-	    ((IMG_UINT64) psSyncPrimOpCreateIN->ui32SyncBlockCount *
-	     sizeof(IMG_HANDLE)) +
-	    ((IMG_UINT64) psSyncPrimOpCreateIN->ui32ClientSyncCount *
-	     sizeof(IMG_UINT32)) +
-	    ((IMG_UINT64) psSyncPrimOpCreateIN->ui32ClientSyncCount *
-	     sizeof(IMG_UINT32)) +
-	    ((IMG_UINT64) psSyncPrimOpCreateIN->ui32ServerSyncCount *
+	    (psSyncPrimOpCreateIN->ui32SyncBlockCount * sizeof(IMG_HANDLE)) +
+	    (psSyncPrimOpCreateIN->ui32ClientSyncCount * sizeof(IMG_UINT32)) +
+	    (psSyncPrimOpCreateIN->ui32ClientSyncCount * sizeof(IMG_UINT32)) +
+	    (psSyncPrimOpCreateIN->ui32ServerSyncCount *
 	     sizeof(SERVER_SYNC_PRIMITIVE *)) +
-	    ((IMG_UINT64) psSyncPrimOpCreateIN->ui32ServerSyncCount *
-	     sizeof(IMG_HANDLE)) + 0;
+	    (psSyncPrimOpCreateIN->ui32ServerSyncCount * sizeof(IMG_HANDLE)) +
+	    0;
 
 	if (unlikely
 	    (psSyncPrimOpCreateIN->ui32SyncBlockCount > PVRSRV_MAX_SYNC_PRIMS))
@@ -983,15 +920,6 @@ PVRSRVBridgeSyncPrimOpCreate(IMG_UINT32 ui32DispatchTableEntry,
 		    PVRSRV_ERROR_BRIDGE_ARRAY_SIZE_TOO_BIG;
 		goto SyncPrimOpCreate_exit;
 	}
-
-	if (ui64BufferSize > IMG_UINT32_MAX)
-	{
-		psSyncPrimOpCreateOUT->eError =
-		    PVRSRV_ERROR_BRIDGE_BUFFER_TOO_SMALL;
-		goto SyncPrimOpCreate_exit;
-	}
-
-	ui32BufferSize = (IMG_UINT32) ui64BufferSize;
 
 	if (ui32BufferSize != 0)
 	{
@@ -1032,9 +960,6 @@ PVRSRVBridgeSyncPrimOpCreate(IMG_UINT32 ui32DispatchTableEntry,
 		psBlockListInt =
 		    (SYNC_PRIMITIVE_BLOCK **) (((IMG_UINT8 *) pArrayArgsBuffer)
 					       + ui32NextOffset);
-		OSCachedMemSet(psBlockListInt, 0,
-			       psSyncPrimOpCreateIN->ui32SyncBlockCount *
-			       sizeof(SYNC_PRIMITIVE_BLOCK *));
 		ui32NextOffset +=
 		    psSyncPrimOpCreateIN->ui32SyncBlockCount *
 		    sizeof(SYNC_PRIMITIVE_BLOCK *);
@@ -1117,9 +1042,6 @@ PVRSRVBridgeSyncPrimOpCreate(IMG_UINT32 ui32DispatchTableEntry,
 		psServerSyncInt =
 		    (SERVER_SYNC_PRIMITIVE **) (((IMG_UINT8 *) pArrayArgsBuffer)
 						+ ui32NextOffset);
-		OSCachedMemSet(psServerSyncInt, 0,
-			       psSyncPrimOpCreateIN->ui32ServerSyncCount *
-			       sizeof(SERVER_SYNC_PRIMITIVE *));
 		ui32NextOffset +=
 		    psSyncPrimOpCreateIN->ui32ServerSyncCount *
 		    sizeof(SERVER_SYNC_PRIMITIVE *);
@@ -1245,7 +1167,7 @@ PVRSRVBridgeSyncPrimOpCreate(IMG_UINT32 ui32DispatchTableEntry,
 		{
 
 			/* Unreference the previously looked up handle */
-			if (psBlockListInt[i])
+			if (hBlockListInt2[i])
 			{
 				PVRSRVReleaseHandleUnlocked(psConnection->
 							    psHandleBase,
@@ -1263,7 +1185,7 @@ PVRSRVBridgeSyncPrimOpCreate(IMG_UINT32 ui32DispatchTableEntry,
 		{
 
 			/* Unreference the previously looked up handle */
-			if (psServerSyncInt[i])
+			if (hServerSyncInt2[i])
 			{
 				PVRSRVReleaseHandleUnlocked(psConnection->
 							    psHandleBase,
@@ -1284,10 +1206,7 @@ PVRSRVBridgeSyncPrimOpCreate(IMG_UINT32 ui32DispatchTableEntry,
 	}
 
 	/* Allocated space should be equal to the last updated offset */
-#ifdef PVRSRV_NEED_PVR_ASSERT
-	if (psSyncPrimOpCreateOUT->eError == PVRSRV_OK)
-		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
-#endif /* PVRSRV_NEED_PVR_ASSERT */
+	PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 
 #if defined(INTEGRITY_OS)
 	if (pArrayArgsBuffer)
@@ -1304,12 +1223,6 @@ PVRSRVBridgeSyncPrimOpCreate(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(SUPPORT_SERVER_SYNC_IMPL)
-
-static_assert(PVRSRV_MAX_SYNC_PRIMS <= IMG_UINT32_MAX,
-	      "PVRSRV_MAX_SYNC_PRIMS must not be larger than IMG_UINT32_MAX");
-static_assert(PVRSRV_MAX_SYNC_PRIMS <= IMG_UINT32_MAX,
-	      "PVRSRV_MAX_SYNC_PRIMS must not be larger than IMG_UINT32_MAX");
-
 static IMG_INT
 PVRSRVBridgeSyncPrimOpTake(IMG_UINT32 ui32DispatchTableEntry,
 			   PVRSRV_BRIDGE_IN_SYNCPRIMOPTAKE * psSyncPrimOpTakeIN,
@@ -1329,16 +1242,11 @@ PVRSRVBridgeSyncPrimOpTake(IMG_UINT32 ui32DispatchTableEntry,
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
 #endif
 
-	IMG_UINT32 ui32BufferSize = 0;
-	IMG_UINT64 ui64BufferSize =
-	    ((IMG_UINT64) psSyncPrimOpTakeIN->ui32ClientSyncCount *
-	     sizeof(IMG_UINT32)) +
-	    ((IMG_UINT64) psSyncPrimOpTakeIN->ui32ClientSyncCount *
-	     sizeof(IMG_UINT32)) +
-	    ((IMG_UINT64) psSyncPrimOpTakeIN->ui32ClientSyncCount *
-	     sizeof(IMG_UINT32)) +
-	    ((IMG_UINT64) psSyncPrimOpTakeIN->ui32ServerSyncCount *
-	     sizeof(IMG_UINT32)) + 0;
+	IMG_UINT32 ui32BufferSize =
+	    (psSyncPrimOpTakeIN->ui32ClientSyncCount * sizeof(IMG_UINT32)) +
+	    (psSyncPrimOpTakeIN->ui32ClientSyncCount * sizeof(IMG_UINT32)) +
+	    (psSyncPrimOpTakeIN->ui32ClientSyncCount * sizeof(IMG_UINT32)) +
+	    (psSyncPrimOpTakeIN->ui32ServerSyncCount * sizeof(IMG_UINT32)) + 0;
 
 	if (unlikely
 	    (psSyncPrimOpTakeIN->ui32ClientSyncCount > PVRSRV_MAX_SYNC_PRIMS))
@@ -1355,15 +1263,6 @@ PVRSRVBridgeSyncPrimOpTake(IMG_UINT32 ui32DispatchTableEntry,
 		    PVRSRV_ERROR_BRIDGE_ARRAY_SIZE_TOO_BIG;
 		goto SyncPrimOpTake_exit;
 	}
-
-	if (ui64BufferSize > IMG_UINT32_MAX)
-	{
-		psSyncPrimOpTakeOUT->eError =
-		    PVRSRV_ERROR_BRIDGE_BUFFER_TOO_SMALL;
-		goto SyncPrimOpTake_exit;
-	}
-
-	ui32BufferSize = (IMG_UINT32) ui64BufferSize;
 
 	if (ui32BufferSize != 0)
 	{
@@ -1543,10 +1442,7 @@ PVRSRVBridgeSyncPrimOpTake(IMG_UINT32 ui32DispatchTableEntry,
 	UnlockHandle(psConnection->psHandleBase);
 
 	/* Allocated space should be equal to the last updated offset */
-#ifdef PVRSRV_NEED_PVR_ASSERT
-	if (psSyncPrimOpTakeOUT->eError == PVRSRV_OK)
-		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
-#endif /* PVRSRV_NEED_PVR_ASSERT */
+	PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 
 #if defined(INTEGRITY_OS)
 	if (pArrayArgsBuffer)
@@ -1563,7 +1459,6 @@ PVRSRVBridgeSyncPrimOpTake(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(SUPPORT_SERVER_SYNC_IMPL)
-
 static IMG_INT
 PVRSRVBridgeSyncPrimOpReady(IMG_UINT32 ui32DispatchTableEntry,
 			    PVRSRV_BRIDGE_IN_SYNCPRIMOPREADY *
@@ -1620,7 +1515,6 @@ PVRSRVBridgeSyncPrimOpReady(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(SUPPORT_SERVER_SYNC_IMPL)
-
 static IMG_INT
 PVRSRVBridgeSyncPrimOpComplete(IMG_UINT32 ui32DispatchTableEntry,
 			       PVRSRV_BRIDGE_IN_SYNCPRIMOPCOMPLETE *
@@ -1676,7 +1570,6 @@ PVRSRVBridgeSyncPrimOpComplete(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(SUPPORT_SERVER_SYNC_IMPL)
-
 static IMG_INT
 PVRSRVBridgeSyncPrimOpDestroy(IMG_UINT32 ui32DispatchTableEntry,
 			      PVRSRV_BRIDGE_IN_SYNCPRIMOPDESTROY *
@@ -1690,7 +1583,7 @@ PVRSRVBridgeSyncPrimOpDestroy(IMG_UINT32 ui32DispatchTableEntry,
 	LockHandle(psConnection->psHandleBase);
 
 	psSyncPrimOpDestroyOUT->eError =
-	    PVRSRVDestroyHandleUnlocked(psConnection->psHandleBase,
+	    PVRSRVReleaseHandleUnlocked(psConnection->psHandleBase,
 					(IMG_HANDLE) psSyncPrimOpDestroyIN->
 					hServerCookie,
 					PVRSRV_HANDLE_TYPE_SERVER_OP_COOKIE);
@@ -1718,7 +1611,6 @@ PVRSRVBridgeSyncPrimOpDestroy(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(PDUMP)
-
 static IMG_INT
 PVRSRVBridgeSyncPrimPDump(IMG_UINT32 ui32DispatchTableEntry,
 			  PVRSRV_BRIDGE_IN_SYNCPRIMPDUMP * psSyncPrimPDumpIN,
@@ -1773,7 +1665,6 @@ PVRSRVBridgeSyncPrimPDump(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(PDUMP)
-
 static IMG_INT
 PVRSRVBridgeSyncPrimPDumpValue(IMG_UINT32 ui32DispatchTableEntry,
 			       PVRSRV_BRIDGE_IN_SYNCPRIMPDUMPVALUE *
@@ -1831,7 +1722,6 @@ PVRSRVBridgeSyncPrimPDumpValue(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(PDUMP)
-
 static IMG_INT
 PVRSRVBridgeSyncPrimPDumpPol(IMG_UINT32 ui32DispatchTableEntry,
 			     PVRSRV_BRIDGE_IN_SYNCPRIMPDUMPPOL *
@@ -1892,7 +1782,6 @@ PVRSRVBridgeSyncPrimPDumpPol(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(SUPPORT_SERVER_SYNC_IMPL_PDUMP)
-
 static IMG_INT
 PVRSRVBridgeSyncPrimOpPDumpPol(IMG_UINT32 ui32DispatchTableEntry,
 			       PVRSRV_BRIDGE_IN_SYNCPRIMOPPDUMPPOL *
@@ -1950,7 +1839,6 @@ PVRSRVBridgeSyncPrimOpPDumpPol(IMG_UINT32 ui32DispatchTableEntry,
 #endif
 
 #if defined(PDUMP)
-
 static IMG_INT
 PVRSRVBridgeSyncPrimPDumpCBP(IMG_UINT32 ui32DispatchTableEntry,
 			     PVRSRV_BRIDGE_IN_SYNCPRIMPDUMPCBP *
@@ -2009,9 +1897,6 @@ PVRSRVBridgeSyncPrimPDumpCBP(IMG_UINT32 ui32DispatchTableEntry,
 #define PVRSRVBridgeSyncPrimPDumpCBP NULL
 #endif
 
-static_assert(SYNC_MAX_CLASS_NAME_LEN <= IMG_UINT32_MAX,
-	      "SYNC_MAX_CLASS_NAME_LEN must not be larger than IMG_UINT32_MAX");
-
 static IMG_INT
 PVRSRVBridgeSyncAllocEvent(IMG_UINT32 ui32DispatchTableEntry,
 			   PVRSRV_BRIDGE_IN_SYNCALLOCEVENT * psSyncAllocEventIN,
@@ -2026,10 +1911,8 @@ PVRSRVBridgeSyncAllocEvent(IMG_UINT32 ui32DispatchTableEntry,
 	IMG_BOOL bHaveEnoughSpace = IMG_FALSE;
 #endif
 
-	IMG_UINT32 ui32BufferSize = 0;
-	IMG_UINT64 ui64BufferSize =
-	    ((IMG_UINT64) psSyncAllocEventIN->ui32ClassNameSize *
-	     sizeof(IMG_CHAR)) + 0;
+	IMG_UINT32 ui32BufferSize =
+	    (psSyncAllocEventIN->ui32ClassNameSize * sizeof(IMG_CHAR)) + 0;
 
 	if (unlikely
 	    (psSyncAllocEventIN->ui32ClassNameSize > SYNC_MAX_CLASS_NAME_LEN))
@@ -2038,15 +1921,6 @@ PVRSRVBridgeSyncAllocEvent(IMG_UINT32 ui32DispatchTableEntry,
 		    PVRSRV_ERROR_BRIDGE_ARRAY_SIZE_TOO_BIG;
 		goto SyncAllocEvent_exit;
 	}
-
-	if (ui64BufferSize > IMG_UINT32_MAX)
-	{
-		psSyncAllocEventOUT->eError =
-		    PVRSRV_ERROR_BRIDGE_BUFFER_TOO_SMALL;
-		goto SyncAllocEvent_exit;
-	}
-
-	ui32BufferSize = (IMG_UINT32) ui64BufferSize;
 
 	if (ui32BufferSize != 0)
 	{
@@ -2120,10 +1994,7 @@ PVRSRVBridgeSyncAllocEvent(IMG_UINT32 ui32DispatchTableEntry,
  SyncAllocEvent_exit:
 
 	/* Allocated space should be equal to the last updated offset */
-#ifdef PVRSRV_NEED_PVR_ASSERT
-	if (psSyncAllocEventOUT->eError == PVRSRV_OK)
-		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
-#endif /* PVRSRV_NEED_PVR_ASSERT */
+	PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 
 #if defined(INTEGRITY_OS)
 	if (pArrayArgsBuffer)

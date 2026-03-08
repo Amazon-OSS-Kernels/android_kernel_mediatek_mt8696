@@ -34,8 +34,6 @@ extern bool fgCaHDMIGetTAStatus(unsigned char *pdata);
 extern bool fgCaHDMIGetHdr10pVSIFInfo(unsigned char *pdata);
 void fgCaHDMISetSecureRegEntry(unsigned int Tx_entry,
 	unsigned int Rx_entry);
-extern bool fgCaHDMILoadEMP(unsigned char en,
-	unsigned int num, unsigned char *pdata);
 extern int hdmi_audio_signal_state(unsigned int state);
 #endif
 #endif

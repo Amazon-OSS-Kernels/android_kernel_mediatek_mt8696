@@ -28,23 +28,9 @@
 #define TZ_TA_DOVI_UUID   "96fa7b2e-62b2-28ef-64a8-12f9bcc84940"
 
 
+
+
 struct dovi_share_memory_info_t {
-	struct src_params_t src_param[MAX_NUM_INPUT];
-	struct cp_param_t cp_param;
-	uint32_t sec_layer; /*rpu sec buffer save layer*/
-	/* out: control_path_test out dm info */
-	uint32_t hdmi_md_type;
-	struct vsif_param_t vsif;
-	uint32_t hdmi_md[DOVI_MD_DW_SIZE];
-	uint32_t hdmi_md_len;
-	/* out: control_path_test hdr10 md */
-	struct mtk_disp_hdr10_md_t hdr10_info_frame;
-	uint32_t log_level;
-	struct dv_hw_reg dv_out_params;/*out hw setting*/
-};
-
-
-struct dovi_share_memory_info_t_old {
 	enum DISP_DR_TYPE_T dr_type;	/* in: sdr/hdr10 md/dovi rpu stream */
 	struct mtk_disp_hdr10_md_t hdr10_md;
 	uint32_t frame_num;
@@ -86,8 +72,7 @@ enum dovi_status dovi_sec_share_memory_init(void);
 enum dovi_status dovi_sec_md_parser_init(void);
 enum dovi_status dovi_sec_md_parser_uninit(void);
 enum dovi_status dovi_sec_cp_test_init(void);
-enum dovi_status dovi_sec_find_rpu_buffer(uint32_t layer_id,
-	uint32_t sec_handle,
+enum dovi_status dovi_sec_find_rpu_buffer(uint32_t sec_handle,
 	uint32_t len);
 enum dovi_status dovi_sec_cp_test_main(void);
 enum dovi_status dovi_sec_cp_test_uninit(void);

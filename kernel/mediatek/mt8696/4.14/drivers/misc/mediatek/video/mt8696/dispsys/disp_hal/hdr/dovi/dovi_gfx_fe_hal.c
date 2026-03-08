@@ -142,7 +142,7 @@ int dovi_gfx_fe_hal_set_enable(uint8_t id, uint32_t enable)
 
 	if (dv_gfx_fe_en[id] != enable) {
 		dv_gfx_fe_en[id] = enable;
-		dovi_printf("%s[%d] %d\n", __func__, id, enable);
+		dovi_info("%s[%d] %d\n", __func__, id, enable);
 	}
 
 	return 0;

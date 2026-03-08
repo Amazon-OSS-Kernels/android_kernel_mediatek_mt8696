@@ -30,7 +30,7 @@ int dovi_gfx_fe_hal_config_reg(uint32_t *p_gfx_fe_reg);
 	(mode == HDMI_VIDEO_720x480p_60Hz)) \
 
 extern uint32_t dovi_idk_test;
-extern unsigned int g_force_dovi;
+extern unsigned int g_force_dolby;
 extern uint32_t hdr_input_width[4];
 extern uint32_t hdr_input_height[4];
 

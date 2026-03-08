@@ -656,7 +656,7 @@ void vdp_hal_set_disp_config(uint8_t vdp_id, struct vdp_hal_region *p_src,
 	p_vdp_sw_reg->field.DW_NEED_BIT9 = ((dw_need & 0x200) >> 9);
 	p_vdp_sw_reg->field.YSLTT = p_src->y;
 
-	/* for dovi idk test chroma repeat */
+	/* for dolby idk test chroma repeat */
 	if (p_src->y == 0) {
 		p_vdp_sw_reg->field.CSLTT = 0x1;      /* 0x24[11:0] */
 		p_vdp_sw_reg->field.CSSLTT = 0x80;    /* 0x2C[7:0] */

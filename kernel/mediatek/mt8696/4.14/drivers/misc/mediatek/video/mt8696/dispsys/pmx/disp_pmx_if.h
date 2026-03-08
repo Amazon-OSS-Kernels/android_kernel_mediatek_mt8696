@@ -49,7 +49,7 @@
 
 #define PMX_FUNC() pr_debug("[PMX] func: %s\n", __func__)
 
-extern uint32_t dovi_path_en;
+extern uint32_t dolby_path_enable;
 extern int hdmi_internal_video_config(enum HDMI_VIDEO_RESOLUTION vformat);
 //extern int hdmi_internal_audio_config(HDMI_AUDIO_FORMAT aformat);
 

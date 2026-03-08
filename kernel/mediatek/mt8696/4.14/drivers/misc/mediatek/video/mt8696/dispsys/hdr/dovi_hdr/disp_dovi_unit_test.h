@@ -133,7 +133,7 @@ extern uintptr_t ml_reg_base[ML_REG_ID_MAX];
 extern char *dovi_reg_base[DOVI_CORE_MAX];
 void dovi_ut_external_bypass(uint32_t id1);
 void dovi_ut_internal_bypass(uint32_t id1);
-void dovi_idk_dump_vdo_bypass(uint32_t id1);
+
 void disp_dovi_wakeup_routine(void);
 void disp_dovi_ut_ml_update(void);
 int disp_dovi_default_path(uint32_t value);

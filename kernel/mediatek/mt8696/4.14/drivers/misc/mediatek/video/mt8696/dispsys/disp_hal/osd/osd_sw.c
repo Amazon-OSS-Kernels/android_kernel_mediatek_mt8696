@@ -870,7 +870,7 @@ void osd_plane_enable(unsigned int plane, bool enable)
 		IGNORE_RET(_OSD_PLA_SetEnable(plane, (UINT32) true));
 		VERIFYED(_OSD_PLA_UpdateHwReg(plane) == (INT32)OSD_RET_OK);
 
-		/*change premix de for dovi*/
+		/*change premix de for dolby*/
 		/*osd_premix_set_mix_del_sel(plane, enable);*/
 	} else {
 		if (OSD_Is_PLA_Enabled(plane)) {
@@ -880,7 +880,7 @@ void osd_plane_enable(unsigned int plane, bool enable)
 			VERIFYED(_OSD_PLA_UpdateHwReg(plane) ==
 				 (INT32)OSD_RET_OK);
 
-			/*change premix de for dovi*/
+			/*change premix de for dolby*/
 			/*osd_premix_set_mix_del_sel(plane, enable);*/
 		}
 	}

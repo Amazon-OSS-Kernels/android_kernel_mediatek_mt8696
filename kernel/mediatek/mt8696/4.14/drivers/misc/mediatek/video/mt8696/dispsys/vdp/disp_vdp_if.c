@@ -112,16 +112,36 @@ struct disp_hw_common_info disp_common_info;
 enum DISP_DR_TYPE_T force_dr_range;
 uint32_t force_decode_allm;
 uint32_t vdp_disp_test;
-//for idk2.6
-uint32_t idk_vdo_en;
-uint32_t idk_gfx_en;
-uint32_t idk_vdo_pts[2];
-uint8_t idk_vdo_start[2];
+
 uint32_t vdp_not_mix = 3, vdp_not_display = 3;
 
 bool is_hd_resolution(void)
 {
 	return IS_HD_RES(current_resolution);
+}
+
+void vdp_set_HDMI_BT2020_signal(bool enable_bt2020)
+{
+/* store last time bt2020 signal status. */
+#ifdef CONFIG_MTK_INTERNAL_HDMI_SUPPORT
+	static bool bt2020_enabled;
+
+	if (enable_bt2020 && disp_common_info.tv.is_support_bt2020) {
+		/* enable bt2020 */
+		if (!bt2020_enabled) {
+			DISP_LOG_N("enable BT2020 signal\n");
+			vBT2020Enable(true);
+		}
+		bt2020_enabled = true;
+	} else {
+		/* disable bt2020 */
+		if (bt2020_enabled) {
+			DISP_LOG_N("disable BT2020 signal\n");
+			vBT2020Enable(false);
+		}
+		bt2020_enabled = false;
+	}
+#endif
 }
 
 static void vdp_ion_init(void)
@@ -221,6 +241,13 @@ int vdp_clear_incoming_buffer(disp_video_buffer_info *buffer_info)
 	return ret;
 }
 #endif
+
+int vdp_set_output_resolution(uint32_t res)
+{
+	unsigned int ret = 0;
+
+	return ret;
+}
 
 static int _vdp_parse_dev_node(void)
 {
@@ -496,8 +523,6 @@ uint32_t disp_vdp_get_source_duration(uint32_t fps,
 				      const struct disp_hw_resolution *info)
 {
 	uint32_t source_duration = TIME_BASE * 100 / 5994; /* 59.94 fps */
-	if (vdo_set_fps > 0)
-		fps = vdo_set_fps;
 
 	if (fps != 0) {
 		if (fps == 2397)
@@ -691,9 +716,6 @@ int disp_vdp_stop(unsigned int layer_id)
 {
 	struct video_layer_info *layer_info = NULL;
 
-	//idk2.6 use vdp layer
-	if (idk_vdo_en)
-		return VDP_OK;
 	/* struct vdp_hal_config_info config_info = {0}; */
 	if (!disp_vdp_check_layer_id(layer_id, __LINE__))
 		return VDP_INVALID_INDEX;
@@ -724,7 +746,7 @@ int disp_vdp_stop(unsigned int layer_id)
 	video_layer[layer_id].allm_en = false;
 
 	vdp_stop_disable_hw(layer_id);
-	set_fs_index(layer_id, 0);
+	set_fs_index(0);
 	hdmi_game_mode_enable(false);
 
 	DISP_LOG_I("%s layer_start %d end\n",
@@ -846,21 +868,6 @@ int disp_vdp_get_info(struct disp_hw_common_info *info)
 			break;
 		}
 
-		/*for dovi idk2.6 PIP and sbs case*/
-		/*pip case sub video use mdp*/
-		if (idk_vdo_en == 2 &&
-			((vdp_cap->tgt.width < info->resolution->width) ||
-			(vdp_cap->tgt.height < info->resolution->height))) {
-			vdp_cap->need_resizer = true;
-			break;
-		}
-
-		/*pip case main and sub video use mdp*/
-		if (idk_vdo_en == 3) {
-			vdp_cap->need_resizer = true;
-			break;
-		}
-
 		/* buffer & HDMI resolution are not the same.
 		 ** in this case, can't use H Down Scale
 		 ** only can use DSD or imgresz.
@@ -944,7 +951,7 @@ int disp_vdp_change_resolution(const struct disp_hw_resolution *info)
 		fmt_hal_set_mode(DISP_FMT_MAIN, info->res_mode, true);
 		fmt_hal_set_tv_type(DISP_FMT_MAIN, tv_type);
 		fmt_hal_enable(DISP_FMT_MAIN, true);
-		if (dovi_path_en != 1) {
+		if (dolby_path_enable != 1) {
 			disp_path_get_sof_info(DISP_SOF_0_M_VDO_MAIN_STA,
 			DISP_SOF_0_M_VDO_MAIN_END, &sof_start, &sof_end);
 			fmt_hal_set_sof(FMT_SOF_0_M_VDO_MAIN_STA,
@@ -962,7 +969,7 @@ int disp_vdp_change_resolution(const struct disp_hw_resolution *info)
 		fmt_hal_set_mode(DISP_FMT_SUB, info->res_mode, true);
 		fmt_hal_set_tv_type(DISP_FMT_SUB, tv_type);
 		fmt_hal_enable(DISP_FMT_SUB, true);
-		if (dovi_path_en != 1) {
+		if (dolby_path_enable != 1) {
 			disp_path_get_sof_info(DISP_SOF_7_S_VDO_MAIN_STA,
 			DISP_SOF_7_S_VDO_MAIN_END, &sof_start, &sof_end);
 			fmt_hal_set_sof(FMT_SOF_7_S_VDO_MAIN_STA,
@@ -1120,28 +1127,7 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 	bool is_Y_C_independent = false;
 	struct mtk_vdp_hdr10_plus_svp_handle_t
 		hdr10_plus_svp_handle; /*for hdr10+ secure file*/
-
-	if (!disp_vdp_check_layer_id(config->layer_id, __LINE__))
-		return VDP_INVALID_INDEX;
-
 	memset(&hdr10_plus_svp_handle, 0, sizeof(hdr10_plus_svp_handle));
-
-	/*add for dovi idk2.6 pip case*/
-	if (idk_vdo_en == 2) {
-		if ((config->tgt.width < 1920 && config->tgt.height < 1080))
-			config->layer_id = 1;
-		else
-			config->layer_id = 0;
-		vdp_cli_get()->target_area.enable = false;
-	}
-
-	if (idk_vdo_en == 3) {
-		if (config->tgt.x > 0)
-			config->layer_id = 1;
-		else
-			config->layer_id = 0;
-		vdp_cli_get()->target_area.enable = false;
-	}
 
 	config_buffer_count[config->layer_id]++;
 
@@ -1333,7 +1319,7 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 		goto release_ion_handle;
 	}
 
-	/* for dovi unitTest */
+	/* for dolby unitTest */
 	if (vdp_disp_test) {
 		if (vdp_disp_test == 1) {
 			buf_info->tgt.x = 0;
@@ -1369,7 +1355,7 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 	buf_info->is_10bit_lbs2bit_tile_mode =
 		config->is_10bit_lbs2bit_tile_mode;
 	buf_info->is_bt2020 = config->is_bt2020;
-	buf_info->is_dovi = config->is_dovi;
+	buf_info->is_dolby = config->is_dolby;
 	buf_info->is_pack_mode = config->is_pack_mode;
 	buf_info->is_interlace = !config->is_progressive;
 	buf_info->is_seamless = config->is_seamless;
@@ -1392,7 +1378,6 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 	buf_info->metadata_already_set = false;
 	buf_info->is_enter_async_mode = false;
 	buf_info->allm_en = config->allm_en;
-	buf_info->new_frame = 0;
 	/*
 	 **the following info is for hdr2sdr,
 	 **saving video buffer info and tv info at vdp config,
@@ -1481,20 +1466,20 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 		buf_info->hdr_info.metadata_info.dovi_metadata.pts =
 			config->pts;
 		buf_info->hdr_info.metadata_info.dovi_metadata.len =
-			config->dovi_info.len;
+			config->dolby_info.len;
 		if (!config->secruity_en) { /* normal display buffer */
-			if (config->dovi_info.len >= DOVI_MD_MAX_LEN) {
+			if (config->dolby_info.len >= DOVI_MD_MAX_LEN) {
 				DISP_LOG_E(
 					"hdr10 plus metadata size too long: %d\n",
-					config->dovi_info.len);
+					config->dolby_info.len);
 				goto release_ion_handle;
 			}
 
 			if (copy_from_user(
 				    buf_info->hdr_info.metadata_info
 					    .dovi_metadata.buff,
-				    (void __user *)(config->dovi_info.addr),
-				    config->dovi_info.len)) {
+				    (void __user *)(config->dolby_info.addr),
+				    config->dolby_info.len)) {
 				DISP_LOG_E("copy hdr10 plus metadata fail\n");
 				buf_info->meta_data_size = 0;
 				goto release_ion_handle;
@@ -1502,8 +1487,8 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 		} else { /* secure display buffer */
 			DISP_LOG_D("hdr10 plus svp path\n");
 			hdr10_plus_svp_handle.sec_handle =
-				config->dovi_info.sec_handle;
-			hdr10_plus_svp_handle.len = config->dovi_info.len;
+				config->dolby_info.sec_handle;
+			hdr10_plus_svp_handle.len = config->dolby_info.len;
 			hdr10_plus_svp_handle.pts = config->pts;
 			ret_cfd = disp_hdr_backup_hdr10plus_sec_handle(
 				&hdr10_plus_svp_handle);
@@ -1519,10 +1504,10 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 			} else {
 				buf_info->hdr_info.metadata_info
 					.dovi_metadata.sec_handle
-					= config->dovi_info.sec_handle;
+					= config->dolby_info.sec_handle;
 				buf_info->hdr_info.metadata_info
 					.dovi_metadata.len =
-					config->dovi_info.len;
+					config->dolby_info.len;
 				buf_info->hdr_info.metadata_info
 					.dovi_metadata.svp = true;
 			}
@@ -1532,10 +1517,10 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 	disp_vdp_copy_film_grain_md(config, buf_info);
 
 	vdp_printf(VDP_DOVI_LOG,
-		"vdo%d dovi %d hdr_type %d dr=%d->%d pts = %lld\n",
-		   buf_info->layer_id, buf_info->is_dovi,
+		"vdo%d dolby %d hdr_type %d dr=%d->%d\n",
+		   buf_info->layer_id, buf_info->is_dolby,
 		   buf_info->hdr10_type, buf_info->hdr_info.dr_range,
-			config->dr_range, buf_info->pts);
+			config->dr_range);
 
 	vdp_printf(
 		VDP_FLOW_LOG,
@@ -1563,55 +1548,54 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 		buf_info->tgt.y, buf_info->tgt.width, buf_info->tgt.height,
 		buf_info->tgt.pitch);
 
-	/* fill Dovi HDR info  vdec only add 0 1 2 dr range*/
+	/* fill Dolby HDR info  vdec only add 0 1 2 dr range*/
 	buf_info->hdr_info.dr_range = config->dr_range;
 	/* fill hlg type */
 	if (buf_info->hdr10_type == HDR10_TYPE_HLG)
 		buf_info->hdr_info.dr_range = DISP_DR_TYPE_HLG;
 
-#ifdef CONFIG_DOVI_SUPPORT
 	if (config->dr_range == DISP_DR_TYPE_DOVI) {
-		struct mtk_disp_dovi_md_t *dovi_info = &config->dovi_info;
+		struct mtk_disp_dovi_md_t *dolby_info = &config->dolby_info;
 		struct mtk_vdp_dovi_md_t *dovi_md_info =
 			&buf_info->hdr_info.metadata_info.dovi_metadata;
 
 		buf_info->hdr_info.dr_range = DISP_DR_TYPE_DOVI;
 
-		dovi_md_info->pts = dovi_info->pts;
-		dovi_md_info->len = dovi_info->len;
-		dovi_md_info->svp = dovi_info->svp;
+		dovi_md_info->pts = dolby_info->pts;
+		dovi_md_info->len = dolby_info->len;
+		dovi_md_info->svp = dolby_info->svp;
 		memset(&dovi_md_info->buff, 0, DOVI_MD_MAX_LEN);
 
 		if (dovi_md_info->svp) {
 			/* store rpu data into tz buffers, not transmit to dovi
 			 * process immediately
 			 */
-			disp_dovi_hdr_save_sec_rpu(buf_info->layer_id, dovi_info, dovi_md_info);
+			disp_dovi_hdr_save_sec_rpu(dolby_info, dovi_md_info);
 			vdp_printf(
 				VDP_DOVI_LOG,
 				"dovi frm pts %lld rpu pts %lld len %d sec_handle 0x%x new sec_handle:%d\n",
-				config->pts, dovi_info->pts, dovi_info->len,
-				dovi_info->sec_handle,
+				config->pts, dolby_info->pts, dolby_info->len,
+				dolby_info->sec_handle,
 				dovi_md_info->sec_handle);
 		} else {
 			vdp_printf(
 				VDP_DOVI_LOG,
 				"dovi frm pts %lld rpu pts %lld len %d addr %p\n",
-				config->pts, dovi_info->pts, dovi_info->len,
-				dovi_info->addr);
-			if (dovi_info->len >= DOVI_MD_MAX_LEN) {
+				config->pts, dolby_info->pts, dolby_info->len,
+				dolby_info->addr);
+			if (dolby_info->len >= DOVI_MD_MAX_LEN) {
 				DISP_LOG_E("dovi_info size too long: %d\n",
-					dovi_info->len);
+					dolby_info->len);
 				goto release_ion_handle;
 			}
 			if (copy_from_user(dovi_md_info->buff,
-					   (void __user *)(dovi_info->addr),
-					   dovi_info->len)) {
+					   (void __user *)(dolby_info->addr),
+					   dolby_info->len)) {
 				DISP_LOG_E("dovi info copy from user fail\n");
 				goto release_ion_handle;
 			}
 
-			if (dovi_info->len != 0) {
+			if (dolby_info->len != 0) {
 				uint32_t *addr = (uint32_t *)dovi_md_info->buff;
 
 				vdp_printf(
@@ -1621,26 +1605,26 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 			}
 		}
 	}
-#endif
-	/* for Dovi debug.
-	 ** force set current buffer as dovi video
+
+	/* for Dolby debug.
+	 ** force set current buffer as dolby video
 	 */
 	if (force_dr_range) {
 		buf_info->hdr_info.dr_range = force_dr_range - 1;
 
 		if (buf_info->hdr_info.dr_range == DISP_DR_TYPE_DOVI) {
-			buf_info->is_dovi = true;
+			buf_info->is_dolby = true;
 			buf_info->hdr10_type = HDR10_TYPE_NONE;
 		} else if (buf_info->hdr_info.dr_range == DISP_DR_TYPE_HDR10) {
-			buf_info->is_dovi = false;
+			buf_info->is_dolby = false;
 			buf_info->hdr10_type = HDR10_TYPE_ST2084;
 		} else {
-			buf_info->is_dovi = false;
+			buf_info->is_dolby = false;
 			buf_info->hdr10_type = HDR10_TYPE_NONE;
 		}
 		vdp_printf(VDP_DOVI_LOG,
-			   "force dr range %d dovi %d hdr type %d\n",
-			   buf_info->hdr_info.dr_range, buf_info->is_dovi,
+			   "force dr range %d dolby %d hdr type %d\n",
+			   buf_info->hdr_info.dr_range, buf_info->is_dolby,
 			   buf_info->hdr10_type);
 	}
 

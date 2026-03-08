@@ -51,8 +51,6 @@
 
 /* ////////////////////////////////////// */
 extern bool _fgDolbyHdrEnable;
-extern struct hdmi_emp_t hdmi_emp;
-extern bool emp_data_is_sending;
 
 /*for color space*/
 #define RGB_444  0
@@ -170,36 +168,6 @@ enum HDMI_REF_CLOCK_ENUM {
 	TOP_HDCP24SEL_UNIVPD52,
 	TOP_HDCP24SEL_UNIVP2D8,
 	HDMI_SEL_CLOCK_NUM,
-};
-
-enum dovi_signal_type_t {
-	DOVI_SIGNAL_TYPE_NONDOVI = 0x0,
-	DOVI_SIGNAL_TYPE_DOVI    = 0x1,
-	/* 0b0010 - Reserved */
-	DOVI_SIGNAL_TYPE_HDR10   = 0x3,
-	/* 0100 - Reserved */
-	DOVI_SIGNAL_TYPE_SDR     = 0x5,
-	/* 0b0110 - Reserved */
-	DOVI_SIGNAL_TYPE_HLG     = 0x7
-	/* 0b1000 - 0b1111: Reserved */
-};
-
-struct dovi_vsif_param_t {
-	int low_latency;
-	int backlt_ctrl_md_present;
-	int source_dm_version;
-	int eff_tmax_pq;
-	enum dovi_signal_type_t dovi_signal_type;
-	int auxiliary_md_present;
-	int L11_md_present;
-	uint8_t auxiliary_runmode;
-	uint8_t auxiliary_runversion;
-	uint8_t auxiliary_debug0;
-	uint8_t content_type;
-	uint8_t white_point;
-	uint8_t L11_byte2;
-	uint8_t L11_byte3;
-	int bt2020_container;
 };
 
 #define TX_DEF_LOG(fmt, arg...) pr_info("[HDMI]"fmt, ##arg)
@@ -1946,7 +1914,6 @@ extern unsigned char hdr10p_vsif_repeat_en;
 #define RG_VSYNC_CAPTURE (1 << 1)
 #define RG_VRR_VSYNC_SW_SEL (1 << 2)
 #define RG_VSYNC_CNT_SEL (1 << 3)
-#define RG_EM_SW_TRIGGER_ENABLE (1 << 4)
 #define RG_VRR_SYNC_SW (0xFFFFF << 12)
 
 
@@ -2014,20 +1981,6 @@ extern unsigned char hdr10p_vsif_repeat_en;
 #define TOP_VSYNC_SEND 0x370
 #define MAX_HSYNC_NUM (0xFF << 16)
 #define MIN_HSYNC_NUM (0xFF)
-
-#define HDMI_TOP_EM_ADDR 0x378
-#define HDMI_EM_SRAM_ADDR (0x3FF)
-
-#define HDMI_TOP_EM_DATA 0x37C
-
-#define HDMI_TOP_VSYNC_SEND_L 0x380
-#define EM_SEND_ZONE_LOW 0xFFFFF
-#define EM_HW_TRIGGER_LOW (0x3FF << 20)
-
-#define HDMI_TOP_VSYNC_SEND_H 0x384
-#define EM_SEND_ZONE_HIGH 0xFFFFF
-#define EM_HW_TRIGGER_HIGH (0x3FF << 20)
-
 
 enum HDMI_GEN_PACKET_HW_ENUM {
 	GEN_PKT_HW1,
@@ -3096,8 +3049,6 @@ extern struct clk *vdout_sd_sel;
 extern struct clk *hdmitx_pxl_clk;
 extern struct clk *hdmitx_pxl_clk_d6;
 
-extern struct workqueue_struct *hdmi_wq;
-extern struct delayed_work dolby_work;
 extern unsigned int hdmi_rgb2hdmi_read(unsigned int u2Reg);
 extern void hdmi_rgb2hdmi_write(unsigned int u2Reg, unsigned int u4Data);
 extern unsigned int hdmi_p2i_read(unsigned int u2Reg);
@@ -3283,8 +3234,7 @@ extern void vChgHDMIVideoResolution(void);
 extern void vChangeVpll(unsigned int bRes, unsigned int bdeepmode);
 extern void vEnableDeepColor(bool fgEnable, unsigned int ui1Mode);
 extern void v4k6G_set_clock(void);
-extern void vDoviHdrEnable(bool fgEnable);
-extern void vDoviVsemHdrEnable(bool fgEnable, unsigned int type);
+extern void vDolbyHdrEnable(bool fgEnable);
 extern void vdout_sys_422_to_420(bool en);
 
 extern void vHDMIAVUnMute(void);
@@ -3383,7 +3333,7 @@ extern enum VID_PLA_DR_TYPE_T hdr_status(char *str);
 void vResetAudioHDMI(unsigned char bRst);
 void vResetVideoHDMI(unsigned char bRst);
 void vAudioPacketOff(unsigned char bOn);
-void vLowLatencyDoviEnable(bool fgEnable);
+void vLowLatencyDolbyVisionEnable(bool fgEnable);
 void vHdr10PlusEnable(bool fgEnable);
 void vSetStaticHdrType(char bType);
 void vHdr10PlusVSIFEnable(bool fgEnable,
@@ -3396,8 +3346,7 @@ void MuteHDMIAudio(void);
 void vHalSendStaticHdrInfoFrame(char bEnable, char *pr_bData);
 void vHdrEnable(bool fgEnable);
 void vBT2020Enable(bool fgEnable);
-void vDoviHdrEnable(bool fgEnable);
-void vDoviVsemHdrEnable(bool fgEnable, unsigned int type);
+void vDolbyHdrEnable(bool fgEnable);
 void mtk_hdmi_dolby_work_handle(struct work_struct *work);
 void vSetHdrDebugType(unsigned int u4Data);
 void vVrrEnable(bool fgEnable);
@@ -3413,8 +3362,7 @@ void vshow_audio_status(void);
 void vResetAudioHDMI(unsigned char bRst);
 void vResetVideoHDMI(unsigned char bRst);
 void vAudioPacketOff(unsigned char bOn);
-void vLowLatencyDoviEnable(bool fgEnable);
-void vSetDoviVsifParamter(void *p_dovi_vsif);
+void vLowLatencyDolbyVisionEnable(bool fgEnable);
 void vHdr10PlusEnable(bool fgEnable);
 void vSetStaticHdrType(char bType);
 void vBlackHDMIOnly(void);
@@ -3439,7 +3387,6 @@ void hdmi_vrr_en(unsigned int en);
 void vHdmiGameModeEn(unsigned int en);
 extern u32 get_devinfo_with_index(u32 index);
 extern void hdmi_vsync_handle(void);
-extern void vSendEMP(void);
-extern void DoviVsifVerCtrl(unsigned int ver);
+
 #endif
 #endif

@@ -676,11 +676,12 @@ MS_BOOL disp_fg_handler(u32 fg_hw_id, struct mtk_av1_film_grain_params *fg_param
 	update_grain = fg_param->update_grain;
 
 	if (apply_grain) {
-		info->fg_params_idx =
-			(info->fg_params_idx + 1) % FG_MAX_PARAM_NS;
-		info->hw_reg = &info->fg_params_hw_reg[info->fg_params_idx];
-		info->hw_adl = &info->fg_params_hw_adl[info->fg_params_idx];
-		disp_fg_parser_meta(fg_param, info->hw_reg, info->hw_adl);
+		if (update_grain) {
+			info->fg_params_idx = (info->fg_params_idx + 1) % FG_MAX_PARAM_NS;
+			info->hw_reg = &info->fg_params_hw_reg[info->fg_params_idx];
+			info->hw_adl = &info->fg_params_hw_adl[info->fg_params_idx];
+			disp_fg_parser_meta(fg_param, info->hw_reg, info->hw_adl);
+		}
 
 		if (info->hw_reg && info->hw_adl)
 			fg_hal_update_process(fg_hw_id, info->hw_reg, info->hw_adl, adl_tbl);

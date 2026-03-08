@@ -426,7 +426,7 @@ int dovi_get_cp1_setting(uint32_t id, struct dv_hw_reg *p_dv_reg)
 	}
 
 	p_reg_tbl = &dv_dsys_all_reg;
-	p_dv_comp_reg = &p_dv_reg->dv_comp[id];
+	p_dv_comp_reg = &p_dv_reg->dv_comp;
 
 	if (id == 0)
 		reg_base = MVDO_HDR_FE_BASE;
@@ -575,7 +575,7 @@ int dovi_get_cp0_setting(uint32_t id, struct dv_hw_reg *p_dv_reg)
 	}
 
 	p_reg_tbl = &dv_dsys_all_reg;
-	p_dv_comp_reg = &p_dv_reg->dv_comp[id];
+	p_dv_comp_reg = &p_dv_reg->dv_comp;
 
 	if (id == 0)
 		reg_base = MVDO_HDR_FE_BASE;
@@ -674,7 +674,6 @@ int dovi_get_cp0_setting(uint32_t id, struct dv_hw_reg *p_dv_reg)
 
 
 	reg_bl_coeff_v00(p_dv_comp_reg->coeff_cr[0], reg_base, p_reg_tbl);
-	dovi_info("2398 0x%x", p_dv_comp_reg->coeff_cr[0]);
 	reg_bl_coeff_v01(p_dv_comp_reg->coeff_cr[1], reg_base, p_reg_tbl);
 	reg_bl_coeff_v02(p_dv_comp_reg->coeff_cr[2], reg_base, p_reg_tbl);
 	reg_bl_coeff_v10(p_dv_comp_reg->coeff_cr[3], reg_base, p_reg_tbl);
@@ -701,7 +700,7 @@ int dovi_get_ctrl_setting(uint32_t id, struct dv_hw_reg *p_dv_reg)
 	}
 
 	p_reg_tbl = &dv_dsys_all_reg;
-	p_dv_ctrl_reg = &p_dv_reg->dv_ctrl[id];
+	p_dv_ctrl_reg = &p_dv_reg->dv_ctrl;
 
 	if (id == 0)
 		reg_base = MVDO_HDR_FE_BASE;
@@ -768,7 +767,7 @@ int dovi_get_vdo_dm_setting(uint32_t id, struct dv_hw_reg *p_dv_reg)
 	}
 
 	p_reg_tbl = &dv_dsys_all_reg;
-	p_dv_dm_reg = &p_dv_reg->dv_dm[id];
+	p_dv_dm_reg = &p_dv_reg->dv_dm;
 
 	if (id == 0)
 		reg_base = MVDO_HDR_FE_BASE;
@@ -923,7 +922,7 @@ int dovi_get_gop_setting(uint32_t id, struct dv_hw_reg *p_dv_reg)
 	}
 
 	p_reg_tbl = &dv_msys_all_reg;
-	p_dv_gop_reg = &p_dv_reg->dv_gop[id];
+	p_dv_gop_reg = &p_dv_reg->dv_gop;
 
 	if (id == 0)
 		reg_base = FHD_HDR_FE_BASE;
@@ -1095,15 +1094,9 @@ int dovi_get_dith_setting(struct dv_hw_reg *p_dv_reg)
 	p_reg_tbl = &dv_msys_all_reg;
 	p_dv_dither_reg = &p_dv_reg->dv_dither;
 
-	if (dump_bit_depth == 12) {
-		reg_hdr_dith_en(0x0, reg_base, p_reg_tbl);
-		reg_hdr_dith_444md(0x0, reg_base, p_reg_tbl);
-	} else {
-		reg_hdr_dith_en(p_dv_dither_reg->hdr_dith_en,
-			reg_base, p_reg_tbl);
-		reg_hdr_dith_444md(p_dv_dither_reg->hdr_dith_444md,
-			reg_base, p_reg_tbl);
-	}
+	reg_hdr_dith_en(p_dv_dither_reg->hdr_dith_en, reg_base, p_reg_tbl);
+	reg_hdr_dith_444md(p_dv_dither_reg->hdr_dith_444md,
+		reg_base, p_reg_tbl);
 	reg_hdr_dith_8b_md(p_dv_dither_reg->hdr_dith_8b_md,
 		reg_base, p_reg_tbl);
 	reg_hdr_pseudo_dith_stop(p_dv_dither_reg->hdr_byp_dith_reorder,
@@ -1169,11 +1162,9 @@ int dovi_get_scm_setting(struct dv_hw_reg *p_dv_reg)
 		reg_meta_len_per_pkt(p_dv_scm_reg->reg_meta_len_per_pkt,
 			reg_base, p_reg_tbl);
 
-	} else {
+	} else
 		reg_scramble_byp_en(1, reg_base, p_reg_tbl);
-		//reg_autod_lut_md_7b(0, reg_base, p_reg_tbl);
-		//reg_autod_trigger_md_7b(0x0, reg_base, p_reg_tbl);
-	}
+
 
 	return 0;
 }
@@ -1183,7 +1174,7 @@ int dovi_get_be_dm_setting(struct dv_hw_reg *p_dv_reg)
 {
 	uint32_t reg_base = 0;
 	struct dv_all_reg_tab *p_reg_tbl = NULL;
-	struct dv_be_dm_reg *p_dv_dm_reg = NULL;
+	struct dv_dm_reg *p_dv_dm_reg = NULL;
 
 	if (p_dv_reg == NULL) {
 		dovi_error("%s null params\n", __func__);
@@ -1192,7 +1183,7 @@ int dovi_get_be_dm_setting(struct dv_hw_reg *p_dv_reg)
 
 	reg_base = VDO_BE_REG_BASE;
 	p_reg_tbl = &dv_msys_all_reg;
-	p_dv_dm_reg = &p_dv_reg->dv_be_dm;
+	p_dv_dm_reg = &p_dv_reg->dv_dm;
 
 	//be dm default internal bypass setting
 	reg_b204_defalut(0x7e, reg_base, p_reg_tbl);
@@ -1313,66 +1304,46 @@ int dovi_get_be_dm_setting(struct dv_hw_reg *p_dv_reg)
 	return 0;
 }
 
-int dovi_set_comp_bypass(uint8_t is_dovi, struct dv_hw_reg *p_hw_reg)
+int dovi_set_comp_bypass(uint8_t is_dolby, struct dv_hw_reg *p_hw_reg)
 {
-	if (dv_vdo_fe_en[0] && !((is_dovi & 1) || b_comp_enable)) {
-		p_hw_reg->dv_ctrl[0].dm_src_sel = 1;
-		p_hw_reg->dv_ctrl[0].dm_msb_align_en = 1;
+	if (is_dolby || b_comp_enable)
+		return 0;
 
-		p_hw_reg->dv_dm[0].b0101.cup420_en = 0;
-		p_hw_reg->dv_dm[0].b0101.repeat_en = 0;
-		p_hw_reg->dv_dm[0].b0101._422to444_en = 0;
+	p_hw_reg->dv_ctrl.dm_src_sel = 1;
+	p_hw_reg->dv_ctrl.dm_msb_align_en = 1;
 
-		p_hw_reg->dv_dm[0].b0102.reg_ycbcr_offset_0 =
-			p_hw_reg->dv_dm[0].b0102.reg_ycbcr_offset_0 << 2;
-		p_hw_reg->dv_dm[0].b0102.reg_ycbcr_offset_1 =
-			p_hw_reg->dv_dm[0].b0102.reg_ycbcr_offset_1 << 2;
-		p_hw_reg->dv_dm[0].b0102.reg_ycbcr_offset_2 =
-			p_hw_reg->dv_dm[0].b0102.reg_ycbcr_offset_2 << 2;
-		p_hw_reg->dv_dm[0].b0102.reg_range_clip =
-			p_hw_reg->dv_dm[0].b0102.reg_range_clip << 2;
+	p_hw_reg->dv_dm.b0101.repeat_en = 0;
+	p_hw_reg->dv_dm.b0101._422to444_en = 0;
 
-		p_hw_reg->dv_dm[0].b0102.reg_ycbcr_shift = 0;
-	}
+	p_hw_reg->dv_dm.b0102.reg_ycbcr_offset_0 =
+		p_hw_reg->dv_dm.b0102.reg_ycbcr_offset_0 << 2;
+	p_hw_reg->dv_dm.b0102.reg_ycbcr_offset_1 =
+		p_hw_reg->dv_dm.b0102.reg_ycbcr_offset_1 << 2;
+	p_hw_reg->dv_dm.b0102.reg_ycbcr_offset_2 =
+		p_hw_reg->dv_dm.b0102.reg_ycbcr_offset_2 << 2;
+	p_hw_reg->dv_dm.b0102.reg_range_clip =
+		p_hw_reg->dv_dm.b0102.reg_range_clip << 2;
 
-	if (dv_vdo_fe_en[1] && !((is_dovi & 2) || b_comp_enable)) {
-		p_hw_reg->dv_ctrl[1].dm_src_sel = 1;
-		p_hw_reg->dv_ctrl[1].dm_msb_align_en = 1;
-
-		p_hw_reg->dv_dm[1].b0101.cup420_en = 0;
-		p_hw_reg->dv_dm[1].b0101.repeat_en = 0;
-		p_hw_reg->dv_dm[1].b0101._422to444_en = 0;
-
-		p_hw_reg->dv_dm[1].b0102.reg_ycbcr_offset_0 =
-			p_hw_reg->dv_dm[1].b0102.reg_ycbcr_offset_0 << 2;
-		p_hw_reg->dv_dm[1].b0102.reg_ycbcr_offset_1 =
-			p_hw_reg->dv_dm[1].b0102.reg_ycbcr_offset_1 << 2;
-		p_hw_reg->dv_dm[1].b0102.reg_ycbcr_offset_2 =
-			p_hw_reg->dv_dm[1].b0102.reg_ycbcr_offset_2 << 2;
-		p_hw_reg->dv_dm[1].b0102.reg_range_clip =
-			p_hw_reg->dv_dm[1].b0102.reg_range_clip << 2;
-
-		p_hw_reg->dv_dm[1].b0102.reg_ycbcr_shift = 0;
-	}
+	p_hw_reg->dv_dm.b0102.reg_ycbcr_shift = 0;
 
 	return 0;
 }
-int dovi_get_output_setting(struct dv_hw_reg *p_hw_reg, uint8_t is_dovi_src)
+int dovi_get_output_setting(struct dv_hw_reg *p_hw_reg, bool is_dolby_src)
 {
 	if (p_hw_reg == NULL) {
 		dovi_printf("%s null params\n",  __func__);
 		return -1;
 	}
 
-	dovi_flow("dv hw en (%d %d)(%d %d)(%d) is_dovi %d\n",
+	dovi_flow("dv hw en (%d %d)(%d %d)(%d)\n",
 		dv_vdo_fe_en[0], dv_vdo_fe_en[1],
 		dv_gfx_fe_en[0], dv_gfx_fe_en[1],
-		dv_vdo_be_en, is_dovi_src);
+		dv_vdo_be_en);
 
 	memset(&dv_dsys_all_reg, 0, sizeof(struct dv_all_reg_tab));
 	memset(&dv_msys_all_reg, 0, sizeof(struct dv_all_reg_tab));
 
-	dovi_set_comp_bypass(is_dovi_src, p_hw_reg);
+	dovi_set_comp_bypass(is_dolby_src, p_hw_reg);
 
 	if (dv_vdo_fe_en[0]) {
 		/* get composer hw output */
@@ -1390,15 +1361,19 @@ int dovi_get_output_setting(struct dv_hw_reg *p_hw_reg, uint8_t is_dovi_src)
 
 	//temp use vdofe[0] setting because of idk limit
 	if (dv_vdo_fe_en[1]) {
-		/* get composer hw output */
-		dovi_get_cp0_setting(1, p_hw_reg);
-		dovi_get_cp1_setting(1, p_hw_reg);
-		/* get control path hw output */
-		dovi_get_ctrl_setting(1, p_hw_reg);
-		/* get dm hw output*/
-		dovi_get_vdo_dm_setting(1, p_hw_reg);
-		/* get vdo fe lut setting*/
-		dovi_get_vdo_lut_setting(1, p_hw_reg);
+		if (_subv_type == 0)
+			dovi_get_sub_video_setting(dolby_out_format);
+		else if (_subv_type == 1) {
+			/* get composer hw output */
+			dovi_get_cp0_setting(1, p_hw_reg);
+			dovi_get_cp1_setting(1, p_hw_reg);
+			/* get control path hw output */
+			dovi_get_ctrl_setting(1, p_hw_reg);
+			/* get dm hw output*/
+			dovi_get_vdo_dm_setting(1, p_hw_reg);
+			/* get vdo fe lut setting*/
+			dovi_get_vdo_lut_setting(1, p_hw_reg);
+		}
 		cur_ml_cfg_st[1] = 1;
 	} else
 		cur_ml_cfg_st[1] = 0;

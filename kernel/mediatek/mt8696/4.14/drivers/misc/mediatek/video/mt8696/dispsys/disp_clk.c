@@ -554,11 +554,11 @@ static void __exit disp_clk_exit(void)
 	platform_driver_unregister(&mtk_disp_clk_driver);
 }
 
-/* remove dovi late init
+/* remove dolby late init
 static int __init disp_clk_init_late(void)
 {
 	return 0;
-	DISP_LOG_I("disp_clock probe power down dovi, pm type=%d\n",
+	DISP_LOG_I("disp_clock probe power down dolby, pm type=%d\n",
 		   DISP_PM_DOLBY);
 	pm_runtime_put_sync(pm_info[DISP_PM_DOLBY].pm_dev);
 

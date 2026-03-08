@@ -61,9 +61,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /* FIXME */
 #if defined(__KERNEL__)
 #include "pvrsrv.h"
-#include "srvcore.h"
-#else
-#include "srvcore_intern.h"
 #endif
 
 
@@ -241,9 +238,7 @@ FreeSyncPrimitiveBlock(SYNC_PRIM_BLOCK *psSyncBlk)
 
 	DevmemReleaseCpuVirtAddr(psSyncBlk->hMemDesc);
 	DevmemFree(psSyncBlk->hMemDesc);
-	(void) DestroyServerResource(psContext->hDevConnection,
-	                             NULL,
-	                             BridgeFreeSyncPrimitiveBlock,
+	BridgeFreeSyncPrimitiveBlock(GetBridgeHandle(psContext->hDevConnection),
 	                             psSyncBlk->hServerSyncPrimBlock);
 	OSFreeMem(psSyncBlk);
 }
@@ -378,21 +373,19 @@ static void SyncPrimLocalFree(SYNC_PRIM *psSyncInt)
 
 	{
 		PVRSRV_ERROR eError;
-		SHARED_DEV_CONNECTION hDevConnection =
-			psSyncInt->u.sLocal.psSyncBlock->psContext->hDevConnection;
+		IMG_HANDLE hBridge =
+				GetBridgeHandle(psSyncInt->u.sLocal.psSyncBlock->psContext->hDevConnection);
 
-		if (GetInfoPageDebugFlags(hDevConnection) & DEBUG_FEATURE_FULL_SYNC_TRACKING_ENABLED)
+		if (GetInfoPageDebugFlags(psSyncInt->u.sLocal.psSyncBlock->psContext->hDevConnection) & DEBUG_FEATURE_FULL_SYNC_TRACKING_ENABLED)
 		{
 			if (psSyncInt->u.sLocal.hRecord)
 			{
 				/* remove this sync record */
-				eError = DestroyServerResource(hDevConnection,
-				                               NULL,
-				                               BridgeSyncRecordRemoveByHandle,
-				                               psSyncInt->u.sLocal.hRecord);
+				eError = BridgeSyncRecordRemoveByHandle(hBridge,
+				                                        psSyncInt->u.sLocal.hRecord);
 				if (PVRSRV_OK != eError)
 				{
-					PVR_DPF((PVR_DBG_ERROR, "%s: BridgeSyncRecordRemoveByHandle() failed", __func__));
+					PVR_DPF((PVR_DBG_ERROR, "%s: failed to remove SyncRecord", __func__));
 				}
 			}
 		}
@@ -401,7 +394,7 @@ static void SyncPrimLocalFree(SYNC_PRIM *psSyncInt)
 			IMG_UINT32 ui32FWAddr = psSyncBlock->ui32FirmwareAddr +
 					SyncPrimGetOffset(psSyncInt);
 
-			eError = BridgeSyncFreeEvent(GetBridgeHandle(hDevConnection), ui32FWAddr);
+			eError = BridgeSyncFreeEvent(hBridge, ui32FWAddr);
 			if (eError != PVRSRV_OK)
 			{
 				PVR_DPF((PVR_DBG_WARNING,

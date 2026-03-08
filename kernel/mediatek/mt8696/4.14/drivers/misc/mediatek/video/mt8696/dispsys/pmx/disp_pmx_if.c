@@ -173,7 +173,7 @@ static int _pmx_init(struct disp_hw_common_info *info)
 	vdout_sys_hal_set_hdmi(info->resolution->res_mode);   /* set hdmi pll */
 	vdout_sys_hal_reorder_before_mmsys_mix_out
 		(COLOR_FORMAT_YUV, false);
-	if (!g_force_dovi)
+	if (!g_force_dolby)
 		vdout_sys_hal_hdr_vdo_be_enable(false);
 
 	disp_mix_hal_mix_enable(true);
@@ -265,7 +265,7 @@ static int disp_pmx_resume(void)
 	vdout_sys_hal_set_hdmi(pmx.hdmi_res.res_mode);   /* set hdmi pll */
 	vdout_sys_hal_reorder_before_mmsys_mix_out
 		(COLOR_FORMAT_YUV, false);
-	if (!dovi_path_en)
+	if (!dolby_path_enable)
 		vdout_sys_hal_hdr_vdo_be_enable(false);
 
 	disp_mix_hal_set_dst_wigth_and_height(pmx.hdmi_res.res_mode, true);
@@ -339,7 +339,7 @@ static int disp_pmx_deep_resume(void)
 	vdout_sys_hal_set_hdmi(pmx.hdmi_res.res_mode);   /* set hdmi pll */
 	vdout_sys_hal_reorder_before_mmsys_mix_out
 		(COLOR_FORMAT_YUV, false);
-	if (!dovi_path_en)
+	if (!dolby_path_enable)
 		vdout_sys_hal_hdr_vdo_be_enable(false);
 
 	disp_mix_hal_set_dst_wigth_and_height(pmx.hdmi_res.res_mode, true);

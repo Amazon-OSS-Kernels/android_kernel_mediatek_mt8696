@@ -1018,7 +1018,7 @@ void fmt_hal_hw_shadow_enable(uint32_t fmt_id)
 			unsigned int idx = 0;
 			struct fmt_rec_info fmt_rec[FMT_MAX_REC];
 
-			FMT_LOG_D("before spin 0x94|0x%X 0xA0|0x%X 0xAC|0x%X 0xBC|0x%X\n",
+			FMT_LOG_I("before spin 0x94|0x%X 0xA0|0x%X 0xAC|0x%X 0xBC|0x%X\n",
 				  ReadREG32(disp_fmt->hw_fmt_base + DISP_FMT_REG_MODE_CTRL),
 				  ReadREG32(disp_fmt->hw_fmt_base + DISP_FMT_REG_ACTIVE_H),
 				  ReadREG32(disp_fmt->hw_fmt_base + DISP_FMT_REG_VDO_FMT_CTRL),
@@ -1060,7 +1060,7 @@ void fmt_hal_hw_shadow_enable(uint32_t fmt_id)
 			spin_unlock_irqrestore(&disp_fmt->fmt_shadow_lock, flags);
 
 			for (idx = 0; idx < FMT_MAX_REC; idx++)
-				FMT_LOG_D("rec 0x%X %lu 0x94|0x%X 0xa0|0x%X 0xac|0x%X 0xbc|0x%X\n",
+				FMT_LOG_I("rec 0x%X %lu 0x94|0x%X 0xa0|0x%X 0xac|0x%X 0xbc|0x%X\n",
 					  fmt_rec[idx].rec_reg,
 					  fmt_rec[idx].time,
 					  fmt_rec[idx].reg_0x94,
@@ -1075,13 +1075,13 @@ void fmt_hal_hw_shadow_enable(uint32_t fmt_id)
 			udelay(1);
 			udelay_end_time = sched_clock();
 
-			FMT_LOG_D("after spin 0x94|0x%X 0xA0|0x%X 0xAC|0x%X 0xBC|0x%X\n",
+			FMT_LOG_I("after spin 0x94|0x%X 0xA0|0x%X 0xAC|0x%X 0xBC|0x%X\n",
 			  ReadREG32(disp_fmt->hw_fmt_base + DISP_FMT_REG_MODE_CTRL), /**/
 			  ReadREG32(disp_fmt->hw_fmt_base + DISP_FMT_REG_ACTIVE_H),
 			  ReadREG32(disp_fmt->hw_fmt_base + DISP_FMT_REG_VDO_FMT_CTRL),
 			  ReadREG32(disp_fmt->hw_fmt_base + DISP_FMT_REG_LINE_CNT_DEBUG));
 
-			FMT_LOG_D("fmt en %lu %lu %lu reset %lu %lu %lu udelay %lu %lu %lu\n",
+			FMT_LOG_I("fmt en %lu %lu %lu reset %lu %lu %lu udelay %lu %lu %lu\n",
 				  disp_fmt->fmt_enable_start_time,
 				  disp_fmt->fmt_enable_end_time,
 				  disp_fmt->fmt_enable_end_time - disp_fmt->fmt_enable_start_time,
@@ -1097,7 +1097,7 @@ void fmt_hal_hw_shadow_enable(uint32_t fmt_id)
 				(disp_fmt->hw_fmt_base + DISP_FMT_REG_ACTIVE_H),
 				(0x1 << 29), (0x1 << 29));
 
-			FMT_LOG_D("after enable 0x94|0x%X 0xA0|0x%X 0xAC|0x%X 0xBC|0x%X\n",
+			FMT_LOG_I("after enable 0x94|0x%X 0xA0|0x%X 0xAC|0x%X 0xBC|0x%X\n",
 			  ReadREG32(disp_fmt->hw_fmt_base + DISP_FMT_REG_MODE_CTRL),
 			  ReadREG32(disp_fmt->hw_fmt_base + DISP_FMT_REG_ACTIVE_H),
 			  ReadREG32(disp_fmt->hw_fmt_base + DISP_FMT_REG_VDO_FMT_CTRL),
@@ -1609,11 +1609,11 @@ int fmt_hal_set_sof(enum FMT_SOF_TYPE type_start,
 		WriteREG32((vdout_fmt->hw_fmt_base +
 			DISP_FMT_REG_5_M_FILM_GRAIN_2_END), sof_end);
 		break;
-	case FMT_SOF_6_M_HDR_FE_STA:
+	case FMT_SOF_6_M_DOLBY_FE_STA:
 		WriteREG32((vdout_fmt->hw_fmt_base +
-			DISP_FMT_REG_6_M_HDR_FE_STA), sof_start);
+			DISP_FMT_REG_6_M_DOLBY_FE_STA), sof_start);
 		WriteREG32((vdout_fmt->hw_fmt_base +
-			DISP_FMT_REG_6_M_HDR_FE_END), sof_end);
+			DISP_FMT_REG_6_M_DOLBY_FE_END), sof_end);
 		break;
 	case FMT_SOF_7_S_VDO_MAIN_STA:
 		WriteREG32((vdout_fmt->hw_fmt_base +
@@ -1651,11 +1651,11 @@ int fmt_hal_set_sof(enum FMT_SOF_TYPE type_start,
 		WriteREG32((vdout_fmt->hw_fmt_base +
 			DISP_FMT_REG_12_S_FILM_GRAIN_2_END), sof_end);
 		break;
-	case FMT_SOF_13_S_HDR_FE_STA:
+	case FMT_SOF_13_S_DOLBY_FE_STA:
 		WriteREG32((vdout_fmt->hw_fmt_base +
-			DISP_FMT_REG_13_S_HDR_FE_STA), sof_start);
+			DISP_FMT_REG_13_S_DOLBY_FE_STA), sof_start);
 		WriteREG32((vdout_fmt->hw_fmt_base +
-			DISP_FMT_REG_13_S_HDR_FE_END), sof_end);
+			DISP_FMT_REG_13_S_DOLBY_FE_END), sof_end);
 		break;
 	case FMT_SOF_14_UHD_OSD_STA:
 		WriteREG32((vdout_fmt->hw_fmt_base +
@@ -1669,11 +1669,11 @@ int fmt_hal_set_sof(enum FMT_SOF_TYPE type_start,
 		WriteREG32((vdout_fmt->hw_fmt_base +
 			DISP_FMT_REG_15_UHD_FE_FIFO_END), sof_end);
 		break;
-	case FMT_SOF_16_UHD_HDR_FE_STA:
+	case FMT_SOF_16_UHD_DOLBY_FE_STA:
 		WriteREG32((vdout_fmt->hw_fmt_base +
-			DISP_FMT_REG_16_UHD_HDR_FE_STA), sof_start);
+			DISP_FMT_REG_16_UHD_DOLBY_FE_STA), sof_start);
 		WriteREG32((vdout_fmt->hw_fmt_base +
-			DISP_FMT_REG_16_UHD_HDR_FE_END), sof_end);
+			DISP_FMT_REG_16_UHD_DOLBY_FE_END), sof_end);
 		break;
 	case FMT_SOF_17_FHD_OSD_STA:
 		WriteREG32((vdout_fmt->hw_fmt_base +
@@ -1687,11 +1687,11 @@ int fmt_hal_set_sof(enum FMT_SOF_TYPE type_start,
 		WriteREG32((vdout_fmt->hw_fmt_base +
 			DISP_FMT_REG_18_FHD_FE_FIFO_END), sof_end);
 		break;
-	case FMT_SOF_19_FHD_HDR_FE_STA:
+	case FMT_SOF_19_FHD_DOLBY_FE_STA:
 		WriteREG32((vdout_fmt->hw_fmt_base +
-			DISP_FMT_REG_19_FHD_HDR_FE_STA), sof_start);
+			DISP_FMT_REG_19_FHD_DOLBY_FE_STA), sof_start);
 		WriteREG32((vdout_fmt->hw_fmt_base +
-			DISP_FMT_REG_19_FHD_HDR_FE_END), sof_end);
+			DISP_FMT_REG_19_FHD_DOLBY_FE_END), sof_end);
 		break;
 	case FMT_SOF_20_DISP_MIX_STA:
 		WriteREG32((vdout_fmt->hw_fmt_base +
@@ -1699,11 +1699,11 @@ int fmt_hal_set_sof(enum FMT_SOF_TYPE type_start,
 		WriteREG32((vdout_fmt->hw_fmt_base +
 			DISP_FMT_REG_20_DISP_MIX_END), sof_end);
 		break;
-	case FMT_SOF_21_HDR_BE_STA:
+	case FMT_SOF_21_DOLBY_BE_STA:
 		WriteREG32((vdout_fmt->hw_fmt_base +
-			DISP_FMT_REG_21_HDR_BE_STA), sof_start);
+			DISP_FMT_REG_21_DOLBY_BE_STA), sof_start);
 		WriteREG32((vdout_fmt->hw_fmt_base +
-			DISP_FMT_REG_21_HDR_BE_END), sof_end);
+			DISP_FMT_REG_21_DOLBY_BE_END), sof_end);
 		break;
 	case FMT_SOF_22_BE_FIFO_STA:
 		WriteREG32((vdout_fmt->hw_fmt_base +

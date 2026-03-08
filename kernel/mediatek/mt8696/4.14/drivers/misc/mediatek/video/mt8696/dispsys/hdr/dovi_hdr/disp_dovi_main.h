@@ -19,8 +19,7 @@
 
 #define DOVI_DRV_NAME  "disp_drv_dovi"
 
-//#include "disp_dovi_common_if.h"
-#include "dovi_table.h"
+#include "disp_dovi_common_if.h"
 
 enum dovi_core_id {
 	DOVI_MVDO_FE = 0,
@@ -35,7 +34,7 @@ enum dovi_core_id {
 #define CHK_CORE_ID(core_id) \
 (((core_id) >= DOVI_MVDO_FE) || ((core_id) <= DOVI_VDO_BE))
 
-extern unsigned int g_force_dovi;
+extern unsigned int g_force_dolby;
 extern unsigned int g_hdr_type;
 extern unsigned int g_out_format;
 extern uint32_t ui_force_hdr_type;
@@ -50,8 +49,8 @@ extern uint32_t dovi_vs10_path_en;
 extern uint32_t dovi_enable;
 extern uint32_t dv_gfx_fe_en[2];
 extern uint32_t dv_gfx_fe_en[2];
-extern uint32_t dovi_path_en;
-extern struct disp_hw_common_info hdr_common_info;
+extern uint32_t dolby_path_enable;
+extern struct disp_hw_common_info dovi_common_info;
 extern bool tv_info_set_by_cmd;
 extern unsigned char dv_std_tv_vsvdb[];
 extern unsigned char dv_ll_tv_vsvdb[];
@@ -63,13 +62,9 @@ extern uint32_t dv_vdo_be_en;
 extern uint32_t dovi_out_height;
 extern uint32_t cur_ml_cfg_st[4];
 extern uint32_t adl_mode;
-
-extern enum input_format_t pip_fhd_format;
-extern enum input_format_t pip_uhd_format;
 extern bool dovi_black_pattern_en;
 extern uint32_t dovi_black_pattern_cnt;
 extern uint32_t dovi_black_pattern_cnt_max;
-
 
 int disp_dovi_resolution_change(const struct disp_hw_resolution *info);
 
@@ -86,7 +81,7 @@ void disp_dovi_set_osd_clk_enable(bool enable);
 uint32_t disp_dovi_set_osd_showdoblylogo(void);
 void disp_dovi_set_graphic_header(uint32_t *va,
 	dma_addr_t graphic_pa);
-extern void vDoviHdrEnable(bool fgEnable);
+extern void vDolbyHdrEnable(bool fgEnable);
 extern void vHdrEnable(bool fgEnable);
 extern void vSetStaticHdrType(char bType);
 int disp_dovi_show_res_status(enum HDMI_VIDEO_RESOLUTION res);
@@ -114,24 +109,4 @@ void disp_hdr_trigger_vdp(uint32_t id);
 int disp_dovi_force_gfx_vs10(void);
 void disp_dovi_set_hdr_fe_size(uint32_t layer_id, uint32_t width,
 	uint32_t heigh);
-
-extern uint32_t *graphic2_idk_load_addr_va;
-extern dma_addr_t graphic2_idk_dump_load_pa;
-extern uint32_t *graphic2_header_idk_load_addr_va;
-extern dma_addr_t graphic2_header_idk_dump_load_pa;
-extern uint8_t idk_vdo_start[];
-uint32_t disp_dovi_set_only_gfx_idk_info(void);
-void disp_dovi_set_pip_gfx1_info(void);
-void disp_dovi_set_pip_gfx2_info(void);
-void disp_dovi_set_graphic2_header(uint32_t *va,
-	dma_addr_t graphic_pa);
-void disp_dovi_dump_gfx(void);
-void disp_dovi_videoin_off_gfx(void);
-void disp_dovi_videoin_off(void);
-void disp_dovi_videoin_gfx(void);
-void disp_dovi_idk_set_uhd(bool enable);
-void dovi_idk_settings(uint32_t idk_set);
-void disp_dovi_set_osd_enable(bool enable);
-void disp_dovi_dump_vsem(void);
-
 #endif

@@ -27,6 +27,11 @@
 #define DOVI_FE_LUT_SIZE 0x4000
 #define DOVI_BE_LUT_SIZE 0x1000
 
+#define DOVI_MD_SIZE    512
+#define DOVI_COMP_SIZE    1800
+#define DOVI_MD_DW_SIZE    128
+#define DOVI_COMP_DW_SIZE    450
+
 #define DOVI_IOMMU_SUPPORT 1
 
 #define MAX_COMP_REG_NUM             (300)
@@ -37,8 +42,6 @@
 #define MAX_SCRAMBLE_REG_NUM         (20)
 #define MAX_REORDER_REG_NUM          (10)
 #define MAX_LUT_REG_NUM              (10)
-
-extern int dump_bit_depth;
 
 enum HDR_FE_ID {
 	FE0 = 0,
@@ -3558,10 +3561,9 @@ struct dv_sw_reg {
 
 extern uint32_t dovi_out_height;
 extern uint32_t dovi_out_width;
-extern enum dovi_signal_format_t dovi_out_format;
+extern enum dovi_signal_format_t dolby_out_format;
 extern uint32_t adl_mode;
-extern uint32_t dovi_idk_test;
 int dovi_get_output_setting(struct dv_hw_reg *p_hw_params,
-	uint8_t is_dolby_src);
+	bool is_dolby_src);
 
 #endif

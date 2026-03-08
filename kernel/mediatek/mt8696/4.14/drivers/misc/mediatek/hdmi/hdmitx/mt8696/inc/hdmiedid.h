@@ -194,7 +194,7 @@ struct HDMI_SINK_AV_CAP_T {
 	unsigned char ui1_sink_support_static_hdr;
 	unsigned char ui1_sink_support_dynamic_hdr;
 	unsigned char ui1_sink_hdr10plus_app_version;
-	unsigned char ui1_sink_dovi_block[32];
+	unsigned char ui1_sink_dolbyvision_block[32];
 	unsigned char ui1_sink_hf_vsdb_exist;
 	unsigned short ui2_sink_max_tmds_character_rate;
 	unsigned char ui1_sink_hf_vsdb_info;
@@ -207,33 +207,33 @@ struct HDMI_SINK_AV_CAP_T {
 
 	unsigned int ui4_sink_hdmi_4k2kvic_420_vdb;
 
-	unsigned int ui4_sink_dovi_vsvdb_length;
-	unsigned int ui4_sink_dovi_vsvdb_version;
-	unsigned int ui4_sink_dovi_vsvdb_v1_low_latency;
-	unsigned int ui4_sink_dovi_vsvdb_v2_interface;
-	unsigned int ui4_sink_dovi_vsvdb_low_latency_support;
-	unsigned int ui4_sink_dovi_vsvdb_v2_supports_10b_12b_444;
-	unsigned int ui4_sink_dovi_vsvdb_support_backlight_control;
-	unsigned int ui4_sink_dovi_vsvdb_backlt_min_lumal;
-	unsigned int ui4_sink_dovi_vsvdb_tmin;
-	unsigned int ui4_sink_dovi_vsvdb_tmax;
-	unsigned int ui4_sink_dovi_vsvdb_tminPQ;
-	unsigned int ui4_sink_dovi_vsvdb_tmaxPQ;
-	unsigned int ui4_sink_dovi_vsvdb_Rx;
-	unsigned int ui4_sink_dovi_vsvdb_Ry;
-	unsigned int ui4_sink_dovi_vsvdb_Gx;
-	unsigned int ui4_sink_dovi_vsvdb_Gy;
-	unsigned int ui4_sink_dovi_vsvdb_Bx;
-	unsigned int ui4_sink_dovi_vsvdb_By;
-	unsigned int ui4_sink_dovi_vsvdb_Wx;
-	unsigned int ui4_sink_dovi_vsvdb_Wy;
+	unsigned int ui4_sink_dolbyvision_vsvdb_length;
+	unsigned int ui4_sink_dolbyvision_vsvdb_version;
+	unsigned int ui4_sink_dolbyvision_vsvdb_v1_low_latency;
+	unsigned int ui4_sink_dolbyvision_vsvdb_v2_interface;
+	unsigned int ui4_sink_dolbyvision_vsvdb_low_latency_support;
+	unsigned int ui4_sink_dolbyvision_vsvdb_v2_supports_10b_12b_444;
+	unsigned int ui4_sink_dolbyvision_vsvdb_support_backlight_control;
+	unsigned int ui4_sink_dolbyvision_vsvdb_backlt_min_lumal;
+	unsigned int ui4_sink_dolbyvision_vsvdb_tmin;
+	unsigned int ui4_sink_dolbyvision_vsvdb_tmax;
+	unsigned int ui4_sink_dolbyvision_vsvdb_tminPQ;
+	unsigned int ui4_sink_dolbyvision_vsvdb_tmaxPQ;
+	unsigned int ui4_sink_dolbyvision_vsvdb_Rx;
+	unsigned int ui4_sink_dolbyvision_vsvdb_Ry;
+	unsigned int ui4_sink_dolbyvision_vsvdb_Gx;
+	unsigned int ui4_sink_dolbyvision_vsvdb_Gy;
+	unsigned int ui4_sink_dolbyvision_vsvdb_Bx;
+	unsigned int ui4_sink_dolbyvision_vsvdb_By;
+	unsigned int ui4_sink_dolbyvision_vsvdb_Wx;
+	unsigned int ui4_sink_dolbyvision_vsvdb_Wy;
 	unsigned char u1_sink_allm_support;
 	unsigned char u1_sink_14gamemode_support;
 	unsigned int  u4_sink_vrr_min;
 	unsigned int  u4_sink_vrr_max;
 	unsigned char u1_sink_cinemavrr;
 	unsigned char u1_sink_mdelta;
-	unsigned int ui4_sink_dovi_vsvdb_dm_version;
+
 };
 
 
@@ -248,5 +248,4 @@ extern long long vDispGetHdmiResolution(void);
 extern unsigned char vCheckPcmBitSize(unsigned char ui1ChNumInx);
 extern void hdmi_clear_edid_data(void);
 extern unsigned char hdmi_check_edid_header(void);
-extern bool is_sny_dv_tv(void);
 #endif

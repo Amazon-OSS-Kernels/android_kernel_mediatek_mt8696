@@ -250,10 +250,10 @@ struct video_buffer_info {
 
 	/* if buffer_info is video plane, should fill video info */
 	bool is_ufo;
-	bool is_dovi;
-	bool is_dovi_graphic_mode;
-	bool is_dovi_low_latency;
-	bool is_dovi_vs10;
+	bool is_dolby;
+	bool is_dolby_graphic_mode;
+	bool is_dolby_low_latency;
+	bool is_dolby_vs10;
 	bool is_interlace;
 	bool is_10bit;
 	bool is_10bit_lbs2bit_tile_mode;
@@ -280,7 +280,7 @@ struct video_buffer_info {
 	/* HDR10 metadata for HDMI use. */
 	struct VID_STATIC_HDMI_MD_T hdr10_info;
 
-	/* dovi HDR metadata for Dovi use. */
+	/* dolby HDR metadata for Dolby use. */
 	struct mtk_disp_hdr_md_info_t hdr_info;
 
 	bool is_film_grain;
@@ -322,7 +322,6 @@ struct video_buffer_info {
 	struct timespec ts;
 	/*hdmi ALLM enable flag*/
 	bool allm_en;
-	uint8_t new_frame;
 };
 
 struct video_layer_info {
@@ -430,14 +429,18 @@ struct vdp_display_info {
 	uint32_t display_counter; /*for frc */
 };
 
+extern int vdp_set_output_resolution(uint32_t res);
 /* record whether main path is playing dolby video now. */
-extern uint32_t dovi_path_en;
-//for idk2.6
-extern unsigned int vdo_set_fps;
-extern uint32_t idk_vdo_en;
-extern uint32_t idk_gfx_en;
-extern uint32_t idk_vdo_pts[2];
-extern unsigned int g_dovi_efuse;
+extern uint32_t dolby_path_enable;
+extern void
+vdp_update_dovi_setting_res_change(struct disp_hw_tv_capbility *tv_cap,
+				   const struct disp_hw_resolution *resolution);
+void vdp_set_HDMI_BT2020_signal(bool enable_bt2020);
+extern bool netflix_dolby_path_enable;
+extern bool netflix_dolby_osd_no_ready;
+extern uint32_t dolby_path_enable;//8696 review
+extern uint32_t ui_force_hdr_type;
+
 
 extern int fg_sec_get_params(struct mtk_disp_film_grain_md_t *fg_info);
 #endif

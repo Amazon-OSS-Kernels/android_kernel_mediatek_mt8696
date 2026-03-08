@@ -17,8 +17,6 @@
 #include <linux/types.h>
 #include "disp_info.h"
 #include "dovi_log.h"
-#include "disp_dovi_md_parser.h"
-#include "dovi_common_hal.h"
 #include "disp_dovi_tz_client.h"
 
 
@@ -60,9 +58,9 @@ static enum dovi_status dovi_sec_create_session(void)
 	} while (0);
 
 	if (status != DOVI_STATUS_OK)
-		dovi_error("create session fail:%d\n", status);
+		dovi_info("create session fail:%d\n", status);
 	else
-		dovi_printf("create session dovi_tz_session[0x%X]\n",
+		dovi_info("create session dovi_tz_session[0x%X]\n",
 		dovi_tz_session);
 
 	return status;
@@ -86,7 +84,7 @@ static enum dovi_status dovi_sec_create_share_memory(void)
 		return DOVI_STATUS_OK;
 	}
 
-	dovi_printf("share memory create 0x%p size %u\n",
+	dovi_info("share memory create 0x%p size %u\n",
 		dovi_share_mem, size);
 
 	memset((void *)dovi_share_mem, 0, size);
@@ -122,7 +120,7 @@ enum dovi_status dovi_sec_create_share_mem_session(void)
 	if (status != DOVI_STATUS_OK)
 		dovi_error("create session fail:%d\n", status);
 	else
-		dovi_printf("create session dovi_tz_mem_session[0x%X]\n",
+		dovi_info("create session dovi_tz_mem_session[0x%X]\n",
 		dovi_tz_mem_session);
 
 	return status;
@@ -152,7 +150,7 @@ enum dovi_status dovi_sec_create_share_mem_handle(void)
 		dovi_error("create dv_tz_mem_hdl fail:%d\n",
 		status);
 	else {
-		dovi_printf(
+		dovi_info(
 			"create dv_tz_mem_hdl[0x%X] pointer 0x%p\n",
 			dovi_tz_mem_handle,
 			(void *)dovi_share_mem);
@@ -291,7 +289,7 @@ enum dovi_status dovi_sec_init(void)
 	static bool dovi_sec_inited;
 	enum dovi_status status = DOVI_STATUS_OK;
 
-	dovi_func_default();
+	dovi_func();
 	if (dovi_sec_inited)
 		return DOVI_STATUS_OK;
 	dovi_sec_inited = true;
@@ -315,7 +313,7 @@ enum dovi_status dovi_sec_init(void)
 		if (status != DOVI_STATUS_OK)
 			break;
 
-		#if 1
+		#if 0
 		status = dovi_sec_share_memory_init();
 		if (status != DOVI_STATUS_OK)
 			break;
@@ -344,7 +342,7 @@ enum dovi_status dovi_sec_share_memory_init(void)
 
 	status = dovi_sec_share_mem_service_call(
 		DOVI_TZ_CALL_CMD_SHARE_MEMORY_INIT,
-		DOVI_TZ_CALL_DIR_MEMREF_INPUT,
+		DOVI_TZ_CALL_DIR_MEMREF_INOUT,
 		(void *)&dovi_tz_mem_handle, size);
 
 	if (status != DOVI_STATUS_OK)
@@ -380,11 +378,11 @@ enum dovi_status dovi_sec_md_parser_uninit(void)
 {
 	enum dovi_status status = DOVI_STATUS_OK;
 
-	//if (!dovi_sec_md_parser_inited) {
-	//	dovi_error("dv_md_parser already uninited\n");
-	//	return DOVI_STATUS_OK;
-	//}
-	//dovi_sec_md_parser_inited = false;
+	if (!dovi_sec_md_parser_inited) {
+		dovi_error("dv_md_parser already uninited\n");
+		return DOVI_STATUS_OK;
+	}
+	dovi_sec_md_parser_inited = false;
 
 	status = dovi_sec_service_call(
 		DOVI_TZ_CALL_CMD_MD_PARSER_UNINIT,
@@ -411,10 +409,10 @@ enum dovi_status dovi_sec_cp_test_init(void)
 	dovi_info("size %d share %p fra %u, dr %u,_len %u 0x%p\n",
 		  size,
 		  dovi_share_mem,
-		  dovi_share_mem->src_param[0].src_frame_num,
-		  dovi_share_mem->src_param[0].dr_type,
-		  dovi_share_mem->src_param[0].rpu_bs_len,
-		  dovi_share_mem->src_param[0].rpu_bs_buffer);
+		  dovi_share_mem->frame_num,
+		  dovi_share_mem->dr_type,
+		  dovi_share_mem->rpu_bs_len,
+		  dovi_share_mem->rpu_bs_buffer);
 
 	status = dovi_sec_share_mem_service_call(
 		DOVI_TZ_CALL_CMD_CP_TEST_INIT,
@@ -428,8 +426,7 @@ enum dovi_status dovi_sec_cp_test_init(void)
 	return status;
 }
 
-enum dovi_status dovi_sec_find_rpu_buffer(uint32_t layer_id,
-	uint32_t sec_handle,
+enum dovi_status dovi_sec_find_rpu_buffer(uint32_t sec_handle,
 	uint32_t len)
 {
 	enum dovi_status status = DOVI_STATUS_OK;
@@ -437,9 +434,8 @@ enum dovi_status dovi_sec_find_rpu_buffer(uint32_t layer_id,
 	char *p_dovi_share_mem_handle =
 		(char *)&dovi_tz_mem_handle;
 
-	dovi_share_mem->src_param[layer_id].sec_handle_in = sec_handle;
-	dovi_share_mem->src_param[layer_id].len_tmp = len;
-	dovi_share_mem->sec_layer = layer_id;
+	dovi_share_mem->sec_handle_in = sec_handle;
+	dovi_share_mem->len_tmp = len;
 
 	status = dovi_sec_share_mem_service_call(
 		DOVI_TZ_CALL_CMD_FIND_RPU_BUFFER,
@@ -475,11 +471,11 @@ enum dovi_status dovi_sec_cp_test_uninit(void)
 {
 	enum dovi_status status = DOVI_STATUS_OK;
 
-	//if (!dovi_sec_cp_test_inited) {
-	//	dovi_error("%s already uninited\n", __func__);
-	//	return DOVI_STATUS_OK;
-	//}
-	//dovi_sec_cp_test_inited = false;
+	if (!dovi_sec_cp_test_inited) {
+		dovi_error("%s already uninited\n", __func__);
+		return DOVI_STATUS_OK;
+	}
+	dovi_sec_cp_test_inited = false;
 
 	status = dovi_sec_service_call(
 		DOVI_TZ_CALL_CMD_CP_TEST_UNINIT,
@@ -540,8 +536,8 @@ enum dovi_status dovi_sec_handle_copy(uint32_t *sec_handle,
 	char *p_dovi_share_mem_handle =
 		(char *)&dovi_tz_mem_handle;
 
-	dovi_share_mem->src_param[0].sec_handle_in = *sec_handle;
-	dovi_share_mem->src_param[0].sec_handle_len = len;
+	dovi_share_mem->sec_handle_in = *sec_handle;
+	dovi_share_mem->sec_handle_len = len;
 	status = dovi_sec_share_mem_service_call(
 		DOVI_TZ_CALL_CMD_SEC_MEM_COPY,
 		DOVI_TZ_CALL_DIR_MEMREF_INOUT,
@@ -550,7 +546,7 @@ enum dovi_status dovi_sec_handle_copy(uint32_t *sec_handle,
 	if (status != DOVI_STATUS_OK)
 		dovi_error("%s fail [%d]\n", __func__, status);
 
-	*sec_handle = dovi_share_mem->src_param[0].sec_handle_out;
+	*sec_handle = dovi_share_mem->sec_handle_out;
 
 	return status;
 }

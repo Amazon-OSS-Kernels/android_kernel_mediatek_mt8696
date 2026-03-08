@@ -66,7 +66,6 @@ unsigned char hdr10p_vsif_application_version;
 unsigned char hdr10p_vsif_wr_en;
 unsigned char hdr10p_vsif_repeat_en;
 
-struct dovi_vsif_param_t hdmi_dovi_vsif;
 bool _fgBackltCtrlMDPresent;
 unsigned int _u4EffTmaxPQ;
 char _bStaticHdrType = GAMMA_ST2084;
@@ -77,11 +76,6 @@ unsigned int hdmi_boot_colordepth;
 unsigned int hdmi_boot_colorspace;
 unsigned int hdmi_boot_forcedolby;
 unsigned int hdmi_boot_forcehdr;
-unsigned int dovi_vsif_ver = 1; //for debug
-
-
-struct hdmi_emp_t hdmi_emp;
-bool emp_data_is_sending = FALSE;
 
 DEFINE_SEMAPHORE(hdcp_update_mutex);
 
@@ -1687,13 +1681,9 @@ void vSendAVIInfoFrame(unsigned char ui1resindex,
 		_bAviInfoFm[4] = 0x00;
 	}
 
-	if (hdmi_emp.en && hdmi_emp.type == 1)
-		_bAviInfoFm[4] |= 0x40;
-	HDMI_PLUG_LOG("AVIInfoFm %d %d %d 0x%x 0x%x 0x%x 0x%x 0x%x\n",
-		_fg14GameModeEnable, _HdmiSinkAvCap.u1_sink_14gamemode_support,
-		_HdmiSinkAvCap.u1_sink_allm_support,
+	HDMI_PLUG_LOG("AVIInfoFm 0x%x; 0x%x; 0x%x 0x%x; -------\n",
 		_bAviInfoFm[0], _bAviInfoFm[1],
-		_bAviInfoFm[2], _bAviInfoFm[3], _bAviInfoFm[4]);
+		      _bAviInfoFm[2], _bAviInfoFm[3]);
 	vHalSendAVIInfoFrame(&_bAviInfoFm[0]);
 
 }
@@ -3565,10 +3555,6 @@ void vHalSendVendorSpecificInfoFrame(
 		bPB2 + bPB3 + bPB4 + bPB5;
 	bVS_CHSUM = 0x100 - bVS_CHSUM;
 
-
-	HDMI_PLUG_LOG("vsif 0x%x 0x%x 0x%x 0x%x 0x%x\n",
-			bPB1, bPB2, bPB3, bPB4, bPB5);
-
 	vWriteHdmiGRLMsk(TOP_INFO_EN, VSIF_DIS | VSIF_DIS_WR, VSIF_EN |
 		VSIF_EN_WR);
 	vWriteHdmiGRLMsk(TOP_INFO_RPT, VSIF_RPT_DIS, VSIF_RPT_EN);
@@ -4361,10 +4347,6 @@ void vTxSignalOnOff(unsigned char bOn)
 		RG_HDMITX21_DRV_EN
 		);
 	} else {
-		while (emp_data_is_sending == true) {
-			TX_DEF_LOG("emp is sending\n");
-			mdelay(1);
-		}
 		vWriteIoHdmiAnaMsk(
 		HDMI_1_CFG_0,
 		0,
@@ -4721,17 +4703,11 @@ void HdrDelayAllOffImmediately(void)
 	Hdr10pVsifOffImmediately();
 }
 
-void DoviVsifVerCtrl(unsigned int ver)
-{
-	dovi_vsif_ver = ver;
-	HDMI_PLUG_LOG("set dovi vsif ver %d\n", dovi_vsif_ver);
-
-}
 void vHalSendDolbyVSIF(bool fgEnable,
 	bool fgLowLatency, bool fgDolbyVisionSignal,
 			 bool fgBackltCtrlMdPresent, unsigned int u4EfftmaxPQ)
 {
-	unsigned char bData[13];
+	unsigned char bData[6];
 	unsigned char bHDR_CHSUM = 0;
 	unsigned char i;
 
@@ -4742,32 +4718,16 @@ void vHalSendDolbyVSIF(bool fgEnable,
 		bData[0] = 0x46;
 		bData[1] = 0xD0;
 		bData[2] = 0x00;
-		if (dovi_vsif_ver == 0) {
-			bData[3] = (fgDolbyVisionSignal << 1) | fgLowLatency;
-			bData[4] = (fgBackltCtrlMdPresent << 7) |
-				((u4EfftmaxPQ >> 8) & 0x0F);
-			bData[5] = u4EfftmaxPQ & 0xFF;
-		} else {
-			bData[3] = (fgDolbyVisionSignal << 1) | fgLowLatency |
-				(hdmi_dovi_vsif.dovi_signal_type << 1) |
-				(hdmi_dovi_vsif.source_dm_version << 5);
-			bData[4] = (fgBackltCtrlMdPresent << 7) |
-				(hdmi_dovi_vsif.L11_md_present << 5) |
-				(hdmi_dovi_vsif.auxiliary_md_present << 6) |
-				((u4EfftmaxPQ >> 8) & 0x0F);
-			bData[5] = u4EfftmaxPQ & 0xFF;
-			bData[6] = hdmi_dovi_vsif.auxiliary_runmode;
-			bData[7] = hdmi_dovi_vsif.auxiliary_runversion;
-			bData[8] = hdmi_dovi_vsif.auxiliary_debug0;
-			bData[9] = (hdmi_dovi_vsif.content_type & 0xF);
-			bData[10] = (hdmi_dovi_vsif.white_point & 0xF);
-			bData[11] = hdmi_dovi_vsif.L11_byte2;
-			bData[12] = hdmi_dovi_vsif.L11_byte3;
-		}
-
-		HDMI_PLUG_LOG("dovi vsif 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
-			bData[3], bData[4], bData[5], bData[6], bData[7],
-			bData[8], bData[9], bData[10], bData[11], bData[12]);
+		bData[3] = (fgDolbyVisionSignal << 1) | fgLowLatency;
+		bData[4] = (fgBackltCtrlMdPresent << 7) |
+			((u4EfftmaxPQ >> 8) & 0x0F);
+		bData[5] = u4EfftmaxPQ & 0xFF;
+		if (fgLowLatency)
+			bData[3] |= 1;
+		if (fgDolbyVisionSignal)
+			bData[3] |= (1 << 1);
+		if (fgBackltCtrlMdPresent)
+			bData[4] |= (1 << 7);
 
 		vWriteByteHdmiGRL(TOP_GEN5_HEADER,
 			(DOLBYVSIF_LEN << 16) + (DOLBYVSIF_VERS << 8) +
@@ -4781,15 +4741,8 @@ void vHalSendDolbyVSIF(bool fgEnable,
 			(bData[0] << 8) + (bHDR_CHSUM << 0));
 		vWriteByteHdmiGRL(TOP_GEN5_PKT01, (bData[5] << 16) +
 			(bData[4] << 8) + (bData[3] << 0));
-		if (dovi_vsif_ver == 0) {
-			vWriteByteHdmiGRL(TOP_GEN5_PKT02, 0);
-			vWriteByteHdmiGRL(TOP_GEN5_PKT03, 0);
-		} else {
-			vWriteByteHdmiGRL(TOP_GEN5_PKT02, (bData[9] << 24) +
-				(bData[8] << 16) + (bData[7] << 8) + (bData[6] << 0));
-			vWriteByteHdmiGRL(TOP_GEN5_PKT03, (bData[12] << 16) +
-				(bData[11] << 8) + (bData[10] << 0));
-		}
+		vWriteByteHdmiGRL(TOP_GEN5_PKT02, 0);
+		vWriteByteHdmiGRL(TOP_GEN5_PKT03, 0);
 		vWriteByteHdmiGRL(TOP_GEN5_PKT04, 0);
 		vWriteByteHdmiGRL(TOP_GEN5_PKT05, 0);
 		vWriteByteHdmiGRL(TOP_GEN5_PKT06, 0);
@@ -5021,36 +4974,6 @@ void vHalSendHdr10PlusVSIF(char bEnable,
 	vHalSendPacket(pkthw[DYNAMIC_HDR10P_VSIF_PKTHW], HB, PB);
 }
 
-void vHalSendDoviVsem(bool bEnable, char Num,
-	char *pr)
-{
-	char i, j;
-
-	if (bEnable) {
-		if (Num <= (DOVI_VSEM_METADATA_MAX_PACKET)) {
-			vWriteHdmiGRLMsk(HDMI_VRR_CFG,
-				RG_EM_SW_TRIGGER_ENABLE,
-				RG_EM_SW_TRIGGER_ENABLE);
-			vWriteByteHdmiGRL(HDMI_TOP_EM_ADDR, 0);
-		for (i = 0; i < Num; i++) {
-			vWriteByteHdmiGRL(HDMI_TOP_EM_DATA,
-				(*(pr+2)<<16)|(*(pr+1)<<8)|(*pr));
-			pr = pr + 3;
-			for (j = 0; j < 4; j++) {
-				vWriteByteHdmiGRL(HDMI_TOP_EM_DATA,
-				(*(pr+3)<<24)|(*(pr+2)<<16)|(*(pr+1)<<8)|(*pr));
-				vWriteByteHdmiGRL(HDMI_TOP_EM_DATA,
-				(*(pr+6)<<16)|(*(pr+5)<<8)|(*(pr+4)));
-				pr = pr + 7;
-			}
-		}
-		vWriteHdmiGRLMsk(HDMI_VRR_CFG, 0, RG_EM_SW_TRIGGER_ENABLE);
-		}
-	} else {
-		vWriteHdmiGRLMsk(HDMI_VRR_CFG, RG_EM_SW_TRIGGER_ENABLE,
-			RG_EM_SW_TRIGGER_ENABLE);
-}
-}
 void vSetHdr10pVsifTimeDelayOff(unsigned int i4_count)
 {
 	HDMI_DRV_FUNC();
@@ -5191,7 +5114,7 @@ void vSetStaticHdrType(char bType)
 bool fgUseDolbyVSIF(void)
 {
 	if (_HdmiSinkAvCap
-		.ui4_sink_dovi_vsvdb_low_latency_support)
+		.ui4_sink_dolbyvision_vsvdb_low_latency_support)
 		return TRUE;
 	else
 		return FALSE;
@@ -5267,27 +5190,7 @@ unsigned int dv_start_line;
 unsigned int dv_end_line;
 unsigned int dv_vsync_line;
 
-void vDoviVsemHdrEnable(bool fgEnable, unsigned int type)
-{
-	struct VID_PLA_HDR_METADATA_INFO_T hdr_metadata = { 0 };
-
-	if (hdmi_emp.en != fgEnable) {
-		HDMI_PLUG_LOG(" DolbyVsemHdrEnable =%d %d\n", fgEnable, type);
-		hdmi_emp.en = fgEnable;
-		hdmi_emp.type = type;
-
-		//clear EMP data
-		if (!fgEnable) {
-			hdr_metadata.e_DynamicRangeType = VID_PLA_DR_TYPE_DOVI_VSEM;
-			hdmi_emp.type = 0;
-			vVdpSetHdrMetadata(0, hdr_metadata);
-		}
-		vBT2020Enable(fgEnable);
-		vSendAVIInfoFrame(_stAvdAVInfo.e_resolution,
-		_stAvdAVInfo.e_video_color_space);
-	}
-}
-void vDoviHdrEnable(bool fgEnable)
+void vDolbyHdrEnable(bool fgEnable)
 {
 	if (_u4HdrDebugDisableType & HDR_DEBUG_DISABLE_DOLBY_HDR)
 		return;
@@ -5317,7 +5220,7 @@ void vDoviHdrEnable(bool fgEnable)
 #else
 		HDMI_PLUG_LOG("warning!! %s() line=%d\n", __func__, __LINE__);
 #endif
-		memset(&hdmi_dovi_vsif, 0, sizeof(hdmi_dovi_vsif));
+
 		if (!fgUseDolbyVSIF())
 			vSendVendorSpecificInfoFrame(_stAvdAVInfo.e_resolution);
 		else
@@ -5354,31 +5257,12 @@ void hdmi_vsync_handle(void)
 	_fgVoutInVsync = FALSE;
 }
 
-void vSetDoviVsifParamter(void *p_dovi_vsif)
-{
-	struct dovi_vsif_param_t *p_vsif = NULL;
-
-	if (p_dovi_vsif == NULL)
-		return;
-
-	p_vsif = (struct dovi_vsif_param_t *)p_dovi_vsif;
-
-	memcpy(&hdmi_dovi_vsif, p_vsif, sizeof(*p_vsif));
-
-	if (_fgLowLatencyDolbyVisionEnable ||
-		(_fgDolbyHdrEnable && fgUseDolbyVSIF())) {
-		// re-sent the signal
-		vHalSendDolbyVSIF(TRUE, _fgLowLatencyDolbyVisionEnable, TRUE,
-		_fgBackltCtrlMDPresent, _u4EffTmaxPQ);
-	}
-}
-
-void vLowLatencyDoviEnable(bool fgEnable)
+void vLowLatencyDolbyVisionEnable(bool fgEnable)
 {
 	if (fgEnable == _fgLowLatencyDolbyVisionEnable)
 		return;
 
-	HDMI_PLUG_LOG("_fgLowLatencyDolbyVision is_enable =%d\n", fgEnable);
+	HDMI_PLUG_LOG(" is_enable =%d\n", fgEnable);
 	_fgLowLatencyDolbyVisionEnable = fgEnable;
 
 	if (fgEnable) {
@@ -5389,7 +5273,6 @@ void vLowLatencyDoviEnable(bool fgEnable)
 		vSendVendorSpecificInfoFrame(_stAvdAVInfo.e_resolution);
 		_bHdrType = VID_PLA_DR_TYPE_DOVI_LOWLATENCY;
 	} else {
-		memset(&hdmi_dovi_vsif, 0, sizeof(hdmi_dovi_vsif));
 		vBT2020Enable(FALSE);
 		vHalSendDolbyVSIF(TRUE, 0, 0, 0, 0);
 		vSendVendorSpecificInfoFrame(_stAvdAVInfo.e_resolution);
@@ -5510,8 +5393,7 @@ void vInitHdr(void)
 	initbuf.ui2_MinDisplayMasteringLuminance = 50;
 	initbuf.ui2_MaxCLL = 1000;
 	initbuf.ui2_MaxFALL = 400;
-	if (_bHdrMetadataBuff)
-		memcpy(_bHdrMetadataBuff, &initbuf,
+	memcpy(_bHdrMetadataBuff, &initbuf,
 		sizeof(struct HDMI_STATIC_METADATA_INFO_T));
 
 	_u4HdrDebugDisableType = 0;
@@ -5620,7 +5502,7 @@ void vVdpSetHdrMetadata(bool enable,
 		HDMI_HDR_LOG(" set HDR ui2_DisplayPrimariesX2=0x%x\n",
 			      _bStaticHdrMetadata.ui2_DisplayPrimariesX2);
 		HDMI_HDR_LOG(" set HDR ui2_DisplayPrimariesY2=0x%x\n",
-			      _bStaticHdrMetadata.ui2_DisplayPrimariesY2);
+			      _bStaticHdrMetadata.ui2_DisplayPrimariesX2);
 		HDMI_HDR_LOG(" set HDR ui2_WhitePointX=0x%x\n",
 			      _bStaticHdrMetadata.ui2_WhitePointX);
 		HDMI_HDR_LOG(" set HDR ui2_WhitePointY=0x%x\n",
@@ -5679,41 +5561,7 @@ void vVdpSetHdrMetadata(bool enable,
 		vHalSendHdr10PlusVSIF(enable,
 			&(hdr_metadata
 			.metadata_info.hdr10_plus_metadata));
-	} else if (hdr_metadata.e_DynamicRangeType ==
-	VID_PLA_DR_TYPE_DOVI_VSEM) {
-		HDMI_HDR_LOG("[DOVI][VSEM] [%s]\n", __func__);
-#if (defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE))
-		hdmi_emp.en = enable;
-		hdmi_emp.num = hdr_metadata.metadata_info.dovi_vsem_metadata.PktNum;
-		if (hdmi_emp.num <= DOVI_VSEM_METADATA_MAX_PACKET)
-			memcpy(&hdmi_emp.emp_data[0],
-				hdr_metadata.metadata_info.dovi_vsem_metadata.dovi_vsem_md_info,
-				(hdmi_emp.num * 31));
-		if ((dReadIoHdmiAna(HDMI_1_CFG_0) & RG_HDMITX21_DRV_EN) ==
-		RG_HDMITX21_DRV_EN) {
-			fgCaHDMILoadEMP(enable,
-				hdr_metadata.metadata_info.dovi_vsem_metadata.PktNum,
-				(char *)
-				(hdr_metadata.metadata_info.dovi_vsem_metadata.dovi_vsem_md_info));
-		} else {
-			TX_DEF_LOG("%s, delay emp dure to tmds off, %d\n",
-				__func__,
-				sizeof(struct VID_DOVI_VSEM_METADATA_INFO_T));
-		}
-#else
-		vHalSendDoviVsem(enable,
-		hdr_metadata.metadata_info.dovi_vsem_metadata.PktNum,
-		(char *)
-(hdr_metadata.metadata_info.dovi_vsem_metadata.dovi_vsem_md_info));
-#endif
 	}
-}
-void vSendEMP(void)
-{
-#if (defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE))
-	TX_DEF_LOG("%s: %d, %d\n", __func__, hdmi_emp.en, hdmi_emp.num);
-	fgCaHDMILoadEMP(hdmi_emp.en, hdmi_emp.num, &hdmi_emp.emp_data[0]);
-#endif
 }
 
 enum VID_PLA_DR_TYPE_T hdr_status(char *str)

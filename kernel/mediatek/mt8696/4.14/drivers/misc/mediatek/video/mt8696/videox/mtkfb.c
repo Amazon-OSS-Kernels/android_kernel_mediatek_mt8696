@@ -88,7 +88,7 @@ struct tag_videolfb {
 unsigned int g_hdmi_res = 0xd;
 unsigned int g_hdmi_colordepth = 0xff;
 unsigned int g_hdmi_colorspace = 0xff;
-unsigned int g_force_dovi;
+unsigned int g_force_dolby;
 unsigned int g_force_hdr;
 unsigned int g_force_open_hdr;
 unsigned int g_dovi_efuse;
@@ -783,7 +783,7 @@ static void _parse_tag_videolfb(struct device *dev)
 		g_force_hdr = videolfb_tag->lfb_force_hdr;
 		g_dovi_efuse = (g_force_hdr & 0x10) >> 4;
 		g_force_open_hdr = (g_force_hdr & 0x40) >> 6;
-		g_force_dovi = (g_force_hdr & 0x20) >> 5;
+		g_force_dolby = (g_force_hdr & 0x20) >> 5;
 		g_ic_version = (g_force_hdr & 0x80) >> 7;
 		g_force_hdr = g_force_hdr & 0xF;
 	}
@@ -795,7 +795,7 @@ static void _parse_tag_videolfb(struct device *dev)
 	MTKFB_INFO("[DT][videolfb]colorspace   = %d\n", g_hdmi_colorspace);
 	MTKFB_INFO("[DT][videolfb]colordepth   = %d\n", g_hdmi_colordepth);
 	MTKFB_INFO("[DT][videolfb]force hdr   = %d\n", g_force_hdr);
-	MTKFB_INFO("[DT][videolfb]force dovi   = %d\n", g_force_dovi);
+	MTKFB_INFO("[DT][videolfb]force dolby   = %d\n", g_force_dolby);
 	MTKFB_INFO("[DT][videolfb]force openhdr   = %d\n", g_force_open_hdr);
 	MTKFB_INFO("[DT][videolfb]force doviefuse   = %d\n", g_dovi_efuse);
 	MTKFB_INFO("[DT][videolfb]hdr_type   = %d\n", g_hdr_type);

@@ -130,7 +130,6 @@ int dovi_vdo_fe_hal_set_enable(uint8_t id, uint32_t enable)
 	if (dv_vdo_fe_en[id] != enable) {
 		dv_vdo_fe_en[id] = enable;
 		dovi_printf("%s[%d] enable %d\n", __func__, id, enable);
-		return 1;
 	}
 
 	return 0;

@@ -19,6 +19,20 @@
 #include "disp_hdr_if.h"
 #include "vdp_hal.h"
 #include <linux/types.h>
+#ifdef CONFIG_MTK_INTERNAL_HDMI_SUPPORT
+#include "hdmitx.h"
+
+extern void vVdpSetHdrMetadata(bool enable,
+			       struct VID_PLA_HDR_METADATA_INFO_T hdr_metadata);
+extern void vHdrEnable(bool fgEnable);
+extern void vBT2020Enable(bool fgEnable);
+extern void vDolbyHdrEnable(bool fgEnable);
+extern void vLowLatencyDolbyVisionEnable(bool fgEnable);
+extern void vHdr10PlusEnable(bool fgEnable);
+extern void vSetStaticHdrType(char bType);
+extern void vHdr10PlusVSIFEnable(bool fgEnable,
+	unsigned int forcedHdrType, int dolbyOpFmt);
+#endif
 
 enum vdp_time_rec {
 	VDP_ROUTINE_START, /* 0 */
@@ -56,8 +70,6 @@ extern struct video_layer_info *video_layer;
 extern struct video_playback_info video_play_info;
 extern struct disp_hw_common_info disp_common_info;
 extern struct mtk_disp_hdr_md_info_t vdp_hdr_info[VDP_MAX];
-extern uint32_t hdr_frame_num;
-extern uint32_t idk_stop_frame_num;
 
 #define NORMAL_PLAYBACK_DURATION 1
 #define INTERLACE_PLAYBACK_DUARATION 3
@@ -89,7 +101,7 @@ int vdp_check_dsd_available(unsigned char vdp_id,
 void vdp_update_dovi_path_delay(int dsd_en);
 
 extern int dovi_core1_hal_is_support(void);
-extern uint32_t dovi_path_en;
+extern uint32_t dolby_path_enable;
 void dovi_path_disable_by_vs10(void);
 void dovi_path_enable_by_vs10(void);
 void mdp_print(char *pBuffer);
@@ -109,12 +121,6 @@ extern struct video_layer_info *video_layer;
 extern bool dovi_idk_dump;
 extern uint32_t dovi_idk_disp_cnt;
 extern uint32_t g_ic_version;
+
 extern bool is_hd_resolution(void);
-extern uint32_t idk_now_num[2];
-extern uint32_t idk_stop_num;
-extern uint32_t idk_vdp_num[2];
-extern uint32_t idk_close_area;
-extern uint32_t idk_no_drop;
-extern uint32_t last_ion_fd[VIDEO_LAYER_MAX_COUNT];
-extern void dovi_idk_settings(uint32_t idk_set);
 #endif

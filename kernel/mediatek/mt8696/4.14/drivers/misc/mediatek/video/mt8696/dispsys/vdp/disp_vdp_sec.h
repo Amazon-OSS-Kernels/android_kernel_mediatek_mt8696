@@ -51,43 +51,9 @@ struct vdp_sec_init_info {
 	unsigned int mva_size;
 };
 
-/*important !!!! need to sync witht tz_disp_vdp_main.h !!!! */
-struct disp_hw_tv_capbility_vdp_use {
-	char is_support_hdr;
-	char is_support_hlg;
-	char is_support_dovi;
-	char is_support_dovi_2160p60;
-	char is_support_601;
-	char is_support_709;
-	char is_support_bt2020;
-	char is_support_dovi_low_latency;
-	char is_support_hdr10_plus;
-	long long supported_resolution;
-	unsigned int hdr_content_max_luminance;
-	unsigned int hdr_content_max_frame_average_luminance;
-	unsigned int hdr_content_min_luminance;
-	unsigned int dovi_vsvdb_version;
-	unsigned int dovi_vsvdb_v2_interface;
-	unsigned char vsvdb_edid[0x1A];
-	unsigned char hdr10_plus_app_ver;
-	unsigned int force_hdr;
-};
-
-struct disp_hw_resolution_vdp_use {
-	uint16_t htotal;
-	uint16_t vtotal;
-	uint16_t width;
-	uint16_t height;
-	uint16_t frequency;
-	char is_progressive;
-	char is_hd;
-	enum HDMI_VIDEO_RESOLUTION res_mode;
-	bool is_fractional;
-};
-
 struct tz_disp_hw_common_info {
-	struct disp_hw_tv_capbility_vdp_use tv;
-	struct disp_hw_resolution_vdp_use resolution;
+	struct disp_hw_tv_capbility tv;
+	struct disp_hw_resolution resolution;
 	uint32_t osd_enable;
 };
 

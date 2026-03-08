@@ -65,14 +65,7 @@ extern uint32_t hdr_sof_start;
 extern uint32_t hdr_sof_end;
 extern uint32_t delay_hdr_num;
 extern uint32_t delay_hdr_mute_num;
-extern uint32_t force_sdr_output;
-extern bool hdr_allm_ctl_by_cmd;
-extern uint32_t hdr_allm_type;
-extern uint32_t use_dv_s_type;
-
 #define HDR_INFO_LOG (1 << 0)
-#define HDR_OSD_INFO_LOG (1 << 1)
-#define HDR_VIDEO_INFO_LOG (1 << 2)
 
 #define hdr_printf(fmt, args...) pr_info("[hdr] "fmt, ##args)
 
@@ -84,18 +77,6 @@ extern uint32_t use_dv_s_type;
 	if (hdr_dbg_level & (HDR_INFO_LOG)) { \
 		hdr_printf("info : "format, ##__VA_ARGS__); \
 	} \
-} while (0)
-
-#define hdr_osd_info(format, ...) do { \
-		if (hdr_dbg_level & (HDR_OSD_INFO_LOG)) { \
-			hdr_printf("info : "format, ##__VA_ARGS__); \
-		} \
-} while (0)
-
-#define hdr_video_info(format, ...) do { \
-		if (hdr_dbg_level & (HDR_VIDEO_INFO_LOG)) { \
-			hdr_printf("info : "format, ##__VA_ARGS__); \
-		} \
 } while (0)
 
 void hdr_debug_init(void);

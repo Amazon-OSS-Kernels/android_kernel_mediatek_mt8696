@@ -37,19 +37,19 @@
 #include "disp_dovi_main.h"
 #include "disp_dovi_unit_test.h"
 #include "disp_dovi_cmd.h"
-#include "disp_mix_hal.h"
+
 
 static int dovi_dbg_init;
-unsigned int dovi_dbg_level;// = 4;
+unsigned int dovi_dbg_level;
+bool dovi_black_en_bycmd;
+uint32_t dovi_black_cnt_bycmd;
 static struct dentry *dovi_debugfs;
-uint32_t idk_stop_frame_num;
 
 static char dovi_dbg_buf[2048];
 static char dovi_cmd_buf[512];
-bool dovi_black_en_bycmd;
-uint32_t dovi_black_cnt_bycmd;
 
 static const char DOVI_STR_HELP[] = "USAGE:echo [ACTION]>/d/dovi\n";
+
 
 static void dovi_process_dbg_opt(const char *opt)
 {
@@ -146,42 +146,20 @@ static void dovi_process_dbg_opt(const char *opt)
 
 		fhd_scale_to_uhd = value;
 		dovi_printf("set fhd_scale_to_uhd %d.\n", fhd_scale_to_uhd);
-	}  else if (strncmp(opt, "idkstop:", 8) == 0) {
-		unsigned int value = 0;
-
-		p = (char *)opt + 8;
-		ret = kstrtoul(p, 0, (unsigned long int *)&value);
-		if (ret) {
-			dovi_error("%s: errno %d\n", __func__, ret);
-			goto Error;
-		}
-
-		idk_stop_frame_num = value;
-		dovi_printf("set stop number %d.\n", idk_stop_frame_num);
-	} else if (strncmp(opt, "idk_test:", 9) == 0) {
-		uint32_t value1 = 0;
-		uint32_t value2 = 0;
-		uint32_t disp_cnt = 0;
+	} else if (strncmp(opt, "idk_dump:", 9) == 0) {
+		unsigned int value1 = 0;
+		unsigned int value2 = 0;
 
 		p = (char *)opt + 9;
 		STR_CVT(&p, &value1, uint32_t, goto Error);
 		STR_CVT(&p, &value2, uint32_t, goto Error);
-		STR_CVT(&p, &disp_cnt, uint32_t, goto Error);
 
-		dovi_idk_file_id = value1;
-		dovi_idk_test = value2;
+		dovi_idk_test = value1;
+		dovi_idk_file_id = value2;
+		dovi_printf("set dovi_idk_test %d, dovi_idk_test %d.\n",
+		    dovi_idk_test, dovi_idk_file_id);
 		if (dovi_idk_test)
 			disp_dovi_set_idk_info();
-
-		dovi_idk_disp_cnt = disp_cnt;
-		if (dovi_idk_disp_cnt > 0)
-			dovi_idk_dump = true;
-		else
-			dovi_idk_dump = false;
-		dovi_printf("set dovi_idk_test %d, test on = %d.\n",
-		    dovi_idk_file_id, dovi_idk_test);
-		dovi_printf("dv_idk_dump %d, dovi_idk_disp_cnt %d!\n",
-			   dovi_idk_dump, dovi_idk_disp_cnt);
 	} else if (strncmp(opt, "tz_test:", 8) == 0) {
 		unsigned int value1 = 0;
 
@@ -288,7 +266,7 @@ static void dovi_process_dbg_opt(const char *opt)
 	} else if (strncmp(opt, "ll_format:", 10) == 0) {
 		/* set low latency mode yuv(0) or rgb(1) */
 		p = (char *)opt + 10;
-		STR_CVT(&p, &ll_format, uint32_t, goto Error);
+		STR_CVT(&p, &ll_format, int, goto Error);
 		dovi_printf("set ll_format %d\n", ll_format);
 	} else if (strncmp(opt, "set_pri_mode:", 13) == 0) {
 		unsigned int force_pri_mode = 0;
@@ -395,12 +373,26 @@ static void dovi_process_dbg_opt(const char *opt)
 		STR_CVT(&p, &dovioutf, uint32_t, goto Error);
 		STR_CVT(&p, &dovi_outformat, uint32_t, goto Error);
 
-		dovi_force_output = dovioutf;
-		dovi_force_out_format =
+		dolby_force_output = dovioutf;
+		dolby_force_out_format =
 			(enum dovi_signal_format_t)dovi_outformat;
 		dovi_default(
-			"set vdp dovi_force_output %d, dovi_force_out_format %d!\n",
-			dovi_force_output, dovi_force_out_format);
+			"set vdp dolby_force_output %d, dolby_force_out_format %d!\n",
+			dolby_force_output, dolby_force_out_format);
+	} else if (strncmp(opt, "idk_test:", 9) == 0) {
+		uint32_t disp_cnt = 0;
+
+		char *p = (char *)opt + 9;
+
+		STR_CVT(&p, &disp_cnt, uint32_t, goto Error);
+
+		dovi_idk_disp_cnt = disp_cnt;
+		if (dovi_idk_disp_cnt > 0)
+			dovi_idk_dump = true;
+		else
+			dovi_idk_dump = false;
+		dovi_default("dv_idk_dump %d, dovi_idk_disp_cnt %d!\n",
+			   dovi_idk_dump, dovi_idk_disp_cnt);
 	} else if (strncmp(opt, "dovipath:", 9) == 0) {
 		uint32_t dovipath;
 
@@ -409,7 +401,7 @@ static void dovi_process_dbg_opt(const char *opt)
 
 		STR_CVT(&p, &dovipath, uint32_t, goto Error);
 		disp_path_set_hw_path(DISP_PATH_M_HDR_VDO_FE, 1);
-		dovi_default("disp_path_set_dovi %d!\n", dovipath);
+		dovi_default("disp_path_set_dolby %d!\n", dovipath);
 	} else if (strncmp(opt, "dovipath2:", 10) == 0) {
 		uint32_t dovipath;
 
@@ -421,9 +413,9 @@ static void dovi_process_dbg_opt(const char *opt)
 			disp_path_set_hw_path(DISP_PATH_M_HDR_VDO_FE, 0);
 		else
 			disp_path_set_hw_path(DISP_PATH_M_HDR_VDO_FE, 1);
-	} else if (strncmp(opt, "dovi_enable", 12) == 0) {
+	} else if (strncmp(opt, "dolby_enable", 12) == 0) {
 		dovi_path_enable();
-	} else if (strncmp(opt, "dovi_disable", 13) == 0) {
+	} else if (strncmp(opt, "dolby_disable", 13) == 0) {
 		dovi_path_disable();
 	} else if (strncmp(opt, "dv_sec_init", 11) == 0) {
 		dovi_default("dv sec init\n");
@@ -431,13 +423,13 @@ static void dovi_process_dbg_opt(const char *opt)
 	} else if (strncmp(opt, "hdr_def:", 8) == 0) {
 		char *p = (char *)opt + 8;
 
-		STR_CVT(&p, &g_force_dovi, uint32_t, goto Error);
+		STR_CVT(&p, &g_force_dolby, uint32_t, goto Error);
 		STR_CVT(&p, &g_force_open_hdr, uint32_t, goto Error);
 		STR_CVT(&p, &g_hdr_type, uint32_t, goto Error);
 		STR_CVT(&p, &g_out_format, uint32_t, goto Error);
 		STR_CVT(&p, &g_dovi_efuse, uint32_t, goto Error);
 		dovi_default("set hdr def: %d %d %d %d %d\n",
-			g_force_dovi, g_force_open_hdr, g_hdr_type,
+			g_force_dolby, g_force_open_hdr, g_hdr_type,
 			g_out_format, g_dovi_efuse);
 
 	} else if (strncmp(opt, "hdr_cmd:", 8) == 0) {
@@ -517,7 +509,6 @@ static void dovi_process_dbg_opt(const char *opt)
 		STR_CVT(&p, &en, uint32_t, goto Error);
 		dovi_default("dovi vfy init\n");
 		dovi_ut_init(en);
-		videoin_hal_enable(en);
 	} else if (strncmp(opt, "ut_case:", 8) == 0) {
 		uint32_t case_id = 0;
 
@@ -572,97 +563,12 @@ static void dovi_process_dbg_opt(const char *opt)
 
 		dovi_set_unit_test_info(out_res, out_format, ll_on, ll_rgb,
 			layer_on, case_id);
-	} else if (strncmp(opt, "idk_set:", 8) == 0) {
-		uint32_t idk_set = 0;
-
-		p = (char *)opt + 8;
-		STR_CVT(&p, &idk_set, uint32_t, goto Error);
-		dovi_default("set idk_set = %d\n", idk_set);
-		if (idk_set == 0) {
-			no_mix_fhd = 0;
-			no_mix_uhd = 0;
-			dovi_idk_settings(idk_set);
-		}
-	} else if (strncmp(opt, "no_mix_gfx:", 11) == 0) {
-		uint32_t cmd1 = 0;
-		uint32_t cmd2 = 0;
-
-		p = (char *)opt + 11;
-		STR_CVT(&p, &cmd1, uint32_t, goto Error);
-		STR_CVT(&p, &cmd2, uint32_t, goto Error);
-		no_mix_fhd = cmd1;
-		no_mix_uhd = cmd2;
-		dovi_default("set no_mix_fhd = %d, no_mix_uhd = %d\n",
-			no_mix_fhd, no_mix_uhd);
-	} else if (strncmp(opt, "gfx_dump:", 9) == 0) {
-		uint32_t gfx_dump = 0;
-
-		p = (char *)opt + 9;
-		STR_CVT(&p, &gfx_dump, uint32_t, goto Error);
-		dovi_default("set gfx_dump = %d\n", gfx_dump);
-		if (gfx_dump == 1)
-			disp_dovi_dump_gfx();
-	} else if (strncmp(opt, "gfx_vdoin:", 10) == 0) {
-		uint32_t gfx_vdoin = 0;
-
-		p = (char *)opt + 10;
-		STR_CVT(&p, &gfx_vdoin, uint32_t, goto Error);
-		dovi_default("set gfx_vdoin = %d\n", gfx_vdoin);
-		if (gfx_vdoin == 1)
-			disp_dovi_videoin_gfx();
-		else
-			disp_dovi_videoin_off_gfx();
-	} else if (strncmp(opt, "dump_crycb:", 11) == 0) {
-		p = (char *)opt + 11;
-		STR_CVT(&p, &dump_crycb, uint32_t, goto Error);
-		dovi_default("set dump_crycb = %d\n", dump_crycb);
-	} else if (strncmp(opt, "dump_bit:", 9) == 0) {
-		p = (char *)opt + 9;
-		STR_CVT(&p, &dump_bit_depth, uint32_t, goto Error);
-		dovi_default("set dump_bit_depth = %d\n", dump_bit_depth);
 	} else if (strncmp(opt, "f_gfx_off:", 10) == 0) {
 
 		p = (char *)opt + 10;
 		STR_CVT(&p, &f_graphic_off_cmd, uint32_t, goto Error);
 		dovi_set_graphic_info(1 - f_graphic_off_cmd);
 		dovi_printf("force gfx off %d\n", f_graphic_off_cmd);
-	} else if (strncmp(opt, "idk_vsem:", 9) == 0) {
-		p = (char *)opt + 9;
-		STR_CVT(&p, &idk_vsem, uint32_t, goto Error);
-		dovi_default("set idk_vsem = %d\n", idk_vsem);
-	} else if (strncmp(opt, "sdk_vsem:", 9) == 0) {
-		p = (char *)opt + 9;
-		STR_CVT(&p, &sdk_vsem, uint32_t, goto Error);
-		dovi_default("set sdk_vsem = %d\n", sdk_vsem);
-	} else if (strncmp(opt, "mapping:", 8) == 0) {
-		uint32_t dovi2hdr10_mapping = 0;
-
-		p = (char *)opt + 8;
-		STR_CVT(&p, &dovi2hdr10_mapping, uint32_t, goto Error);
-		dovi_set_dovi2hdr10_mapping(dovi2hdr10_mapping);
-		dovi_default("set dovi2hdr10_mapping = %d\n",
-			dovi2hdr10_mapping);
-	} else if (strncmp(opt, "vsvdb:", 6) == 0) {
-		char *vsvdb_file_name = "vsvdb_push.bin";
-
-		p = (char *)opt + 6;
-		STR_CVT(&p, &set_vsvdb, uint32_t, goto Error);
-		//if (set_vsvdb)
-		//	dovi_set_vsvdb_file_name(vsvdb_file_name);
-		dovi_default("set_vsvdb /sdcard/vsvdb/%s\n",
-			vsvdb_file_name);
-	} else if (strncmp(opt, "tvbri:", 6) == 0) {
-
-		p = (char *)opt + 6;
-		STR_CVT(&p, &dovi_hdmi_brightness_en, uint32_t, goto Error);
-		STR_CVT(&p, &dovi_hdmi_brightness, uint32_t, goto Error);
-		dovi_default("set tv brightness %d %d\n",
-			dovi_hdmi_brightness_en, dovi_hdmi_brightness);
-	} else if (strncmp(opt, "ext_md:", 7) == 0) {
-
-		p = (char *)opt + 7;
-		STR_CVT(&p, &dovi_get_ext_md, uint32_t, goto Error);
-		dovi_default("get ext_md %d\n", dovi_get_ext_md);
 	} else {
 
 		dovi_error("test debug cmd pass.\n");
@@ -724,8 +630,8 @@ static ssize_t dovi_debug_write(struct file *file,
 	if (count > debug_bufmax)
 		count = debug_bufmax;
 
-	if (copy_from_user(&dovi_cmd_buf, ubuf, count))
-		return ret;
+	if (copy_from_user(dovi_cmd_buf, ubuf, count))
+		return -EFAULT;
 
 	dovi_cmd_buf[count] = 0;
 
