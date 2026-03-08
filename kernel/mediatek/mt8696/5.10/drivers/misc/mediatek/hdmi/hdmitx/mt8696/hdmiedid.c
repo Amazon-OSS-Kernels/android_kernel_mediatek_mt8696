@@ -358,7 +358,8 @@ void vShowEdidRawData(void)
 	HDMI_EDID_FUNC();
 	bExtBlockNum = i4SharedInfo(SI_EDID_EXT_BLOCK_NO);
 
-	for (bTemp = 0; bTemp < (bExtBlockNum+1); bTemp++) {
+	for (bTemp = 0; bTemp < (bExtBlockNum + 1) &&
+	    bTemp < (EDID_SIZE / EDID_BLOCK_LEN); bTemp++) {
 		TX_DEF_LOG(
 "===================================================================\n");
 		TX_DEF_LOG("   EDID Block Number=#%d\n", bTemp);
@@ -369,11 +370,10 @@ void vShowEdidRawData(void)
 		j = bTemp * EDID_BLOCK_LEN;
 		for (i = 0; i < 8; i++) {
 			p = &_bEdidData[j + i * 16];
-			TX_DEF_LOG(
-"%02x:  %02x  %02x  %02x  %02x  %02x  %02x  %02x  %02x  %02x  %02x  ",
-i * 16 + j, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9]);
-			TX_DEF_LOG("%02x  %02x  %02x  %02x  %02x  %02x\n",
-				p[10], p[11], p[12], p[13], p[14], p[15]);
+			TX_DEF_LOG( "%02x:  %02x  %02x  %02x  %02x  %02x  %02x  %02x"
+			"  %02x  %02x  %02x  %02x  %02x  %02x  %02x  %02x  %02x\n",
+			i * 16 + j, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+			p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
 		}
 	}
 	TX_DEF_LOG("===========================================\n");
@@ -3755,7 +3755,7 @@ long long hdmi_DispGetEdidInfo(void)
 bool isThomsonUD9_India_TV(void)
 {
 	/* THOMSON UD9 43TH6000 TV (India only TV) has Dolby audio playback issue.
-	 * black list Dolby audio capability of this TV based on Manufacturer ID
+	 * hide Dolby audio capability of this TV based on Manufacturer ID
 	 * and Manufacturer product code.
 	 * 00  ff  ff  ff  ff  ff  ff  00  0e  96  03  b1  01  00  00  00
 	 */
@@ -3792,12 +3792,12 @@ bool isBadMATSink(void)
 	if (((_bEdidData[0x08] == 0x34) && (_bEdidData[0x09] ==  0xa9)) &&
 		((_bEdidData[0x11] == 0x1d) || (_bEdidData[0x11] == 0x1e)))
 		return true;
-	/* Hisense - 2019/2020 model Dolby MAT TV's has MAT implementation issue
+	/* Hisense - 2018/2019/2020 model Dolby MAT TV's has MAT implementation issue
 	 * This leads no audio for MAT input.
 	 * Disable MAT audio capability of these Hisense TV
 	 */
 	if (((_bEdidData[0x08] == 0x20) && (_bEdidData[0x09] ==  0xa3)) &&
-		((_bEdidData[0x11] == 0x1d) || (_bEdidData[0x11] == 0x1e)))
+		((_bEdidData[0x11] == 0x1c) || (_bEdidData[0x11] == 0x1d) || (_bEdidData[0x11] == 0x1e)))
 		return true;
 
 	return false;

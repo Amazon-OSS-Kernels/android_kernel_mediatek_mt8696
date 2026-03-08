@@ -1041,6 +1041,8 @@ static void mtkfb_shutdown(struct platform_device *pdev)
 		MTKFB_LOG("mtkfb has been power off\n");
 		return;
 	}
+
+	disp_mix_hal_set_black_pattern(true);
 	disp_hw_mgr_suspend();
 	if (fg_mm_pm_state) {
 		pm_runtime_put_sync(&pdev->dev);

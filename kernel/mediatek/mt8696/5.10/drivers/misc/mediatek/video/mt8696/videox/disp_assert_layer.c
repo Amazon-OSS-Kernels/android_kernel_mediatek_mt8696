@@ -357,9 +357,14 @@ EXPORT_SYMBOL(DAL_Printf);
 enum DAL_STATUS DAL_Get_Layer_Info(struct mtk_disp_buffer *info)
 {
 	int layer = DISP_BUFFER_MAX - 1;
+	int ret = 0;
 	struct disp_hw_common_info hw_info;
 
-	disp_hw_mgr_get_info(&hw_info);
+	ret = disp_hw_mgr_get_info(&hw_info);
+	if (ret != 0) {
+		pr_debug("%s get hw mgr info fail\n", __func__);
+		return DAL_STATUS_NOT_READY;
+	}
 
 	info->layer_id = layer;
 	info->layer_enable = 1;

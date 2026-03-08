@@ -306,3 +306,58 @@ void v4l2_m2m_buf_queue_check(struct v4l2_m2m_ctx *m2m_ctx,
 }
 EXPORT_SYMBOL(v4l2_m2m_buf_queue_check);
 
+struct sg_table *mtk_dma_dup_sg_table_by_range(const struct sg_table *table,
+	unsigned int offset, unsigned int len)
+{
+	struct sg_table *new_table;
+	int ret, i;
+	struct scatterlist *sg, *new_sg;
+	unsigned int sg_offset = 0, first_sg_require_len = 0;
+	unsigned int contig_size = 0, found_start = 0;
+
+	new_table = kzalloc(sizeof(*new_table), GFP_KERNEL);
+	if (!new_table)
+		return ERR_PTR(-ENOMEM);
+
+	ret = sg_alloc_table(new_table, table->orig_nents, GFP_KERNEL);
+	if (ret) {
+		kfree(new_table);
+		return ERR_PTR(-ENOMEM);
+	}
+
+	new_sg = new_table->sgl;
+	new_table->nents = 0;
+
+	for_each_sg(table->sgl, sg, table->orig_nents, i) {
+		if (!found_start) {
+			sg_offset += sg->length;
+			if (sg_offset <= offset)
+				continue;
+			found_start = 1;
+
+			/*copy first sg and cal first sg off and length*/
+			memcpy(new_sg, sg, sizeof(*sg));
+			first_sg_require_len = sg_offset - offset;
+			new_sg->offset += sg->length - first_sg_require_len;
+			if (len <= first_sg_require_len)
+				new_sg->length = len;
+			else
+				new_sg->length = first_sg_require_len;
+			contig_size += new_sg->length;
+		} else {
+			memcpy(new_sg, sg, sizeof(*sg));
+			contig_size += sg->length;
+		}
+
+		new_table->nents++;
+		if (contig_size >= len) {
+			/*adjust the last sg length*/
+			new_sg->length -= (contig_size - len);
+			break;
+		}
+		new_sg = sg_next(new_sg);
+	}
+	return new_table;
+}
+EXPORT_SYMBOL(mtk_dma_dup_sg_table_by_range);
+

@@ -120,6 +120,7 @@
 earlycon=uart8250,mmio32,0x11002400 \
 root=/dev/ram  vmalloc=300M \
 androidboot.hardware=mt8696 loop.max_part=7";
+		kaslr-seed = <0 0>;
 	};
 
 	cpus: cpus {
@@ -2148,14 +2149,15 @@ androidboot.hardware=mt8696 loop.max_part=7";
 
 	mtee {
 		compatible = "mediatek,mtee";
+		clocks = <&topckgen CLK_TOP_GCPU_SEL>;
+		clock-names = "GCPU_B";
 	};
 
 	optee {
 		compatible = "linaro,optee-tz";
 		method = "smc";
-		clocks = <&topckgen CLK_TOP_GCPU_SEL>,
-			 <&topckgen CLK_TOP_ECC_SEL>;
-		clock-names = "GCPU_B", "ECC";
+		clocks = <&topckgen CLK_TOP_ECC_SEL>;
+		clock-names = "ECC";
 	};
 
 	clkao: clkao {

@@ -1695,6 +1695,8 @@ do { \
 			sizeof(debug_buffer) - buf_offset, fmt, ##arg); \
 		if (temp_len > 0) \
 			buf_offset += temp_len; \
+		if (buf_offset > (sizeof(debug_buffer) - 1)) \
+			buf_offset = sizeof(debug_buffer) - 1; \
 		debug_buffer[buf_offset] = 0; \
 	} \
 } while (0)
@@ -5138,6 +5140,10 @@ static void process_sysfs_cmd(char *opt)
 		set_colordeep(opt + 7);
 	else if (strncmp(opt, "hdmiioctl:", 10) == 0)
 		set_hdmiioctl(opt + 10);
+	else if (strncmp(opt, "status", 6) == 0)
+		hdmi_status();
+	else if (strncmp(opt, "sethpd:", 7) == 0)
+		set_hpd_status(opt + 7);
 	else
 		goto Error;
 	return;
@@ -5219,6 +5225,8 @@ static ssize_t hdmitx_debug_store(struct kobject *kobj,
 	if (!strncpy(debug_buffer, buf, count))
 		return -EFAULT;
 	debug_buffer[count] = 0;
+	buf_offset = 0;
+
 	process_sysfs_cmd(debug_buffer);
 	return count;
 }

@@ -480,9 +480,11 @@ INT32 OSD_RGN_Create_EX(UINT32 u4Region, UINT32 u4SrcBufWidth,
 	UINT32 u4HStep;
 	UINT32 u4Temp;
 	int BPP = 0;
+	UINT32 header_addr = 0;
 
-	UINT32 header_addr;
 	_OSD_RGN_GetAddress(u4Region, 0, &header_addr);
+	if (!header_addr)
+		return -(INT32)OSD_RET_INV_ARG;
 	if (region_replace_bmp)
 		pvBitmap = header_addr;
 	OSD_PRINTF(OSD_CONFIG_SW_LOG,

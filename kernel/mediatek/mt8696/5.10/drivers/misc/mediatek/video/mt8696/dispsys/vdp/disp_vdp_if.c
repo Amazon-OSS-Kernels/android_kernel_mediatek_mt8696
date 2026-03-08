@@ -1892,10 +1892,8 @@ int disp_vdp_irq_handler(uint32_t irq)
 	if (!vdp_init_done)
 		return VDP_OK;
 
-	if (atomic_read(&vdp_suspend)) {
-		DISP_LOG_I("vdp already suspend irq %u\n", irq);
+	if (atomic_read(&vdp_suspend))
 		return VDP_OK;
-	}
 
 	switch (irq) {
 	case DISP_IRQ_FMT_ACTIVE_START:

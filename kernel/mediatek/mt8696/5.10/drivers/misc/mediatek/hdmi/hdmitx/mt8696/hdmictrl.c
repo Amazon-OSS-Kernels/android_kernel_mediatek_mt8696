@@ -3074,6 +3074,14 @@ void vSendAudioInfoFrame(void)
 	if (_stAvdAVInfo.e_hdmi_aud_in == SV_SPDIF) {
 		_bAudInfoFm[0] = 0x00;	/* CC as 0, */
 		_bAudInfoFm[3] = 0x00;	/* CA 2ch */
+	} else if ((_stAvdAVInfo.e_aud_code != AVD_LPCM) &&
+		(_stAvdAVInfo.e_aud_code != AVD_DSD) &&
+		(_stAvdAVInfo.e_aud_code != AVD_CDDA) &&
+		(_stAvdAVInfo.e_aud_code != AVD_SACD_PCM) &&
+		(_stAvdAVInfo.e_aud_code != AVD_HDCD)) {
+		/* set refer to header for codec raw data*/
+		_bAudInfoFm[0] = 0x00;
+		_bAudInfoFm[3] = 0x00;
 	} else {		/* pcm */
 
 		switch (_stAvdAVInfo.ui2_aud_out_ch.word & 0x7fb) {
