@@ -1668,19 +1668,7 @@ uint32_t dovi_update_res_change(
 	else
 		dovi_out_info.is_vsem = false;
 
-	if (dovi_out_format_new != dovi_out_format) {
-		dovi_default("%s out_format change %d -> %d\n",
-			__func__, dovi_out_format, dovi_out_format_new);
-
-		dovi_set_output_format(dovi_out_info.out_format);
-		dovi_set_low_latency_mode(dovi_out_info.is_low_latency,
-			ll_format);
-		dovi_set_vsem_mode(dovi_out_info.is_vsem);
-		dovi_set_priority_mode(!dovi_out_info.b_gfx_mode);
-		dovi_update_graphic_info();
-		dovi_set_vsvdb_hdmi(dovi_out_info.vsvdb_edid, 0x1A);
-
-	} else if (dovi_out_format_new == dovi_out_format) {
+	if (dovi_out_format_new == dovi_out_format) {
 		dovi_info("out_format is same as before %d\n",
 			dovi_out_format);
 
@@ -1700,8 +1688,17 @@ uint32_t dovi_update_res_change(
 	}
 	if ((old_resolution != resolution->res_mode)
 	    || (dovi_out_format_new != dovi_out_format)) {
-		dovi_default("hdr old_res=%d, new_res=%d\n",
-			   old_resolution, resolution->res_mode);
+		dovi_default("hdr old_res=%d, new_res=%d %d %d\n",
+			   old_resolution, resolution->res_mode,
+			   dovi_out_format, dovi_out_format_new);
+
+		dovi_set_output_format(dovi_out_info.out_format);
+		dovi_set_low_latency_mode(dovi_out_info.is_low_latency,
+			ll_format);
+		dovi_set_vsem_mode(dovi_out_info.is_vsem);
+		dovi_set_priority_mode(!dovi_out_info.b_gfx_mode);
+		dovi_update_graphic_info();
+		dovi_set_vsvdb_hdmi(dovi_out_info.vsvdb_edid, 0x1A);
 
 		switch (dovi_out_format_new) {
 		case DOVI_FORMAT_DOVI:
@@ -2240,6 +2237,7 @@ uint32_t disp_dovi_get_rpu_info(uint32_t idx, uint32_t first_frame,
 {
 	enum DV_RPU_TYPE rpu_type = HEVC_RPU;
 	unsigned char *rpu_addr = NULL;
+	uint32_t rpu_len = 0;
 
 	if (idx >= V_G_LAYER_MAX || dovi_md_info == NULL) {
 		dovi_printf("can not get rpu info\n");
@@ -2261,10 +2259,19 @@ uint32_t disp_dovi_get_rpu_info(uint32_t idx, uint32_t first_frame,
 		p_src_param[idx].is_rbsp = 0;
 		/* remove rpu NAL type */
 		if (!layer_info_set_by_cmd) {
+			if (first_frame &&
+				(dovi_md_info->keyfrm_len >
+				dovi_md_info->len)) {
+				rpu_addr = dovi_md_info->keyfrm_buff;
+				rpu_len = dovi_md_info->keyfrm_len;
+			} else {
+				rpu_addr = dovi_md_info->buff;
+				rpu_len = dovi_md_info->len;
+			}
 
 			rpu_type = dovi_parse_rpu_av1(
-				dovi_md_info->buff,
-				dovi_md_info->len,
+				rpu_addr,
+				rpu_len,
 				p_src_param[idx].rpu_bs_buffer,
 				&p_src_param[idx].rpu_bs_len);
 
@@ -2272,9 +2279,9 @@ uint32_t disp_dovi_get_rpu_info(uint32_t idx, uint32_t first_frame,
 				p_src_param[idx].rpu_bs_len =
 				dovi_remove_rpu_nal_type(
 				first_frame,
-				dovi_md_info->buff,
+				rpu_addr,
 				p_src_param[idx].rpu_bs_buffer,
-				dovi_md_info->len);
+				rpu_len);
 			} else if (rpu_type == AV1_RPU)
 				p_src_param[idx].is_rbsp = 1;
 
@@ -2297,9 +2304,9 @@ uint32_t disp_dovi_get_rpu_info(uint32_t idx, uint32_t first_frame,
 			}
 		}
 
-		dovi_info("rpu[%d] %d %d %d %d\n", idx, rpu_type,
-			dovi_md_info->len, p_src_param[idx].rpu_bs_len,
-			first_frame);
+		dovi_rpu("rpu[%d][%d] %d (%d %d) %d\n", idx, first_frame,
+			rpu_type, dovi_md_info->len, dovi_md_info->keyfrm_len,
+			p_src_param[idx].rpu_bs_len);
 	}
 
 	return 0;
@@ -2313,9 +2320,15 @@ int disp_dovi_process(uint32_t enable,
 		DISP_DR_TYPE_DOVI;
 	uint8_t b_dovi_src = 0;
 	uint32_t old_num_input = 0;
+	bool b_sub_video_st = 0;
 	struct mtk_vdp_dovi_md_t *dovi_md_info_main = NULL;
 	struct mtk_vdp_dovi_md_t *dovi_md_info_sub = NULL;
 	uint32_t first_frame[2] = { 0 };
+
+	if (hdr_metadata == NULL) {
+		dovi_error("hdrmetadata null\n");
+		return DOVI_RET_ERROR;
+	}
 
 	mutex_lock(&disp_dovi_mutex);
 
@@ -2331,6 +2344,7 @@ int disp_dovi_process(uint32_t enable,
 	}
 
 	old_num_input = p_cp_param->num_input;
+	b_sub_video_st = p_src_param[LAYER1].en;
 	p_cp_param->num_input = 0;
 	p_cp_param->cp_init_update = 0;
 	p_cp_param->dm_md_parse_ctrl = 0;
@@ -2344,11 +2358,11 @@ int disp_dovi_process(uint32_t enable,
 	dovi_get_input_format(&dv_pre_input_type);
 
 	if (hdr_metadata->dr_range == DISP_DR_TYPE_DOVI)
-		b_dovi_src |= 1;
+		b_dovi_src |= MAIN_SRC_DOVI;
 
 	if (dv_vdo_fe_en[1] &&
 		dovi_hdr_md_info[LAYER1].dr_range == DISP_DR_TYPE_DOVI)
-		b_dovi_src |= 2;
+		b_dovi_src |= SUB_SRC_DOVI;
 
 	if (enable) {
 		if (dv_vdo_fe_en[1]) {
@@ -2445,23 +2459,37 @@ int disp_dovi_process(uint32_t enable,
 				p_src_param[LAYER0].src_frame_num = 0;
 				p_src_param[LAYER1].src_frame_num = 0;
 			} else if (dovi_proc_state != 1) {
-				if ((b_dovi_src & 0x1) &&
+				if ((b_dovi_src & MAIN_SRC_DOVI) &&
 					(dv_pre_input_type != DISP_DR_TYPE_DOVI)) {
-					//dovi_sec_md_parser_uninit();
-					//dovi_sec_md_parser_init();
 					p_cp_param->dm_md_parse_ctrl |= 0x1;
 					dovi_md_parser_enable = true;
 					first_frame[0] = 1;
 					p_src_param[LAYER0].src_frame_num = 0;
 				}
-				if ((b_dovi_src & 0x2) &&
+				if ((b_dovi_src & SUB_SRC_DOVI) &&
 					(dv_pre_input_type1 != DISP_DR_TYPE_DOVI)) {
-					//dovi_sec_md_parser_uninit();
-					//dovi_sec_md_parser_init();
 					p_cp_param->dm_md_parse_ctrl |= 0x2;
 					dovi_md_parser_enable = true;
 					first_frame[1] = 1;
 					p_src_param[LAYER1].src_frame_num = 0;
+				}
+				/* here add keyfrm case handle for PIP */
+				if ((old_num_input != 0) &&
+					(old_num_input !=
+					p_cp_param->num_input) &&
+					(p_src_param[LAYER1].en !=
+					b_sub_video_st)) {
+					if ((b_dovi_src & MAIN_SRC_DOVI) &&
+						(hdr_metadata->metadata_info
+						.dovi_metadata.keyfrm_len >
+						hdr_metadata->metadata_info
+						.dovi_metadata.len)) {
+						p_cp_param->dm_md_parse_ctrl |=
+							0x1;
+						dovi_md_parser_enable = true;
+						first_frame[0] = 1;
+						p_src_param[LAYER0].src_frame_num = 0;
+					}
 				}
 			}
 

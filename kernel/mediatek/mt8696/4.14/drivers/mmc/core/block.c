@@ -2615,6 +2615,7 @@ out:
 	return NULL;
 }
 
+#define MMC_CQE_RETRIES 2
 /**
  * mmc_blk_cmdq_reset_all - Reset everything for CMDQ block request.
  * @host:	mmc_host pointer.
@@ -2727,6 +2728,10 @@ static void mmc_blk_cmdq_reset_all(struct mmc_host *host, int err)
 		mmc_put_card(card);
 	}
 
+	if (mrq->cmdq_req->resp_err &&
+	    (mrq->cmdq_req->resp_arg & R1_CARD_ECC_FAILED) &&
+	    (mrq->req->retries++ >= MMC_CQE_RETRIES))
+		blk_end_request_all(mrq->req, BLK_STS_IOERR);
 	spin_lock_irq(q->queue_lock);
 	blk_queue_invalidate_tags(q);
 	spin_unlock_irq(q->queue_lock);

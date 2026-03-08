@@ -222,6 +222,10 @@ struct request {
 
 	unsigned int timeout;
 
+#ifdef CONFIG_MTK_EMMC_HW_CQ
+	int retries;
+#endif
+
 	void *special;		/* opaque pointer available for LLD use */
 
 	unsigned int extra_len;	/* length of alignment and padding */

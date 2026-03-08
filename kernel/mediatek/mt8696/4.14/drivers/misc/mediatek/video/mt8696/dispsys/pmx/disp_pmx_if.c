@@ -213,75 +213,74 @@ static int _pmx_init(struct disp_hw_common_info *info)
 static int disp_pmx_suspend(void)
 {
 	PMX_FUNC();
-#ifndef CONFIG_HDMI_BLACK
-	fmt_hal_enable(VDOUT_FMT, false);
+	if (!disp_common_info.low_energy_dozing_mode_enable) {
+		fmt_hal_enable(VDOUT_FMT, false);
 
-	fmt_hal_clock_on_off(VDOUT_FMT, false);
+		fmt_hal_clock_on_off(VDOUT_FMT, false);
 
-	vdout_sys_hal_clock_on_off(false); /* open the vdout sys clock */
+		vdout_sys_hal_clock_on_off(false);
 
-	disp_mix_hal_clock_on_off(false);
+		disp_mix_hal_clock_on_off(false);
 
-	fmt_hal_set_pllgp_hdmidds(pmx.hdmi_res.res_mode, false, false,
-		pmx.hdmi_res.is_fractional);
-#endif
-
-	PMX_INFO("%s - leave.\n", __func__);
+		fmt_hal_set_pllgp_hdmidds(pmx.hdmi_res.res_mode, false, false,
+			pmx.hdmi_res.is_fractional);
+		PMX_INFO("%s - leave.\n", __func__);
+	}
 	return PMX_OK;
 }
 
 static int disp_pmx_resume(void)
 {
-#ifndef CONFIG_HDMI_BLACK
-	int sof_start = 0, sof_end = 0;
+	if (!disp_common_info.low_energy_dozing_mode_enable) {
+		int sof_start = 0, sof_end = 0;
 
-	PMX_FUNC();
+		PMX_FUNC();
 
-	fmt_hal_set_pllgp_hdmidds(pmx.hdmi_res.res_mode, true, true,
-		pmx.hdmi_res.is_fractional);
+		fmt_hal_set_pllgp_hdmidds(pmx.hdmi_res.res_mode, true, true,
+			pmx.hdmi_res.is_fractional);
 
-	vdout_sys_hal_clock_on_off(true); /* open the vdout sys clock */
+		vdout_sys_hal_clock_on_off(true); /* open the vdout sys clock */
 
-	fmt_hal_clock_on_off(VDOUT_FMT, true);
+		fmt_hal_clock_on_off(VDOUT_FMT, true);
 
-	disp_mix_hal_clock_on_off(true);
-
-#ifdef DISP_PATH_SHADOW_ENABLE
-	fmt_hal_sof_grp0_shadow_enable(true);
-	fmt_hal_sof_grp1_shadow_enable(true);
-	fmt_hal_hw_shadow_enable(VDOUT_FMT);
-	vdout_sys_hal_shadow_en(true);
-#endif
-
-	fmt_hal_set_mode(VDOUT_FMT, pmx.hdmi_res.res_mode, true);
-	/*fmt_hal_hw_shadow_enable(VDOUT_FMT);*/
-
-	fmt_hal_set_tv_type(VDOUT_FMT, pmx.tv_type);
-
-	disp_mix_hal_set_background_color(pmx.u4BgColor);
-
-	fmt_hal_reset(VDOUT_FMT);
-
-	vdout_sys_hal_set_hdmi(pmx.hdmi_res.res_mode);   /* set hdmi pll */
-	vdout_sys_hal_reorder_before_mmsys_mix_out
-		(COLOR_FORMAT_YUV, false);
-	if (!dovi_path_en)
-		vdout_sys_hal_hdr_vdo_be_enable(false);
-
-	disp_mix_hal_set_dst_wigth_and_height(pmx.hdmi_res.res_mode, true);
-	disp_mix_hal_mix_enable(true);
-	disp_path_get_sof_info(DISP_SOF_20_DISP_MIX_STA,
-		DISP_SOF_20_DISP_MIX_END,
-		&sof_start, &sof_end);
-	fmt_hal_set_sof(FMT_SOF_20_DISP_MIX_STA,
-		FMT_SOF_20_DISP_MIX_END, sof_start, sof_end);
+		disp_mix_hal_clock_on_off(true);
 
 #ifdef DISP_PATH_SHADOW_ENABLE
-	fmt_hal_shadow_update();
+		fmt_hal_sof_grp0_shadow_enable(true);
+		fmt_hal_sof_grp1_shadow_enable(true);
+		fmt_hal_hw_shadow_enable(VDOUT_FMT);
+		vdout_sys_hal_shadow_en(true);
 #endif
-#endif
-	PMX_INFO("%s - leave.\n", __func__);
 
+		fmt_hal_set_mode(VDOUT_FMT, pmx.hdmi_res.res_mode, true);
+		/*fmt_hal_hw_shadow_enable(VDOUT_FMT);*/
+
+		fmt_hal_set_tv_type(VDOUT_FMT, pmx.tv_type);
+
+		disp_mix_hal_set_background_color(pmx.u4BgColor);
+
+		fmt_hal_reset(VDOUT_FMT);
+		/* set hdmi pll */
+		vdout_sys_hal_set_hdmi(pmx.hdmi_res.res_mode);
+		vdout_sys_hal_reorder_before_mmsys_mix_out
+			(COLOR_FORMAT_YUV, false);
+		if (!dovi_path_en)
+			vdout_sys_hal_hdr_vdo_be_enable(false);
+
+		disp_mix_hal_set_dst_wigth_and_height(pmx.hdmi_res.res_mode,
+			true);
+		disp_mix_hal_mix_enable(true);
+		disp_path_get_sof_info(DISP_SOF_20_DISP_MIX_STA,
+			DISP_SOF_20_DISP_MIX_END,
+			&sof_start, &sof_end);
+		fmt_hal_set_sof(FMT_SOF_20_DISP_MIX_STA,
+			FMT_SOF_20_DISP_MIX_END, sof_start, sof_end);
+
+#ifdef DISP_PATH_SHADOW_ENABLE
+		fmt_hal_shadow_update();
+#endif
+		PMX_INFO("%s - leave.\n", __func__);
+	}
 	return PMX_OK;
 }
 

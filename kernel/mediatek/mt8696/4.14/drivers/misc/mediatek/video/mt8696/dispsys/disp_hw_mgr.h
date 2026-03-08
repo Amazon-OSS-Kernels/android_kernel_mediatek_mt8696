@@ -72,6 +72,7 @@ enum DISP_EVENT {
 	DISP_EVENT_FORCE_HDR = 1 << 7,
 	DISP_EVENT_GCE = 1 << 8,
 	DISP_EVENT_ALLM = 1 << 10,
+	DISP_EVENT_LOW_ENERGY_DOZING_MODE = 1 << 11,
 };
 
 enum DISP_HW_MGR_STATUS {
@@ -149,6 +150,7 @@ struct disp_hw_common_info {
 	/* hwc can also send wrong video to vdp, now if offer */
 	/* specail flag for vdp to drop some special log */
 	bool tunnel_playback_and_user_is_hwc;
+	bool low_energy_dozing_mode_enable;
 };
 
 #ifdef DISP_GCE_SUPPORT

@@ -29,6 +29,9 @@
 #define MAX_UNKNOWN_MD_SIZE 256
 #define CONFIG_DOVI_SUPPORT 1
 
+#if IS_ENABLED(CONFIG_DOVI_SUPPORT)
+#define RPU_DEPEND_LEN_MIN 30
+#endif
 
 enum MTK_DISPIF_TYPE {
 	DISPIF_TYPE_DBI,
@@ -499,8 +502,8 @@ struct mtk_disp_dovi_md_t {
 	void *addr;
 	int fd;
 	uint32_t offset;
-	//struct dm_metadata_t *dm_md;
-	//struct rpu_ext_config_fixpt_main_t *comp_md;
+	uint32_t keyfrm_offset;
+	uint32_t keyfrm_len;
 };
 
 struct mtk_disp_film_grain_md_t {
@@ -526,11 +529,13 @@ struct mtk_vdp_film_gain_md_t {
 struct mtk_vdp_dovi_md_t {
 	uint64_t pts;
 	uint32_t len;
+	uint32_t keyfrm_len;
 	uint32_t len_from_tz;
 	bool svp;
 	uint32_t sec_handle;
 	uint32_t sec_new_handle_from_tz;
 	uint8_t buff[DOVI_MD_MAX_LEN];
+	uint8_t keyfrm_buff[DOVI_MD_MAX_LEN];
 	struct dm_metadata_t dm_md;
 	struct rpu_ext_config_fixpt_main_t comp_md;
 };

@@ -54,6 +54,9 @@
 #define L11_CONTENT_GAME 2
 #define L11_WHITE_POINT 8
 
+#define MAIN_SRC_DOVI 1
+#define SUB_SRC_DOVI 2
+
 enum DV_RPU_TYPE {
 	HEVC_RPU = 0,
 	AV1_RPU = 1,

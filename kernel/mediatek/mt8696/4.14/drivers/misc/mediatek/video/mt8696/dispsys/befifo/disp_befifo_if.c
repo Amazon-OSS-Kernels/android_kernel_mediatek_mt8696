@@ -153,10 +153,10 @@ int disp_befifo_deep_suspend(void)
 
 int disp_befifo_suspend(void)
 {
-#ifndef CONFIG_HDMI_BLACK
-	disp_befifo_drv_enable(false, 0);
-	disp_befifo_drv_set_clk_enable(0);
-#endif
+	if (!disp_common_info.low_energy_dozing_mode_enable) {
+		disp_befifo_drv_enable(false, 0);
+		disp_befifo_drv_set_clk_enable(0);
+	}
 	return BEFIFO_RET_OK;
 }
 
@@ -173,14 +173,23 @@ int disp_befifo_resume(void)
 		disp_befifo_drv_enable(true, 1);
 		befifo_default("deep resume\n");
 		fg_be_fifo_deep_suspend = false;
+	} else {
+		if (!disp_common_info.low_energy_dozing_mode_enable) {
+			disp_befifo_drv_set_clk_enable(1);
+			disp_befifo_drv_set_sof();
+			disp_befifo_drv_get_resolution(0, &res);
+			disp_befifo_drv_set_resolution(0, res);
+			disp_befifo_drv_enable(true, 1);
+		}
 	}
-
 #else
-	disp_befifo_drv_set_clk_enable(1);
-	disp_befifo_drv_set_sof();
-	disp_befifo_drv_get_resolution(0, &res);
-	disp_befifo_drv_set_resolution(0, res);
-	disp_befifo_drv_enable(true, 1);
+	if (!disp_common_info.low_energy_dozing_mode_enable) {
+		disp_befifo_drv_set_clk_enable(1);
+		disp_befifo_drv_set_sof();
+		disp_befifo_drv_get_resolution(0, &res);
+		disp_befifo_drv_set_resolution(0, res);
+		disp_befifo_drv_enable(true, 1);
+	}
 #endif
 	return BEFIFO_RET_OK;
 }

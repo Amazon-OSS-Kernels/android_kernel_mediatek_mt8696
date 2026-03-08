@@ -44,6 +44,7 @@
 #include "hdmitx.h"
 #include "mtkfb.h"
 #include "smi.h"
+#include "internal_hdmi_drv.h"
 
 #include <linux/bootmem.h>
 #include <linux/interrupt.h>
@@ -493,17 +494,24 @@ static int mtkfb_compat_ioctl(struct fb_info *info, unsigned int cmd,
 static void mtkfb_blank_suspend(struct fb_info *info)
 {
 	int ret = 0;
+	int hdmiret = 0;
 	struct mtkfb_device *mtkfb_dev = NULL;
 
 	mtkfb_dev = (struct mtkfb_device *)info->par;
 	MTKFB_LOG("enter early_suspend\n");
+
+	hdmiret = vIsHdmiEarlySuspendInNormalMode();
+	/* keep recovery mode display power on */
+	if (hdmiret == HDMI_INTERNAL_EARLY_SUSPEND_IN_RECOVERY)
+		disp_common_info.low_energy_dozing_mode_enable = 1;
 	ret = disp_hw_mgr_suspend();
 	if (ret < 0) {
 		MTKFB_ERR("suspend failed\n");
 		return;
 	}
 	if (fg_mm_pm_state) {
-		pm_runtime_put_sync(mtkfb_dev->dev);
+		if (hdmiret != HDMI_INTERNAL_EARLY_SUSPEND_IN_RECOVERY)
+			pm_runtime_put_sync(mtkfb_dev->dev);
 		fg_mm_pm_state = false;
 	}
 	MTKFB_LOG("leave early_suspend\n");
@@ -512,13 +520,17 @@ static void mtkfb_blank_suspend(struct fb_info *info)
 static void mtkfb_blank_resume(struct fb_info *info)
 {
 	int ret = 0;
+	int hdmiret = 0;
 	struct mtkfb_device *mtkfb_dev = NULL;
+
+	hdmiret = vIsHdmiEarlySuspendInNormalMode();
 
 	mtkfb_dev = (struct mtkfb_device *)info->par;
 	MTKFB_LOG("enter late_resume\n");
 	/*when system first start up ,bypass the first time*/
 	if (!fg_mm_pm_state) {
-		pm_runtime_get_sync(mtkfb_dev->dev);
+		if (hdmiret != HDMI_INTERNAL_EARLY_SUSPEND_IN_RECOVERY)
+			pm_runtime_get_sync(mtkfb_dev->dev);
 		fg_mm_pm_state = true;
 	}
 
@@ -533,6 +545,9 @@ static void mtkfb_blank_resume(struct fb_info *info)
 #endif
 
 	ret = disp_hw_mgr_resume();
+	/* change back to kara defalut status after reocvery mode resume */
+	if (hdmiret == HDMI_INTERNAL_EARLY_SUSPEND_IN_RECOVERY)
+		disp_common_info.low_energy_dozing_mode_enable = 0;
 	if (ret) {
 		MTKFB_ERR("primary display resume failed\n");
 		return;

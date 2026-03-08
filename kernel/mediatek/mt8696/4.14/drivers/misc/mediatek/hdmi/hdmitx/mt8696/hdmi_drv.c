@@ -73,6 +73,10 @@
 #if (defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE))
 #include "hdmi_ca.h"
 #endif
+#if IS_ENABLED(CONFIG_MTK_FB)
+#include "disp_hw_mgr.h"
+#endif
+
 #define SAVELENGTH 100
 #define SHOW_HDMISTATE_LOG_TIME 500
 #define MASK_UNUSE_INTERRUPT_TIME 200
@@ -172,6 +176,12 @@ bool _fgWifiHdcpErr = FALSE; /* for hdcp 2.x to 1.x converter */
 
 size_t display_off;
 unsigned int u1hdcponoff_bak;
+
+#define HDMI_EARLY_SUSPEND_MODE_POWER_OFF 0
+#define HDMI_EARLY_SUSPEND_MODE_BLACK_SCREEN 1
+//CONFIG_HDMI_BLACK : HdmiEarlySuspendMode
+unsigned char HdmiEarlySuspendMode = HDMI_EARLY_SUSPEND_MODE_POWER_OFF;
+
 static unsigned char hdmi_first_hdcp = 1;
 
 size_t display_off;
@@ -757,6 +767,22 @@ static void hdmi_internal_resume(void)
 
 /*------------------------------------------------------*/
 
+int vIsHdmiEarlySuspendInNormalMode(void)
+{
+	int ret = HDMI_INTERNAL_EARLY_SUSPEND_IN_NORMAL;
+
+	HDMI_DRV_FUNC();
+	TX_DEF_LOG("hdmi_early_suspend %d\n", hdmi_suspend_en);
+
+	if (HdmiEarlySuspendMode == HDMI_EARLY_SUSPEND_MODE_POWER_OFF) {
+		if (hdmi_boot_powerenable == 1) {
+			ret = HDMI_INTERNAL_EARLY_SUSPEND_IN_RECOVERY;
+			TX_DEF_LOG("hdmi suspend in recovery.\n");
+		}
+	}
+
+	return ret;
+}
 
 void HDMI_DisableIrq(void)
 {
@@ -1447,10 +1473,10 @@ void hdmi_internal_power_off(void)
 	/*Use CCF APIs to disable clocsk */
 	if (hdmi_clockenable == 1) {
 		TX_DEF_LOG("[clock]rgb2hdmi Power Off\n");
-#ifndef CONFIG_HDMI_BLACK
-		hdmi_clockenable = 0;
-		hdmi_clock_enable(false);
-#endif
+		if (HdmiEarlySuspendMode == HDMI_EARLY_SUSPEND_MODE_POWER_OFF) {
+			hdmi_clockenable = 0;
+			hdmi_clock_enable(false);
+		}
 	}
 
 	if (hdmi_hdtvd_first != 0) {
@@ -1472,10 +1498,10 @@ void hdmi_internal_power_off(void)
 	mdelay(500);
 	if (hdmi_hdmi_on == 1) {
 		TX_DEF_LOG("[clock]hdmitx clock Power Off\n");
-#ifndef CONFIG_HDMI_BLACK
-		hdmi_hdmi_on = 0;
-		pm_runtime_put_sync(&hdmi_pdev->dev);
-#endif
+		if (HdmiEarlySuspendMode == HDMI_EARLY_SUSPEND_MODE_POWER_OFF) {
+			hdmi_hdmi_on = 0;
+			pm_runtime_put_sync(&hdmi_pdev->dev);
+		}
 		TX_DEF_LOG("[pm]Power Domain Off\n");
 	}
 }
@@ -1811,10 +1837,10 @@ static int hdmi_event_notifier_callback(struct notifier_block *self,
 		HDMI_AKSV[0], HDMI_AKSV[1], HDMI_AKSV[2], HDMI_AKSV[3],
 		HDMI_AKSV[4]);
 
-#ifndef CONFIG_HDMI_BLACK
-		if (hdmi_suspend_en)
-			hdmi_internal_power_off();
-#endif
+		if (HdmiEarlySuspendMode == HDMI_EARLY_SUSPEND_MODE_POWER_OFF) {
+			if (hdmi_suspend_en)
+				hdmi_internal_power_off();
+		}
 		if (_fgDolbyHdrEnable == false)
 			vHDMIAVMute();
 		break;
@@ -2668,6 +2694,7 @@ void hdmi_clock_probe(struct platform_device *pdev)
 	ret = pm_runtime_get_sync(&pdev->dev);
 	TX_DEF_LOG("[pm]Power Domain On %d\n", ret);
 	hdmi_pdev = pdev;
+	hdmi_hdmi_on = 1;
 
 	for (i = 0; i <= MMSYS_HDMI_P2I; i++) {
 		hdmi_ref_clock[i] = devm_clk_get(&pdev->dev,
@@ -2923,6 +2950,25 @@ void hdmi_show_hdcp_information(void)
 		_u2TxBStatus, _fgRepeater);
 }
 
+
+void hdmi_set_early_suspend_mode(unsigned char ui1mode)
+{
+	bool bEnergyDozingMode = false;
+
+	if (ui1mode == 0) {
+		HdmiEarlySuspendMode = HDMI_EARLY_SUSPEND_MODE_POWER_OFF;
+		bEnergyDozingMode = false;
+	} else {
+		HdmiEarlySuspendMode = HDMI_EARLY_SUSPEND_MODE_BLACK_SCREEN;
+		bEnergyDozingMode = true;
+	}
+
+#if IS_ENABLED(CONFIG_MTK_FB)
+	disp_hw_mgr_send_event(DISP_EVENT_LOW_ENERGY_DOZING_MODE,
+		(void *)&bEnergyDozingMode);
+#endif
+}
+
 const struct HDMI_DRIVER *HDMI_GetDriver(void)
 {
 	static const struct HDMI_DRIVER HDMI_DRV = {
@@ -2971,6 +3017,7 @@ const struct HDMI_DRIVER *HDMI_GetDriver(void)
 		.checkedidheader = hdmi_check_edid_header,
 		.gethdmistatus = hdmi_check_status,
 		.hdcp_info = hdmi_hdcp_information,
+		.setearlysuspendmode = hdmi_set_early_suspend_mode,
 	};
 
 	return &HDMI_DRV;

@@ -945,7 +945,7 @@ int disp_vdp_change_resolution(const struct disp_hw_resolution *info)
 	disp_path_get_active_zone(0, info->res_mode, &h_start, &v_start_odd,
 				  &v_start_even);
 
-	if (video_layer[0].enable) {
+	if (video_layer[0].layer_start) {
 		/* set HTotal & VTotal pixel for spec resolution. */
 		fmt_hal_set_mode(DISP_FMT_MAIN, info->res_mode, true);
 		fmt_hal_set_tv_type(DISP_FMT_MAIN, tv_type);
@@ -963,7 +963,7 @@ int disp_vdp_change_resolution(const struct disp_hw_resolution *info)
 			disp_vdp_get_vsync_duration(info);
 	}
 
-	if (video_layer[1].enable) {
+	if (video_layer[1].layer_start) {
 		/* set HTotal & VTotal pixel for spec resolution. */
 		fmt_hal_set_mode(DISP_FMT_SUB, info->res_mode, true);
 		fmt_hal_set_tv_type(DISP_FMT_SUB, tv_type);
@@ -1585,7 +1585,13 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 		dovi_md_info->pts = dovi_info->pts;
 		dovi_md_info->len = dovi_info->len;
 		dovi_md_info->svp = dovi_info->svp;
+		dovi_md_info->keyfrm_len = 0;
 		memset(&dovi_md_info->buff, 0, DOVI_MD_MAX_LEN);
+
+		if (dovi_info->len >= DOVI_MD_MAX_LEN || dovi_info->len == 0) {
+			DISP_LOG_E("dovi_rpu size error: %d\n", dovi_info->len);
+			goto release_ion_handle;
+		}
 
 		if (dovi_md_info->svp) {
 			/* store rpu data into tz buffers, not transmit to dovi
@@ -1601,19 +1607,39 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 		} else {
 			vdp_printf(
 				VDP_DOVI_LOG,
-				"dovi frm pts %lld rpu pts %lld len %d addr %p\n",
-				config->pts, dovi_info->pts, dovi_info->len,
-				dovi_info->addr);
+				"dovi frm pts %lld rpu pts %lld addr %p %d %d %d %d\n",
+				config->pts, dovi_info->pts, dovi_info->addr,
+				dovi_info->len, dovi_info->offset,
+				dovi_info->keyfrm_len,
+				dovi_info->keyfrm_offset);
+
 			if (dovi_info->len >= DOVI_MD_MAX_LEN) {
 				DISP_LOG_E("dovi_info size too long: %d\n",
 					dovi_info->len);
 				goto release_ion_handle;
 			}
 			if (copy_from_user(dovi_md_info->buff,
-					   (void __user *)(dovi_info->addr),
+					   (void __user *)(dovi_info->addr +
+					   dovi_info->offset),
 					   dovi_info->len)) {
 				DISP_LOG_E("dovi info copy from user fail\n");
 				goto release_ion_handle;
+			}
+
+
+			if ((dovi_info->keyfrm_len > dovi_info->len) &&
+				(dovi_info->keyfrm_len < DOVI_MD_MAX_LEN) &&
+				(dovi_info->keyfrm_len - dovi_info->len >
+				RPU_DEPEND_LEN_MIN)) {
+				if (copy_from_user(dovi_md_info->keyfrm_buff,
+					(void __user *)(dovi_info->addr +
+					dovi_info->keyfrm_offset),
+					dovi_info->keyfrm_len)) {
+					DISP_LOG_E("dovi keyfrm copy fail\n");
+					goto release_ion_handle;
+				}
+				dovi_md_info->keyfrm_len =
+					dovi_info->keyfrm_len;
 			}
 
 			if (dovi_info->len != 0) {

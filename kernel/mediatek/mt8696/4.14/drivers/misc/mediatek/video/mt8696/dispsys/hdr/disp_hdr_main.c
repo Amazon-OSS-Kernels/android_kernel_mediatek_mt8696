@@ -48,7 +48,7 @@
 
 #define MULBASE 10
 #define N 50
-
+#define WAKE_UP_DISP_HDR_THREAD4 4
 static struct task_struct *disp_hdr_thread0, *disp_hdr_thread1;
 static struct task_struct *disp_hdr_thread2, *disp_hdr_thread3;
 static struct task_struct *disp_hdr_thread4;
@@ -445,11 +445,13 @@ int disp_hdr_suspend(void)
 	disp_hdr_fe_start_stop(LAYER1, false);
 	disp_hdr_fe_start_stop(LAYER2, false);
 	disp_hdr_fe_start_stop(LAYER3, false);
-	#ifndef CONFIG_HDMI_BLACK
 	#ifdef CONFIG_DOVI_SUPPORT
-	if (g_dovi_efuse)
-		disp_hdr_vdo_be_start_stop(false);
-	#endif
+	if (!disp_common_info.low_energy_dozing_mode_enable) {
+		if (g_dovi_efuse && dovi_path_en) {
+			disp_hdr_vdo_be_start_stop(false);
+			disp_hdr_wakeup_routine(WAKE_UP_DISP_HDR_THREAD4);
+		}
+	}
 	#endif
 	hdr_init_done = false;
 	hdr_printf("hdr suspend done\n");
@@ -465,6 +467,19 @@ int disp_hdr_resume(void)
 		disp_dovi_force_gfx_vs10();
 		fg_hdr_deep_suspend = false;
 		hdr_printf("hdr deep resume\n");
+	} else {
+		if (!disp_common_info.low_energy_dozing_mode_enable
+			&& dovi_path_en && g_dovi_efuse) {
+			disp_hdr_vdo_be_start_stop(true);
+			disp_dovi_force_gfx_vs10();
+		}
+	}
+	#else
+	if (!disp_common_info.low_energy_dozing_mode_enable) {
+		if (dovi_path_en && g_dovi_efuse) {
+			disp_hdr_vdo_be_start_stop(true);
+			disp_dovi_force_gfx_vs10();
+		}
 	}
 	#endif
 

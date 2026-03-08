@@ -169,7 +169,7 @@ void vSetNoEdidChkInfo(void)
 	_HdmiSinkAvCap.ui2_sink_colorimetry = 0xffff;
 	_HdmiSinkAvCap.ui4_sink_cea_ntsc_resolution = 0xffffffff;
 	_HdmiSinkAvCap.ui4_sink_cea_pal_resolution = 0xffffffff;
-	_HdmiSinkAvCap.ui2_sink_aud_dec = 0xffff;
+	_HdmiSinkAvCap.ui4_sink_aud_dec = 0xffff;
 	_HdmiSinkAvCap.ui1_sink_dsd_ch_num = 5;
 	for (bInx = 0; bInx < 7; bInx++) {
 		_HdmiSinkAvCap.ui1_sink_pcm_ch_sampling[bInx] = 0xff;
@@ -181,6 +181,7 @@ void vSetNoEdidChkInfo(void)
 		_HdmiSinkAvCap.ui1_sink_dts_hd_ch_sampling[bInx] = 0xff;
 		_HdmiSinkAvCap.ui1_sink_dolby_atmos_ch_sampling[bInx] = 0xff;
 		_HdmiSinkAvCap.ui1_sink_mat_mlp_ch_sampling[bInx] = 0xff;
+		_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[bInx] = 0xff;
 	}
 
 	for (bInx = 0; bInx < 7; bInx++)
@@ -214,6 +215,8 @@ void vSetNoEdidChkInfo(void)
 	_HdmiSinkAvCap.b_sink_SCDC_present = 1;
 	_HdmiSinkAvCap.b_sink_LTE_340M_sramble = 1;
 	_HdmiSinkAvCap.ui1_sink_support_dolby_atoms = FALSE;
+	_HdmiSinkAvCap.ui1_sink_support_mpegh_profile = 0x00;
+	_HdmiSinkAvCap.ui1_sink_support_mpegh_level = 0x00;
 	_HdmiSinkAvCap.u1_sink_allm_support = 1;
 	_HdmiSinkAvCap.u1_sink_14gamemode_support = 1;
 	_HdmiSinkAvCap.u1_sink_cinemavrr = 1;
@@ -242,7 +245,7 @@ void vClearEdidInfo(void)
 	_HdmiSinkAvCap.ui4_sink_native_ntsc_resolution = 0;
 	_HdmiSinkAvCap.ui4_sink_native_pal_resolution = 0;
 	_HdmiSinkAvCap.ui2_sink_vcdb_data = 0;
-	_HdmiSinkAvCap.ui2_sink_aud_dec = 0;
+	_HdmiSinkAvCap.ui4_sink_aud_dec = 0;
 	_HdmiSinkAvCap.ui1_sink_dsd_ch_num = 0;
 	for (bInx = 0; bInx < 7; bInx++) {
 		if (bInx == 0)
@@ -257,6 +260,7 @@ void vClearEdidInfo(void)
 		_HdmiSinkAvCap.ui1_sink_dts_hd_ch_sampling[bInx] = 0;
 		_HdmiSinkAvCap.ui1_sink_dolby_atmos_ch_sampling[bInx] = 0;
 		_HdmiSinkAvCap.ui1_sink_mat_mlp_ch_sampling[bInx] = 0;
+		_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[bInx] = 0;
 	}
 
 	for (bInx = 0; bInx < 7; bInx++) {
@@ -328,6 +332,8 @@ void vClearEdidInfo(void)
 	_HdmiSinkAvCap.ui1_sink_hf_vsdb_info = 0;
 	_HdmiSinkAvCap.ui1_CNC = 0;
 	_HdmiSinkAvCap.ui1_sink_support_dolby_atoms = FALSE;
+	_HdmiSinkAvCap.ui1_sink_support_mpegh_profile = 0x00;
+	_HdmiSinkAvCap.ui1_sink_support_mpegh_level = 0x00;
 	_HdmiSinkAvCap.u1_sink_allm_support = 0;
 	_HdmiSinkAvCap.u1_sink_14gamemode_support = 0;
 	_HdmiSinkAvCap.u1_sink_cinemavrr = 0;
@@ -1078,8 +1084,9 @@ static void vParser_Audio_Data_Block(unsigned char *prData, unsigned char Len)
 		}
 
 		/* SAD DD+, Byte-3 Bit-0 is Dolby Atmos SAD DD+, Bit-1 is Dolby Atmos ACMOD 28 */
-		if ((((*(prData + bLengthSum + 3) & 0x01) == 0x1) || ((*(prData + bLengthSum + 3) & 0x02) == 0x2))
-				&& (bAudCode == AVD_DOLBY_PLUS)) {
+		if ((((*(prData + bLengthSum + 3) & 0x01) == 0x1)
+			|| ((*(prData + bLengthSum + 3) & 0x02) == 0x2))
+			&& (bAudCode == AVD_DOLBY_PLUS)) {
 			bAudCode = AVD_DOLBY_ATMOS;
 			_HdmiSinkAvCap.ui1_sink_support_dolby_atoms = TRUE;
 			if (bPcmChNum >= 2) {
@@ -1088,12 +1095,12 @@ static void vParser_Audio_Data_Block(unsigned char *prData, unsigned char Len)
 			}
 		}
 
-		if ((bAudCode >= AVD_LPCM) && bAudCode <= AVD_WMA) {
-			_HdmiSinkAvCap.ui2_sink_aud_dec |= (1 << (bAudCode - 1));	/* PCM:1 HDMI_SINK_AUDIO_DEC_LPCM AC3:2 HDMI_SINK_AUDIO_DEC_AC3 */
+		if ((bAudCode >= AVD_LPCM) && bAudCode <= AVD_DOLBY_ATMOS) {
+			/* PCM:1 HDMI_SINK_AUDIO_DEC_LPCM AC3:2 HDMI_SINK_AUDIO_DEC_AC3 */
+			_HdmiSinkAvCap.ui4_sink_aud_dec |= (1 << (bAudCode - 1));
 			/*must support dolby plus if support atmos according to spec*/
-
-		if (bAudCode == AVD_DOLBY_ATMOS)
-				_HdmiSinkAvCap.ui2_sink_aud_dec |= (1 << (AVD_DOLBY_PLUS - 1));
+			if (bAudCode == AVD_DOLBY_ATMOS)
+				_HdmiSinkAvCap.ui4_sink_aud_dec |= (1 << (AVD_DOLBY_PLUS - 1));
 		}
 
 		if (bAudCode == AVD_LPCM) {	/* LPCM */
@@ -1213,7 +1220,37 @@ static void vParser_Audio_Data_Block(unsigned char *prData, unsigned char Len)
 				    (*(prData + bLengthSum + 2) & 0x7f);
 			}
 		}
-	}			/* for(bIdx = 0; bIdx < bNo/3; bIdx++) */
+		/* Audio Extension format - Audio Format Code - 0xF
+		 * See Byte 3 for actual format */
+		if (bAudCode == AVD_EXT) {
+			/* MPEG-H Audio format - Audio Coding Extension Type Code = 0x0B */
+			if ((*(prData + bLengthSum + 3) >> 3) == 0xB) {
+				bAudCode = AVD_MPEGH;
+				_HdmiSinkAvCap.ui4_sink_aud_dec |= HDMI_SINK_AUDIO_DEC_EXT_MPEGH;
+				bPcmChNum = 8; /* fix to 8 as MPEG-H EDID doesn't have channel info */
+				_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[bPcmChNum - 2] |=
+					(*(prData + bLengthSum + 2) & 0x7f);
+				/* MPEG-H Level
+				 * Level - 1 to 5 valid level
+				 * Level - 0 Unspecified and support at least Level - 3
+				 * 6 and 7 Reserved for future
+				 */
+				_HdmiSinkAvCap.ui1_sink_support_mpegh_level =
+					(*(prData + bLengthSum + 1) & 0x07);
+				if (_HdmiSinkAvCap.ui1_sink_support_mpegh_level == 0x0) {
+					_HdmiSinkAvCap.ui1_sink_support_mpegh_level = 0x3;
+				}
+				/* MPEG-H Profile
+				 * 0 - Base Line Profile (BL)
+				 * 1 - Low Complexity Profile (LC)
+				 */
+				_HdmiSinkAvCap.ui1_sink_support_mpegh_profile =
+					(*(prData + bLengthSum + 3) & 0x1);
+				/* Default suggested MPEG-H format is BL-3 */
+			}
+
+		}
+	} /* for(bIdx = 0; bIdx < bNo/3; bIdx++) */
 }
 
 static void vParser_Speaker_Allocation(
@@ -2136,7 +2173,7 @@ void vSetEdidChkError(void)
 	_HdmiSinkAvCap.ui4_sink_native_ntsc_resolution = 0;
 	_HdmiSinkAvCap.ui4_sink_native_pal_resolution = 0;
 	_HdmiSinkAvCap.ui2_sink_vcdb_data = 0;
-	_HdmiSinkAvCap.ui2_sink_aud_dec = 1;	/* PCM only */
+	_HdmiSinkAvCap.ui4_sink_aud_dec = 1;	/* PCM only */
 	_HdmiSinkAvCap.ui1_sink_dsd_ch_num = 0;
 	for (bInx = 0; bInx < 7; bInx++) {
 		if (bInx == 0)
@@ -2149,6 +2186,7 @@ void vSetEdidChkError(void)
 		_HdmiSinkAvCap.ui1_sink_ec3_ch_sampling[bInx] = 0;
 		_HdmiSinkAvCap.ui1_sink_dolby_atmos_ch_sampling[bInx] = 0;
 		_HdmiSinkAvCap.ui1_sink_mat_mlp_ch_sampling[bInx] = 0;
+		_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[bInx] = 0;
 	}
 
 	for (bInx = 0; bInx < 7; bInx++) {
@@ -2172,6 +2210,8 @@ void vSetEdidChkError(void)
 	     SINK_EXT_BLK_CHKSUM_ERR);
 	_HdmiSinkAvCap.b_sink_edid_ready = FALSE;
 	_HdmiSinkAvCap.ui1_sink_support_dolby_atoms = FALSE;
+	_HdmiSinkAvCap.ui1_sink_support_mpegh_profile = 0x00;
+	_HdmiSinkAvCap.ui1_sink_support_mpegh_level = 0x00;
 	_HdmiSinkAvCap.ui1_sink_support_ai = 0;
 
 	_HdmiSinkAvCap.ui4_sink_hdmi_4k2kvic = 0;
@@ -2240,6 +2280,8 @@ void vParserCEADataBlock(unsigned char *prData, unsigned char bLen)
 		    _HdmiSinkAvCap.ui1_sink_dolby_atmos_ch_sampling[bIdx];
 		_HdmiSinkAvCap.ui1_sink_mat_mlp_ch_sampling[bIdx - 1] |=
 			_HdmiSinkAvCap.ui1_sink_mat_mlp_ch_sampling[bIdx];
+		_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[bIdx - 1] |=
+			_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[bIdx];
 	}
 
 	if (_HdmiSinkAvCap.ui2_edid_chksum_and_audio_sup &
@@ -2727,38 +2769,45 @@ void vShowEdidInformation(void)
 	if (_HdmiSinkAvCap.e_sink_rgb_color_bit == HDMI_SINK_NO_DEEP_COLOR)
 		HDMI_PLUG_LOG("Not SUPPORT RGB Deep Color\n");
 
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_LPCM)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_LPCM)
 		HDMI_PLUG_LOG("SUPPORT LPCM\n");
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_AC3)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_AC3)
 		HDMI_PLUG_LOG("SUPPORT AC3 Decode\n");
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_MPEG1)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_MPEG1)
 		HDMI_PLUG_LOG("SUPPORT MPEG1 Decode\n");
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_MP3)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_MP3)
 		HDMI_PLUG_LOG("SUPPORT AC3 Decode\n");
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_MPEG2)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_MPEG2)
 		HDMI_PLUG_LOG("SUPPORT MPEG2 Decode\n");
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_AAC)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_AAC)
 		HDMI_PLUG_LOG("SUPPORT AAC Decode\n");
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_DTS)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_DTS)
 		HDMI_PLUG_LOG("SUPPORT DTS Decode\n");
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_ATRAC)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_ATRAC)
 		HDMI_PLUG_LOG("SUPPORT ATRAC Decode\n");
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_DSD)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_DSD)
 		HDMI_PLUG_LOG("SUPPORT SACD DSD Decode\n");
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_DOLBY_PLUS)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_DOLBY_PLUS)
 		HDMI_PLUG_LOG("SUPPORT Dolby Plus Decode\n");
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_DTS_HD)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_DTS_HD)
 		HDMI_PLUG_LOG("SUPPORT DTS HD Decode\n");
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_MAT_MLP) {
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_MAT_MLP) {
 		HDMI_PLUG_LOG("SUPPORT MAT MLP Decode\n");
 		HDMI_PLUG_LOG("SUPPORT Dolby TrueHD Decode\n");
 	}
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_DST)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_EXT_MPEGH) {
+		if ((_HdmiSinkAvCap.ui1_sink_support_mpegh_level > 0) &&
+			(_HdmiSinkAvCap.ui1_sink_support_mpegh_level < 6))
+			HDMI_PLUG_LOG("SUPPORT MPEGH Decode with Proflie %d Level %d\n",
+				_HdmiSinkAvCap.ui1_sink_support_mpegh_profile,
+				_HdmiSinkAvCap.ui1_sink_support_mpegh_level);
+        }
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_DST)
 		HDMI_PLUG_LOG("SUPPORT SACD DST Decode\n");
-	if ((_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_ATMOS) ||
+	if ((_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_ATMOS) ||
 		(_HdmiSinkAvCap.ui1_sink_support_dolby_atoms == TRUE))
 		HDMI_PLUG_LOG("SUPPORT Dolby ATMOS\n");
-	if (_HdmiSinkAvCap.ui2_sink_aud_dec & HDMI_SINK_AUDIO_DEC_WMA)
+	if (_HdmiSinkAvCap.ui4_sink_aud_dec & HDMI_SINK_AUDIO_DEC_WMA)
 		HDMI_PLUG_LOG("SUPPORT  WMA Decode\n");
 
 	if (_HdmiSinkAvCap.ui1_sink_pcm_ch_sampling[0] != 0) {
@@ -3242,7 +3291,58 @@ void vShowEdidInformation(void)
 		HDMI_PLUG_LOG(
 		"[HDMI]SUPPORT DTS HD Max 8CH, FS is: %s\n",
 			&cDstStr[0]);
+	}
+	if (_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[0] != 0) {
+		for (bInx = 0; bInx < 50; bInx++)
+			memcpy(&cDstStr[0 + bInx], " ", 1);
 
+		for (bInx = 0; bInx < 7; bInx++) {
+			if ((_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[0] >>
+				bInx) & 0x01)
+				memcpy(&cDstStr[0 + bInx * 7],
+				&_cFsStr[bInx][0], 7);
+		}
+		HDMI_PLUG_LOG("[HDMI]SUPPORT MPEGH Max 2CH, Fs is: %s\n",
+			&cDstStr[0]);
+	}
+	if (_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[4] != 0) {
+		for (bInx = 0; bInx < 50; bInx++)
+			memcpy(&cDstStr[0 + bInx], " ", 1);
+
+		for (bInx = 0; bInx < 7; bInx++) {
+			if ((_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[4] >>
+				bInx) & 0x01)
+				memcpy(&cDstStr[0 + bInx * 7],
+				&_cFsStr[bInx][0], 7);
+		}
+		HDMI_PLUG_LOG("[HDMI]SUPPORT MPEGH Max 6CH, Fs is: %s\n",
+			&cDstStr[0]);
+	}
+	if (_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[5] != 0) {
+		for (bInx = 0; bInx < 50; bInx++)
+			memcpy(&cDstStr[0 + bInx], " ", 1);
+
+		for (bInx = 0; bInx < 7; bInx++) {
+			if ((_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[5] >>
+				bInx) & 0x01)
+				memcpy(&cDstStr[0 + bInx * 7],
+				&_cFsStr[bInx][0], 7);
+		}
+		HDMI_PLUG_LOG("[HDMI]SUPPORT MPEGH Max 7CH, Fs is: %s\n",
+			&cDstStr[0]);
+	}
+	if (_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[6] != 0) {
+		for (bInx = 0; bInx < 50; bInx++)
+			memcpy(&cDstStr[0 + bInx], " ", 1);
+
+		for (bInx = 0; bInx < 7; bInx++) {
+			if ((_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[6] >>
+				bInx) & 0x01)
+				memcpy(&cDstStr[0 + bInx * 7],
+				&_cFsStr[bInx][0], 7);
+		}
+		HDMI_PLUG_LOG("[HDMI]SUPPORT MPEGH Max 8CH, FS is: %s\n",
+			&cDstStr[0]);
 	}
 
 	if (_HdmiSinkAvCap.ui1_sink_spk_allocation &
@@ -3585,8 +3685,8 @@ void hdmi_AppGetEdidInfo(
 		_HdmiSinkAvCap.e_sink_ycbcr_color_bit;
 	pv_get_info->ui1_sink_dc420_color_bit =
 		_HdmiSinkAvCap.ui1_sink_dc420_color_bit;
-	pv_get_info->ui2_sink_aud_dec =
-		_HdmiSinkAvCap.ui2_sink_aud_dec | HDMI_SINK_AUDIO_DEC_LPCM;
+	pv_get_info->ui4_sink_aud_dec =
+		_HdmiSinkAvCap.ui4_sink_aud_dec | HDMI_SINK_AUDIO_DEC_LPCM;
 	pv_get_info->ui1_sink_is_plug_in =
 		_stAvdAVInfo.b_hotplug_state;
 	pv_get_info->ui4_hdmi_pcm_ch_type =
@@ -3658,6 +3758,16 @@ void hdmi_AppGetEdidInfo(
 			 (_HdmiSinkAvCap.ui1_sink_mat_mlp_ch_sampling[2] << 8) |
 		(_HdmiSinkAvCap.ui1_sink_mat_mlp_ch_sampling[3] << 16) |
 		(_HdmiSinkAvCap.ui1_sink_mat_mlp_ch_sampling[5] << 24));
+		/* MPEG-H */
+		pv_get_info->ui4_hdmi_mpegh_ch_type =
+			((_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[0]) |
+			 (_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[4] << 8) |
+			 (_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[6] << 16));
+		pv_get_info->ui4_hdmi_mpegh_ch3ch4ch5ch7_type =
+			((_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[1]) |
+			 (_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[2] << 8) |
+			 (_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[3] << 16) |
+			 (_HdmiSinkAvCap.ui1_sink_mpegh_ch_sampling[5] << 24));
 	pv_get_info->ui4_hdmi_pcm_bit_size =
 	    ((_HdmiSinkAvCap.ui1_sink_pcm_bit_size[0]) |
 	     (_HdmiSinkAvCap.ui1_sink_pcm_bit_size[4] << 8) |
@@ -3665,6 +3775,10 @@ void hdmi_AppGetEdidInfo(
 
 	pv_get_info->ui1_sink_support_dolby_atoms =
 		_HdmiSinkAvCap.ui1_sink_support_dolby_atoms;
+	pv_get_info->ui1_sink_support_mpegh_profile =
+		_HdmiSinkAvCap.ui1_sink_support_mpegh_profile;
+	pv_get_info->ui1_sink_support_mpegh_level =
+		_HdmiSinkAvCap.ui1_sink_support_mpegh_level;
 	pv_get_info->ui1_sink_i_latency_present =
 		_HdmiSinkAvCap.ui1_sink_i_latency_present;
 	pv_get_info->ui1_sink_p_audio_latency =
@@ -3693,7 +3807,7 @@ void hdmi_AppGetEdidInfo(
 		      pv_get_info->ui4_pal_resolution,
 		      pv_get_info->ui2_sink_cec_address);
 	HDMI_EDID_LOG("[edid]to app,aud dec:%x,pcm ch:%x\n",
-		pv_get_info->ui2_sink_aud_dec,
+		pv_get_info->ui4_sink_aud_dec,
 		      pv_get_info->ui4_hdmi_pcm_ch_type);
 
 	pv_get_info->b_sink_SCDC_present =

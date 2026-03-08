@@ -25,7 +25,7 @@
 #include "hdmi_ca.h"
 #endif
 
-
+#define HDMI_CTRL_VAL_FF 0xFF
 struct HDMI_AV_INFO_T _stAvdAVInfo = { 0 };
 
 int _ui4GammaReg[5] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -1476,8 +1476,13 @@ void vSetHDMIAudioIn(void)
 	vWriteHdmiGRLMsk(AIP_TXCTRL, 0, DSD_MUTE_DATA | LAYOUT1);
 
 	if (_stAvdAVInfo.e_hdmi_aud_in == SV_I2S) {
-
-		if (_stAvdAVInfo.e_aud_code == AVD_DSD) {
+		if ((((_stAvdAVInfo.e_aud_code == AVD_DTS_HD) ||
+			(_stAvdAVInfo.e_aud_code == AVD_MPEGH)) &&
+			((_stAvdAVInfo.bhdmiLChstatus[3] & 0xF) == 0x9)) ||
+			(_stAvdAVInfo.e_aud_code == AVD_MAT_MLP)) {
+			vSetHdmiI2SDataFmt(_stAvdAVInfo.e_I2sFmt);
+			vSetHdmiHbrConfig(TRUE);
+		} else if (_stAvdAVInfo.e_aud_code == AVD_DSD) {
 			vSetHdmiDsdConfig(
 				_stAvdAVInfo.ui1_aud_out_ch_number, 0);
 			vSetHdmiI2SChNum(
@@ -1708,11 +1713,33 @@ void vSendAVIInfoFrame(unsigned char ui1resindex,
 
 }
 
+static unsigned char vTransfer3dResIndex(unsigned char ui1resindex)
+{
+	unsigned char bResIndex;
+
+	if (ui1resindex == HDMI_VIDEO_1920x1080p3d_23Hz)
+		bResIndex = HDMI_VIDEO_1920x1080p_23Hz;
+	else if (ui1resindex == HDMI_VIDEO_1920x1080p3d_24Hz)
+		bResIndex = HDMI_VIDEO_1920x1080p_24Hz;
+	else if (ui1resindex == HDMI_VIDEO_1920x1080i3d_60Hz)
+		bResIndex = HDMI_VIDEO_1920x1080i_60Hz;
+	else if (ui1resindex == HDMI_VIDEO_1920x1080i3d_50Hz)
+		bResIndex = HDMI_VIDEO_1920x1080i_50Hz;
+	else if (ui1resindex == HDMI_VIDEO_1280x720p3d_60Hz)
+		bResIndex = HDMI_VIDEO_1280x720p_60Hz;
+	else if (ui1resindex == HDMI_VIDEO_1280x720p3d_50Hz)
+		bResIndex = HDMI_VIDEO_1280x720p_50Hz;
+	else
+		bResIndex = HDMI_CTRL_VAL_FF;
+
+	return bResIndex;
+}
+
 void vSendVendorSpecificInfoFrame(unsigned char ui1resindex)
 {
 	unsigned char bResTableIndex, b3DStruct, bVic;
 	unsigned char fg3DRes;
-
+	unsigned char bResIdx;
 	HDMI_DRV_FUNC();
 
 	if (i4SharedInfo(SI_EDID_VSDB_EXIST) == FALSE)
@@ -1720,25 +1747,21 @@ void vSendVendorSpecificInfoFrame(unsigned char ui1resindex)
 
 	fg3DRes = TRUE;
 
-	if (ui1resindex == HDMI_VIDEO_1920x1080p3d_23Hz)
-		ui1resindex = HDMI_VIDEO_1920x1080p_23Hz;
-	else if (ui1resindex == HDMI_VIDEO_1920x1080p3d_24Hz)
-		ui1resindex = HDMI_VIDEO_1920x1080p_24Hz;
-	else if (ui1resindex == HDMI_VIDEO_1920x1080i3d_60Hz)
-		ui1resindex = HDMI_VIDEO_1920x1080i_60Hz;
-	else if (ui1resindex == HDMI_VIDEO_1920x1080i3d_50Hz)
-		ui1resindex = HDMI_VIDEO_1920x1080i_50Hz;
-	else if (ui1resindex == HDMI_VIDEO_1280x720p3d_60Hz)
-		ui1resindex = HDMI_VIDEO_1280x720p_60Hz;
-	else if (ui1resindex == HDMI_VIDEO_1280x720p3d_50Hz)
-		ui1resindex = HDMI_VIDEO_1280x720p_50Hz;
+	bResIdx = vTransfer3dResIndex(ui1resindex);
+	if (bResIdx != HDMI_CTRL_VAL_FF)
+		ui1resindex = bResIdx;
 	else
 		fg3DRes = FALSE;
 
 	b3DStruct = 0;
 	bVic = 0;
 
-	bResTableIndex = HDMI_VIDEO_ID_CODE[ui1resindex];	/* bData4 */
+	if (ui1resindex < HDMI_VIDEO_RESOLUTION_NUM)
+		bResTableIndex = HDMI_VIDEO_ID_CODE[ui1resindex]; /* bData4 */
+	else {
+		HDMI_PLUG_LOG("unknown res 0x%x\n", ui1resindex);
+		bResTableIndex = HDMI_VIDEO_ID_CODE[0];	/* bData4 */
+	}
 
 	if (fg3DRes == TRUE)
 		vHalSendVendorSpecificInfoFrame(fg3DRes,
@@ -3102,6 +3125,14 @@ void vSendAudioInfoFrame(void)
 	if (_stAvdAVInfo.e_hdmi_aud_in == SV_SPDIF) {
 		_bAudInfoFm[0] = 0x00;	/* CC as 0, */
 		_bAudInfoFm[3] = 0x00;	/* CA 2ch */
+	} else if ((_stAvdAVInfo.e_aud_code != AVD_LPCM) &&
+		(_stAvdAVInfo.e_aud_code != AVD_DSD) &&
+		(_stAvdAVInfo.e_aud_code != AVD_CDDA) &&
+		(_stAvdAVInfo.e_aud_code != AVD_SACD_PCM) &&
+		(_stAvdAVInfo.e_aud_code != AVD_HDCD)) {
+		/* set refer to header for codec raw data*/
+		_bAudInfoFm[0] = 0x00;
+		_bAudInfoFm[3] = 0x00;
 	} else {		/* pcm */
 
 		switch (_stAvdAVInfo.ui2_aud_out_ch.word & 0x7fb) {
@@ -3537,6 +3568,11 @@ void vHalSendVrrEMP(bool fgEnable, unsigned char *pr_bData)
 void vSendVrrEMP(void)
 {
 	unsigned char bVrrEMPPacket[11];
+
+	if (_stAvdAVInfo.e_resolution >= MAX_RES) {
+		TX_DEF_LOG("unknown res:(0x%x)", _stAvdAVInfo.e_resolution);
+		return;
+	}
 
 	bVrrEMPPacket[0] = 0x84;
 	bVrrEMPPacket[1] = 0x00;
@@ -5459,6 +5495,11 @@ void vLowLatencyDoviEnable(bool fgEnable)
 void vHalVrrEnable(bool fgEnable)
 {
 	unsigned int bData = 0;
+
+	if (_stAvdAVInfo.e_resolution >= MAX_RES) {
+		TX_DEF_LOG("unknown res:(0x%x)", _stAvdAVInfo.e_resolution);
+		return;
+	}
 
 	bData = bReadByteHdmiGRL(HDMI_VRR_CFG);
 	bData = bData & 0xFF0;

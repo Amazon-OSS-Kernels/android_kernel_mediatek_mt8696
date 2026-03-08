@@ -172,6 +172,11 @@ enum HDMI_CEC_STATE {
 	HDMI_CEC_STATE_GET_CMD
 };
 
+enum HDMI_INTERNAL_EARLY_SUSPEND_MODE {
+	HDMI_INTERNAL_EARLY_SUSPEND_IN_NORMAL = 0,
+	HDMI_INTERNAL_EARLY_SUSPEND_IN_RECOVERY = 1,
+};
+
 /* -------------------------------------------------------------------- */
 
 struct HDMI_UTIL_FUNCS {
@@ -237,6 +242,7 @@ struct HDMI_DRIVER {
 	unsigned char (*checkedidheader)(void);
 	unsigned int (*gethdmistatus)(void);
 	void (*hdcp_info)(struct HDCP_INFO *hdcp_information);
+	void (*setearlysuspendmode)(unsigned char ui1mode);
 };
 
 
@@ -263,5 +269,6 @@ extern unsigned int hdmi_hotplugout_count;
 extern unsigned int hdmi_TmrValue[MAX_HDMI_TMR_NUMBER];
 extern bool fgCaHDMIGetHdr10pVSIFInfo(unsigned char *pdata);
 extern void hdmi_game_mode_enable(unsigned int en);
-
+extern void hdmi_set_early_suepend_mode(unsigned char ui1mode);
+extern int vIsHdmiEarlySuspendInNormalMode(void);
 #endif

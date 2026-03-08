@@ -409,7 +409,7 @@ int disp_dovi_force_gfx_vs10(void)
 	dovi_be_hal_set_enable(true);
 	disp_fefifo_drv_set_input_order(2, 5);
 	disp_fefifo_drv_set_input_order(3, 5);
-
+	osd_enable = 1;
 	dovi_gfx_fe_config_lut(LAYER0, p_gfx_fe_lut);
 	dovi_gfx_fe_config_lut(LAYER1, p_gfx_fe_lut);
 

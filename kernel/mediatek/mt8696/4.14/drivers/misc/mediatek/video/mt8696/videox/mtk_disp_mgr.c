@@ -278,6 +278,8 @@ struct compat_mtk_disp_dovi_md_s {
 	uint32_t addr;
 	int fd;
 	uint32_t offset;
+	uint32_t keyfrm_offset;
+	uint32_t keyfrm_len;
 };
 
 struct compat_mtk_disp_buffer {

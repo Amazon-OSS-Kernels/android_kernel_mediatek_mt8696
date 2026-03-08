@@ -842,8 +842,10 @@ _err:
 			 * exception once the queue is empty
 			 */
 			WARN_ON(!mmc->card); /*bug*/
-			if (mrq && mrq->cmdq_req)
+			if (mrq && mrq->cmdq_req) {
 				mrq->cmdq_req->resp_err = true;
+				mrq->cmdq_req->resp_arg = cmdq_readl(cq_host, CQCRA);
+			}
 			pr_notice("%s: Response error (0x%08x) from card !!!\n",
 				mmc_hostname(mmc), cmdq_readl(cq_host, CQCRA));
 		} else {

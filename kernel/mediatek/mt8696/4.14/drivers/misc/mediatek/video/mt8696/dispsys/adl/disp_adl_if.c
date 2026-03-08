@@ -498,6 +498,8 @@ int disp_adl_deep_suspend(void)
 #endif
 int disp_adl_suspend(void)
 {
+	if (!disp_common_info.low_energy_dozing_mode_enable)
+		disp_adl_clock_on_off(MMSYS_ADL, false);
 	disp_adl_clock_on_off(DISPSYS_ADL, false);
 	adl_printf("%s done\n", __func__);
 

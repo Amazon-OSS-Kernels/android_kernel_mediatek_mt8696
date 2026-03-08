@@ -582,6 +582,16 @@ static int _disp_event_callback(enum DISP_EVENT event, void *data)
 	case DISP_EVENT_ALLM:
 		_disp_set_cmd(DISP_CMD_ALLM_TYPE, data);
 		break;
+
+	case DISP_EVENT_LOW_ENERGY_DOZING_MODE:
+		disp_common_info.low_energy_dozing_mode_enable
+			= *(bool *)data;
+		disp_hw_mgr.common_info.low_energy_dozing_mode_enable
+			= *(bool *)data;
+		DISP_LOG_I("%s low_energy_dozing_mode_enable:%d.\n", __func__,
+			disp_common_info.low_energy_dozing_mode_enable);
+		break;
+
 	default:
 		break;
 	}
@@ -1384,6 +1394,13 @@ int disp_hw_mgr_deep_suspend(void)
 	struct disp_hw *drv;
 	enum DISP_MODULE_ENUM module;
 
+	if (!disp_common_info.low_energy_dozing_mode_enable) {
+		/* when dozing mode disable, dislay has clk off on early */
+		/* suspend, but for dozing mode enable, it is need to clk */
+		/* off all display clock when do deep suspend. */
+		DISP_LOG_I("display has clk off when dozing mode disable.\n");
+		return ret;
+	}
 	for (i = 0; i < DISP_MODULE_NUM; i++) {
 		module = mgr->sequence.deep_suspend[i];
 		drv = mgr->disp_hw_drv[module];
@@ -1404,6 +1421,10 @@ int disp_hw_mgr_deep_resume(void)
 	struct disp_hw *drv;
 	enum DISP_MODULE_ENUM module;
 
+	if (!disp_common_info.low_energy_dozing_mode_enable) {
+		DISP_LOG_I("display has clk off when dozing mode disable.\n");
+		return ret;
+	}
 	for (i = 0; i < DISP_MODULE_NUM; i++) {
 		module = mgr->sequence.deep_resume[i];
 		drv = mgr->disp_hw_drv[module];

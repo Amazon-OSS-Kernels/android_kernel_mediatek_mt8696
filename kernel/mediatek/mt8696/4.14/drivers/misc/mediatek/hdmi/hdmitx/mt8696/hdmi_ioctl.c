@@ -45,6 +45,8 @@
 #define HDMI_DEVNAME "hdmitx"
 DEFINE_SEMAPHORE(hdmi_update_mutex);
 
+#define HDMI_IOCTL_VAL_FF 0xff
+
 static struct HDMI_DRIVER *hdmi_drv;
 static dev_t hdmi_devno;
 static struct cdev *hdmi_cdev;
@@ -1149,6 +1151,13 @@ defined(CONFIG_MTK_HDMI_HDCP_SUPPORT)\
 				hdmi_vrr_en(1);
 			else
 				hdmi_vrr_en(0);
+			break;
+		}
+	case MTK_HDMI_EARLY_SUSPEND_MODE:
+		{
+			unsigned char ui1mode = (arg & HDMI_IOCTL_VAL_FF);
+
+			hdmi_drv->setearlysuspendmode(ui1mode);
 			break;
 		}
 	default:
