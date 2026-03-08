@@ -187,13 +187,6 @@ struct mmc_request {
 	int			tag;
 };
 
-struct vendor_command_data {
-	u8 sub_number;
-	u8 dummy_data[3];
-	u8 block_cnt[4];
-	u8 reserved[504];
-};
-
 struct mmc_card;
 
 void mmc_wait_for_req(struct mmc_host *host, struct mmc_request *mrq);
@@ -205,7 +198,5 @@ int mmc_hw_reset(struct mmc_host *host);
 int mmc_cmdq_hw_reset(struct mmc_host *host);
 #endif
 void mmc_set_data_timeout(struct mmc_data *data, const struct mmc_card *card);
-extern int mmc_send_vendor_samsung_password_write(struct mmc_card *card, const unsigned char *buf);
-extern int mmc_send_vendor_samsung_ssr_read(struct mmc_card *card, unsigned char *buf);
 
 #endif /* LINUX_MMC_CORE_H */

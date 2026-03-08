@@ -156,6 +156,8 @@ void mtk_vcodec_set_curr_ctx(struct mtk_vcodec_dev *dev,
 	struct mtk_vcodec_ctx *ctx, int hw_id);
 struct mtk_vcodec_ctx *mtk_vcodec_get_curr_ctx(struct mtk_vcodec_dev *dev,
 	int hw_id);
+void mtk_vcodec_add_ctx_list(struct mtk_vcodec_ctx *ctx);
+void mtk_vcodec_del_ctx_list(struct mtk_vcodec_ctx *ctx);
 struct vdec_fb *mtk_vcodec_get_fb(struct mtk_vcodec_ctx *ctx);
 int mtk_vdec_put_fb_ext(struct mtk_vcodec_ctx *ctx, int type);
 int mtk_vdec_put_fb(struct mtk_vcodec_ctx *ctx, int type);

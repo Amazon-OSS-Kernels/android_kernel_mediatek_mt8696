@@ -1120,6 +1120,10 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 	bool is_Y_C_independent = false;
 	struct mtk_vdp_hdr10_plus_svp_handle_t
 		hdr10_plus_svp_handle; /*for hdr10+ secure file*/
+
+	if (!disp_vdp_check_layer_id(config->layer_id, __LINE__))
+		return VDP_INVALID_INDEX;
+
 	memset(&hdr10_plus_svp_handle, 0, sizeof(hdr10_plus_svp_handle));
 
 	/*add for dovi idk2.6 pip case*/

@@ -1616,6 +1616,7 @@ static long mtk_vcu_unlocked_ioctl(struct file *file, unsigned int cmd,
 			return -EINVAL;
 		}
 
+		mutex_lock(&vcu_queue->dev_lock);
 		if (cmd == VCU_MVA_ALLOCATION) {
 			mem_priv =
 				mtk_vcu_get_buffer(vcu_queue, &mem_buff_data);
@@ -1651,6 +1652,7 @@ static long mtk_vcu_unlocked_ioctl(struct file *file, unsigned int cmd,
 			list_add_tail(&tmp->list, &vcu_dev->pa_pages.list);
 #endif
 		}
+		mutex_unlock(&vcu_queue->dev_lock);
 
 		pr_debug("[VCU] VCU_ALLOCATION %d va %llx, pa %llx, iova %llx\n",
 			cmd == VCU_MVA_ALLOCATION, mem_buff_data.va,
@@ -1689,6 +1691,7 @@ static long mtk_vcu_unlocked_ioctl(struct file *file, unsigned int cmd,
 			pr_debug("[VCU] Dma free invalid buf!\n");
 			return PTR_ERR(mem_priv);
 		}
+		mutex_lock(&vcu_queue->dev_lock);
 		if (cmd == VCU_MVA_FREE) {
 			if (vcu_ptr->iommu_padding)
 				mem_buff_data.iova |= 0x100000000UL;
@@ -1710,6 +1713,7 @@ static long mtk_vcu_unlocked_ioctl(struct file *file, unsigned int cmd,
 				}
 			}
 		}
+		mutex_unlock(&vcu_queue->dev_lock);
 
 		pr_debug("[VCU] VCU_FREE %d va %llx, pa %llx, iova %llx\n",
 			cmd == VCU_MVA_FREE, mem_buff_data.va,

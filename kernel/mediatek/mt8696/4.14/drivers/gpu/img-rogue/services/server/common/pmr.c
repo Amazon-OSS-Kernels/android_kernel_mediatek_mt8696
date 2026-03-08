@@ -361,13 +361,6 @@ _PMRCreate(PMR_SIZE_T uiLogicalSize,
 	psPMR = (PMR *) pvPMRLinAddr;
 	psMappingTable = (PMR_MAPPING_TABLE *) (((IMG_CHAR *) pvPMRLinAddr) + sizeof(*psPMR));
 
-	eError = OSLockCreate(&psPMR->hLock);
-	if (eError != PVRSRV_OK)
-	{
-		OSFreeMem(psPMR);
-		return eError;
-	}
-
 	/* Setup the mapping table */
 	psMappingTable->uiChunkSize = uiChunkSize;
 	psMappingTable->ui32NumVirtChunks = ui32NumVirtChunks;
@@ -377,7 +370,22 @@ _PMRCreate(PMR_SIZE_T uiLogicalSize,
 	for (i=0; i<ui32NumPhysChunks; i++)
 	{
 		ui32Temp = pui32MappingTable[i];
-		psMappingTable->aui32Translation[ui32Temp] = ui32Temp;
+		if (ui32Temp < ui32NumVirtChunks)
+		{
+			psMappingTable->aui32Translation[ui32Temp] = ui32Temp;
+		}
+		else
+		{
+			OSFreeMem(psPMR);
+			return PVRSRV_ERROR_PMR_INVALID_MAP_INDEX_ARRAY;
+		}
+	}
+
+	eError = OSLockCreate(&psPMR->hLock);
+	if (eError != PVRSRV_OK)
+	{
+		OSFreeMem(psPMR);
+		return eError;
 	}
 
 	/* Setup the PMR */
@@ -1682,8 +1690,15 @@ PMR_WriteBytes(PMR *psPMR,
 }
 
 PVRSRV_ERROR
-PMRMMapPMR(PMR *psPMR, PMR_MMAP_DATA pOSMMapData)
+PMRMMapPMR(PMR *psPMR, PMR_MMAP_DATA pOSMMapData, PVRSRV_MEMALLOCFLAGS_T uiFlags)
 {
+	/* if writeable mapping is requested on non-writeable PMR then fail */
+	if (!PVRSRV_CHECK_CPU_WRITEABLE(psPMR->uiFlags) &&
+	    PVRSRV_CHECK_CPU_WRITEABLE(uiFlags))
+	{
+		return PVRSRV_ERROR_PMR_NOT_PERMITTED;
+	}
+
 	if (psPMR->psFuncTab->pfnMMap)
 	{
 		return psPMR->psFuncTab->pfnMMap(psPMR->pvFlavourData, psPMR, pOSMMapData);

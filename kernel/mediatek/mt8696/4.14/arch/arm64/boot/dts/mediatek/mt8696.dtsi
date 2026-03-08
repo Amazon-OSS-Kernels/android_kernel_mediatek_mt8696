@@ -228,7 +228,7 @@
 		optee_reserved_mem: optee-reserved-memory@83040000 {
 			compatible = "mediatek,mt8696-optee-reserved-memory";
 			no-map;
-			reg = <0 0x83040000 0 0x14200000>;
+			reg = <0 0x83040000 0 0x14400000>;
 		};
 
 		atf_aee_log_reserved_mem@57240000 {
