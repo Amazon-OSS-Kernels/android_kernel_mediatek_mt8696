@@ -1,0 +1,10 @@
+menu "btmtk"
+
+config BTMTK_76X2T
+        tristate "Mediatek Bluetooth driver mtk76x2t."
+        depends on USB
+        default m
+        help
+          Mediatek btusb driver mtk76x2t
+
+endmenu

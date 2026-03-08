@@ -1,0 +1,273 @@
+/*
+ *  Copyright (c) 2016 MediaTek Inc.
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License version 2 as
+ *  published by the Free Software Foundation.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ */
+#ifndef __BTMTK_USB_MAIN_H__
+#define __BTMTK_USB_MAIN_H__
+
+#include <net/bluetooth/bluetooth.h>
+#include "btmtk_define.h"
+#if SUPPORT_UNIFY_WOBLE
+#include <linux/pm_wakeup.h>
+#endif
+
+#include <linux/timer.h>
+#ifdef CONFIG_AMAZON_METRICS_LOG
+#include <linux/metricslog.h>
+#endif
+
+
+#ifdef CONFIG_AMAZON_METRICS_LOG
+#define BT_DOMAIN                  "Kernel"
+#define BT_PROGRAM                 "remote-wireless"
+#define BT_OPERATION               "bt-driver"
+#define BT_KEY_BUS_DISC            "7668-bus-disc"
+#define BT_KEY_WOBLE               "7668-woble"
+#define BT_KEY_PROBE               "7668-probe"
+#endif
+
+#define BD_ADDRESS_SIZE 6
+
+/* 0:
+ * patch download is not complete/BT get patch semaphore fail (WiFi get semaphore success)
+ * 1:
+ * patch download is complete
+ * 2:
+ * patch download is not complete/BT get patch semaphore success
+ */
+#define PATCH_ERR -1
+#define PATCH_IS_DOWNLOAD_BY_OTHER 0
+#define PATCH_READY 1
+#define PATCH_NEED_DOWNLOAD 2
+
+enum {
+	HW_ERR_NONE = 0,
+	HW_ERR_CODE_BT_HOST = 0xF0,
+	HW_ERR_CODE_LEGACY_WOBLE = 0xF1,
+	HW_ERR_CODE_USB_DISC = 0xF2,
+	HW_ERR_CODE_WIFI = 0xF3,
+	HW_ERR_CODE_BT_FW = 0xF4,
+	HW_ERR_CODE_BT_DRIVER = 0xF5,
+};
+
+/* Please keep sync with btmtk_usb_set_state function */
+enum {
+	BTMTK_USB_STATE_UNKNOWN,
+	BTMTK_USB_STATE_INIT,
+	BTMTK_USB_STATE_DISCONNECT,
+	BTMTK_USB_STATE_PROBE,
+	BTMTK_USB_STATE_WORKING,
+	BTMTK_USB_STATE_EARLY_SUSPEND,
+	BTMTK_USB_STATE_SUSPEND,
+	BTMTK_USB_STATE_RESUME,
+	BTMTK_USB_STATE_LATE_RESUME,
+	BTMTK_USB_STATE_FW_DUMP,
+	BTMTK_USB_STATE_SUSPEND_DISCONNECT,
+	BTMTK_USB_STATE_SUSPEND_PROBE,
+	BTMTK_USB_STATE_SUSPEND_FW_DUMP,
+	BTMTK_USB_STATE_RESUME_DISCONNECT,
+	BTMTK_USB_STATE_RESUME_PROBE,
+	BTMTK_USB_STATE_RESUME_FW_DUMP,
+};
+
+/* Please keep sync with btmtk_fops_set_state function */
+enum {
+	BTMTK_FOPS_STATE_UNKNOWN,	/* deinit in stpbt destroy */
+	BTMTK_FOPS_STATE_INIT,		/* init in stpbt created */
+	BTMTK_FOPS_STATE_OPENED,	/* open in fops_open */
+	BTMTK_FOPS_STATE_CLOSING,	/* during closing */
+	BTMTK_FOPS_STATE_CLOSED,	/* closed */
+};
+
+struct OSAL_UNSLEEPABLE_LOCK {
+	spinlock_t	lock;
+	unsigned long	flag;
+};
+
+struct ring_buffer_struct {
+	struct OSAL_UNSLEEPABLE_LOCK	spin_lock;
+	unsigned char			buffer[META_BUFFER_SIZE];	/* MTKSTP_BUFFER_SIZE:1024 */
+	unsigned int			read_p;				/* indicate the current read index */
+	unsigned int			write_p;			/* indicate the current write index */
+};
+
+struct woble_setting_struct {
+	char	*content;	/* APCF content or radio off content */
+	int	length;		/* APCF content or radio off content of length */
+};
+
+struct woble_ir_km_char_s {
+	char nec[10];
+	char rc5[10];
+};
+
+struct woble_ir_km_value_s {
+	unsigned char nec[4];
+	unsigned char rc5[4];
+};
+
+struct btmtk_usb_data {
+	struct usb_device	*udev;	/* store the usb device informaiton */
+	struct usb_interface	*intf;	/* current interface */
+	struct usb_interface	*isoc;	/* isochronous interface */
+	struct work_struct	waker;
+	struct semaphore	wr_mtx;
+	struct semaphore	rd_mtx;
+	struct semaphore	isoc_wr_mtx;
+	struct semaphore	isoc_rd_mtx;
+	struct usb_anchor	intr_in_anchor;	/* intr in */
+	struct usb_anchor	bulk_in_anchor;	/* bulk in */
+	struct usb_anchor	bulk_out_anchor;/* bulk out */
+	struct usb_anchor	isoc_in_anchor;	/* isoc in */
+	struct usb_anchor	isoc_out_anchor;/* isoc out */
+	int			meta_tx;
+	spinlock_t		txlock;
+
+	/* USB endpoint */
+	struct usb_endpoint_descriptor	*intr_ep;
+	struct usb_endpoint_descriptor	*bulk_tx_ep;
+	struct usb_endpoint_descriptor	*bulk_rx_ep;
+	struct usb_endpoint_descriptor  *isoc_tx_ep;
+	struct usb_endpoint_descriptor  *isoc_rx_ep;
+
+	int		suspend_count;
+
+	/* request for different io operation */
+	unsigned char	w_request;
+	unsigned char	r_request;
+
+	/* io buffer for usb control transfer */
+	unsigned char	*io_buf;
+
+	unsigned char		*rom_patch;
+	unsigned char		*rom_patch_bin_file_name;
+	unsigned char		*rom_patch_image;
+	unsigned int		rom_patch_image_len;
+	unsigned int		chip_id;
+	unsigned int		rom_patch_offset;
+	unsigned int		rom_patch_len;
+
+	unsigned char		*woble_setting_file_name;
+	unsigned int		woble_setting_len;
+
+	struct woble_setting_struct		woble_setting_apcf[WOBLE_SETTING_COUNT];
+	struct woble_setting_struct		woble_setting_apcf_fill_mac[WOBLE_SETTING_COUNT];
+	struct woble_setting_struct		woble_setting_apcf_fill_mac_location[WOBLE_SETTING_COUNT];
+
+	struct woble_setting_struct		woble_setting_radio_off[WOBLE_SETTING_COUNT];
+	struct woble_setting_struct		woble_setting_radio_off_status_event[WOBLE_SETTING_COUNT];
+	/* complete event */
+	struct woble_setting_struct		woble_setting_radio_off_comp_event[WOBLE_SETTING_COUNT];
+
+	struct woble_setting_struct		woble_setting_radio_on[WOBLE_SETTING_COUNT];
+	struct woble_setting_struct		woble_setting_radio_on_status_event[WOBLE_SETTING_COUNT];
+	struct woble_setting_struct		woble_setting_radio_on_comp_event[WOBLE_SETTING_COUNT];
+
+	/* set apcf after resume(radio on) */
+	struct woble_setting_struct		woble_setting_apcf_resume[WOBLE_SETTING_COUNT];
+	unsigned char				bdaddr[BD_ADDRESS_SIZE];
+	unsigned int				woble_need_trigger_coredump;
+#if SUPPORT_UNIFY_WOBLE
+	struct wakeup_source		*woble_wlock;
+#endif
+	unsigned int				woble_need_set_radio_off_in_probe;
+
+	unsigned char		*i_buf;
+	unsigned char		*o_buf;
+	char			*i_fwlog_buf;
+	unsigned char		*o_fwlog_buf;
+	unsigned char		*o_sco_buf;
+	unsigned char		*o_usb_buf;
+
+	struct ring_buffer_struct
+				*metabuffer;
+
+	unsigned char		interrupt_urb_submitted;
+	unsigned char		bulk_urb_submitted;
+	unsigned char		isoc_urb_submitted;
+	atomic_t		isoc_out_count;
+
+	void			*bt_fifo;
+#if SUPPORT_MT7668
+	unsigned char		is_mt7668_dongle_state;
+#endif
+	struct sk_buff_head	fwlog_queue;
+	spinlock_t		fwlog_lock;
+	struct sk_buff_head	isoc_in_queue;
+	spinlock_t		isoc_lock;
+
+	struct timer_list	fw_dump_timer;
+	struct timer_list	chip_rst_disc_timer;
+};
+
+struct le_scan_parm_s {
+	u8 type;
+	u16 interval;
+	u16 window;
+	u8 own_addr_type;
+	u8 filter_policy;
+	u8 enable;
+	u8 filter_dup;
+};
+
+/**
+ * Inline functions
+ */
+static inline int is_support_unify_woble(struct btmtk_usb_data *data)
+{
+#if SUPPORT_UNIFY_WOBLE
+	return ((data->chip_id & 0xffff) == 0x7668);
+#else
+	return 0;
+#endif
+}
+
+#if SUPPORT_MT7662
+static inline int is_mt7662(struct btmtk_usb_data *data)
+{
+	/** Return 1, if MT76x2 or MT76x2T */
+	return ((data->chip_id & 0xffff0000) == 0x76620000)
+		|| ((data->chip_id & 0xffff0000) == 0x76320000);
+}
+
+static inline int is_mt7662T(struct btmtk_usb_data *data)
+{
+	/** Return 1, if MT76x2T */
+	return ((data->chip_id & 0xffffffff) == 0x76620100)
+		|| ((data->chip_id & 0xffffffff) == 0x76320100);
+}
+#endif
+
+#if SUPPORT_MT7668
+static inline int is_mt7668(struct btmtk_usb_data *data)
+{
+	return ((data->chip_id & 0xffff) == 0x7668);
+}
+
+enum {
+	BTMTK_USB_7668_DONGLE_STATE_UNKNOWN,
+	BTMTK_USB_7668_DONGLE_STATE_POWERING_ON,
+	BTMTK_USB_7668_DONGLE_STATE_POWER_ON,
+	BTMTK_USB_7668_DONGLE_STATE_WOBLE,
+	BTMTK_USB_7668_DONGLE_STATE_POWERING_OFF,
+	BTMTK_USB_7668_DONGLE_STATE_POWER_OFF,
+	BTMTK_USB_7668_DONGLE_STATE_ERROR
+};
+#endif
+
+/**
+ * Extern functions
+ */
+int btmtk_usb_send_data(const unsigned char *buffer, const unsigned int length);
+int btmtk_usb_meta_send_data(const unsigned char *buffer,
+		const unsigned int length);
+void btmtk_usb_toggle_rst_pin(void);
+#endif /* __BTMTK_USB_MAIN_H__ */
