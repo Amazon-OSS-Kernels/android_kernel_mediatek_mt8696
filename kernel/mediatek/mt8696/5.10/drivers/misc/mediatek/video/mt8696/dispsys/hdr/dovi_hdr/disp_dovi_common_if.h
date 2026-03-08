@@ -840,6 +840,7 @@ extern uint32_t _subv_type;
 extern bool dovi_black_en_bycmd;
 extern uint32_t dovi_black_cnt_bycmd;
 extern bool hdr_allm_en;
+extern bool hdr_gfx_allm_en;
 extern struct cp_param_t *p_cp_param;
 
 
