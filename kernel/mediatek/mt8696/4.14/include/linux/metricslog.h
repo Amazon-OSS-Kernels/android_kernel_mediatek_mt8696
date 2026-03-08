@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2017 Amazon Technologies, Inc. All Rights Reserved.
+ * Copyright 2011-2023 Amazon Technologies, Inc. All Rights Reserved.
  * Portions Copyright (C) 2007-2008 Google, Inc.
  *
  * This software is licensed under the terms of the GNU General Public
@@ -20,7 +20,7 @@
 /* Add GROUP_ID */
 #define METRICS_THERMAL_GROUP_ID "o3cc69de"
 
-#define METRICS_THERMISTOR_SCHEMA_ID "sk77/2/03330430"
+#define METRICS_THERMISTOR_SCHEMA_ID "ol8z/2/02330431"
 
 #define MINERVA_PREDEFINED_REQUIRED_FIELDS "_deviceId=;SY,_deviceType=;SY,_softwareVersion=;SY,_platform=;SY,_marketPlaceId=;SY,_countryOfResidence=;SY,_otaGroupName=;SY,_osFileTag=;SY"
 

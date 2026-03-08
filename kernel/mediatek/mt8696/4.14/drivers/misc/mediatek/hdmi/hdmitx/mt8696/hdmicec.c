@@ -1936,7 +1936,7 @@ void hdmi_cec_mainloop(unsigned char u1rxmode)
 	cec_loop_count++;
 	if (cec_loop_count >= 500) { //dump status every 10s
 		cec_loop_count = 0;
-		TX_DEF_LOG("[CEC] %s: 0x%x, 0x%x, 0x%lx, 0x%lx\n",
+		HDMI_CEC_LOG("[CEC] %s: 0x%x, 0x%x, 0x%lx, 0x%lx\n",
 			__func__,
 			_CEC_Status,
 			_CEC_ErrStatus,
@@ -2025,7 +2025,7 @@ unsigned char hdmi_cec_isrprocess(
 			}
 
 			mtkcec_hwtx_fail_retransmit_intclr(cec);
-			TX_DEF_LOG("[CEC] Tx fail retransmit interrupt\n");
+			HDMI_CEC_LOG("[CEC] Tx fail retransmit interrupt\n");
 			SetCECStatus(STATE_TXFAIL_RETR);
 			SetCECStatus(STATE_WAIT_TX_CHECK_RESULT);
 			ClrCECStatus(STATE_TXING_FRAME);

@@ -63,6 +63,7 @@ extern unsigned int hdmidrv_log_on;
 #define hdmihdrlog         (0x1000)
 #define hdmihdrdebuglog    (0x2000)
 #define hdmitzdebuglog     (0x4000)
+#define hdmidrvdebuglog    (0x8000)
 
 #define hdmialllog   (hdmiceccommandlog | hdmitxhotpluglog | hdmidrvlog)
 
@@ -196,6 +197,12 @@ extern unsigned int hdmidrv_log_on;
 
 #define HDMI_DRV_LOG(fmt, arg...) \
 	do {	if (hdmidrv_log_on & hdmidrvlog) { \
+		TX_DEF_LOG("[DRV] %s,%d "fmt, __func__, __LINE__, ##arg); \
+		} \
+	} while (0)
+
+#define HDMI_DRV_DBG(fmt, arg...) \
+	do {    if (hdmidrv_log_on & hdmidrvdebuglog) { \
 		TX_DEF_LOG("[DRV] %s,%d "fmt, __func__, __LINE__, ##arg); \
 		} \
 	} while (0)

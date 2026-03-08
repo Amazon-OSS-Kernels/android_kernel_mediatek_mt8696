@@ -2634,20 +2634,20 @@ void hdmi_clock_enable(bool bEnable)
 	int i;
 
 	if (bEnable) {
-		HDMI_DRV_LOG("Enable hdmi clocks(include rgb2hdmi)\n");
+		HDMI_DRV_LOG("Enable hdmi clocks(include rgb2hdmi) (%d)\n", TOP_HDMI_OSDPLL);
 		for (i = 0; i <= TOP_HDMI_OSDPLL; i++) {
-			HDMI_DRV_LOG("1Enable hdmi clocks i = %d\n", i);
+			HDMI_DRV_DBG("1Enable hdmi clocks i = %d\n", i);
 			clk_prepare(hdmi_ref_clock[i]);
 			clk_enable(hdmi_ref_clock[i]);
-			HDMI_DRV_LOG("Enable hdmi clocks i = %d\n", i);
+			HDMI_DRV_DBG("Enable hdmi clocks i = %d\n", i);
 		}
 	} else {
-		HDMI_DRV_LOG("Disable hdmi clocks\n");
+		HDMI_DRV_LOG("Disable hdmi clocks (%d)\n", TOP_HDMI_OSDPLL);
 		for (i = TOP_HDMI_OSDPLL; i >= 0; i--) {
-			HDMI_DRV_LOG("1Disable hdmi clocks i = %d\n", i);
+			HDMI_DRV_DBG("1Disable hdmi clocks i = %d\n", i);
 			clk_disable(hdmi_ref_clock[i]);
 			clk_unprepare(hdmi_ref_clock[i]);
-			HDMI_DRV_LOG("Disable hdmi clocks i = %d\n", i);
+			HDMI_DRV_DBG("Disable hdmi clocks i = %d\n", i);
 		}
 	}
 }

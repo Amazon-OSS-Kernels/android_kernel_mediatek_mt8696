@@ -342,10 +342,6 @@ enum MDP_TASK_STATUS mdp_imgresz_fill_task(struct mdp_task_struct *pTask)
 		p_command_buffer->buffer_info.cb_offset;
 	p_task_src_buffer->buf_info.cr_offset =
 		p_command_buffer->buffer_info.cr_offset;
-	p_task_src_buffer->buf_info.ylen_offset =
-		p_command_buffer->buffer_info.ylen_offset;
-	p_task_src_buffer->buf_info.clen_offset =
-		p_command_buffer->buffer_info.clen_offset;
 
 	p_task_src_buffer->y_buf_addr =
 		p_command_buffer->y_buffer_address; /* y buffer */
@@ -380,14 +376,20 @@ enum MDP_TASK_STATUS mdp_imgresz_fill_task(struct mdp_task_struct *pTask)
 	p_task_src_buffer->ufo_type =
 		mdp_imgresz_get_ufo_format(
 			p_command_buffer->color_format);
-	p_task_src_buffer->ufo_ylen_buf =
-		p_command_buffer->ufo_ylen_buffer_address;
-	p_task_src_buffer->ufo_clen_buf =
-		p_command_buffer->ufo_clen_buffer_address;
-	p_task_src_buffer->ufo_ylen_buf_len =
-		p_command_buffer->ufo_ylen_buffer_len;
-	p_task_src_buffer->ufo_ybuf_len =
-		p_command_buffer->ufo_clen_buffer_len;
+	if (DP_COLOR_GET_UFP_ENABLE(p_command_buffer->color_format)) {
+		p_task_src_buffer->buf_info.ylen_offset =
+			p_command_buffer->buffer_info.ylen_offset;
+		p_task_src_buffer->buf_info.clen_offset =
+			p_command_buffer->buffer_info.clen_offset;
+		p_task_src_buffer->ufo_ylen_buf =
+			p_command_buffer->ufo_ylen_buffer_address;
+		p_task_src_buffer->ufo_clen_buf =
+			p_command_buffer->ufo_clen_buffer_address;
+		p_task_src_buffer->ufo_ylen_buf_len =
+			p_command_buffer->ufo_ylen_buffer_len;
+		p_task_src_buffer->ufo_ybuf_len =
+			p_command_buffer->ufo_clen_buffer_len;
+	}
 
 	p_task_src_buffer->ufo_jump =
 		(p_command_buffer->metaData == DP_METADATA_JUMP_MODE);
@@ -420,10 +422,6 @@ enum MDP_TASK_STATUS mdp_imgresz_fill_task(struct mdp_task_struct *pTask)
 		p_command_buffer->buffer_info.cb_offset;
 	p_task_dst_buffer->buf_info.cr_offset =
 		p_command_buffer->buffer_info.cr_offset;
-	p_task_dst_buffer->buf_info.ylen_offset =
-		p_command_buffer->buffer_info.ylen_offset;
-	p_task_dst_buffer->buf_info.clen_offset =
-		p_command_buffer->buffer_info.clen_offset;
 
 	p_task_dst_buffer->y_buf_addr =
 		p_command_buffer->y_buffer_address;

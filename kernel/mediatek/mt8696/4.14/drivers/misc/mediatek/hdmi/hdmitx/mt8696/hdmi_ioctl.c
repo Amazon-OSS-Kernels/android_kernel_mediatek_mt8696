@@ -1396,7 +1396,7 @@ static long hdmi_ioctl_compat(struct file *file,
 {
 	int ret = 0;
 
-	HDMI_DRV_LOG(">> %s: 0x%x\n", __func__,
+	HDMI_DRV_DBG(">> %s: 0x%x\n", __func__,
 		cmd);
 
 	if (!file->f_op || !file->f_op->unlocked_ioctl)
@@ -1410,7 +1410,7 @@ static long hdmi_ioctl_compat(struct file *file,
 			/* kernel used */
 			struct HDMITX_AUDIO_PARA __user *data;
 
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_AUDIO_SETTING\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_AUDIO_SETTING\n");
 			data32 = compat_ptr(arg);
 			data = compat_alloc_user_space(sizeof(*data));
 
@@ -1431,7 +1431,7 @@ static long hdmi_ioctl_compat(struct file *file,
 			struct COMPAT_HDMI_EDID_T __user *data32;
 			//struct HDMI_EDID_T __user *data;
 
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_GET_EDID\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_GET_EDID\n");
 			/* userspace passed argument */
 			data32 = compat_ptr(arg);
 			//data = compat_alloc_user_space(sizeof(*data));
@@ -1450,7 +1450,7 @@ static long hdmi_ioctl_compat(struct file *file,
 		{
 			int __user *data32;	/* userspace passed argument */
 
-			HDMI_DRV_LOG(
+			HDMI_DRV_DBG(
 				">> COMPAT_MTK_HDMI_AUDIO_VIDEO_ENABLE %ld\n",
 				arg);
 			data32 = compat_ptr(arg);
@@ -1463,14 +1463,14 @@ static long hdmi_ioctl_compat(struct file *file,
 		}
 	case COMPAT_MTK_HDMI_WRITE_DEV:
 		{
-			HDMI_DRV_LOG(
+			HDMI_DRV_DBG(
 				">> COMPAT_MTK_HDMI_WRITE_DEV\n");
 			break;
 		}
 
 	case COMPAT_MTK_HDMI_INFOFRAME_SETTING:
 		{
-			HDMI_DRV_LOG(
+			HDMI_DRV_DBG(
 				">> COMPAT_MTK_HDMI_INFOFRAME_SETTING\n");
 			break;
 		}
@@ -1490,7 +1490,7 @@ static long hdmi_ioctl_compat(struct file *file,
 				MTK_HDMI_HDCP_KEY,
 				(unsigned long)data32);
 
-			TX_DEF_LOG("COMPAT_MTK_HDMI_HDCP_KEY! arg:%ld\n",
+			HDMI_DRV_DBG("COMPAT_MTK_HDMI_HDCP_KEY! arg:%ld\n",
 				arg);
 			break;
 		}
@@ -1508,7 +1508,7 @@ static long hdmi_ioctl_compat(struct file *file,
 
 	case COMPAT_MTK_HDMI_SENDSLTDATA:
 		{
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_SENDSLTDATA\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_SENDSLTDATA\n");
 			break;
 		}
 
@@ -1623,7 +1623,7 @@ static long hdmi_ioctl_compat(struct file *file,
 		{
 			struct CEC_USR_CMD_T __user *data32;
 
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_CEC_USR_CMD %ld\n",
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_CEC_USR_CMD %ld\n",
 				arg);
 			data32 = compat_ptr(arg);
 			ret = file->f_op->unlocked_ioctl(file,
@@ -1633,7 +1633,7 @@ static long hdmi_ioctl_compat(struct file *file,
 
 	case COMPAT_MTK_HDMI_GET_SLTDATA:
 		{
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_GET_SLTDATA\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_GET_SLTDATA\n");
 			break;
 		}
 
@@ -1642,7 +1642,7 @@ static long hdmi_ioctl_compat(struct file *file,
 			struct CEC_ADDRESS_IO __user *data32;
 			struct CEC_ADDRESS_IO __user *data;
 
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_GET_CECADDR %ld\n",
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_GET_CECADDR %ld\n",
 						arg);
 			data32 = compat_ptr(arg);
 			data = compat_alloc_user_space(sizeof(*data));
@@ -1662,7 +1662,7 @@ static long hdmi_ioctl_compat(struct file *file,
 		{
 			struct compat_hdmi_para_setting __user *data32;
 
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_COLOR_DEEP\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_COLOR_DEEP\n");
 			/* userspace passed argument */
 			data32 = compat_ptr(arg);
 
@@ -1677,7 +1677,7 @@ static long hdmi_ioctl_compat(struct file *file,
 		{
 			enum compat_hdmi_force_hdr_enable __user *data32;
 
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_HDR_ENABLE\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_HDR_ENABLE\n");
 			/* userspace passed argument */
 			data32 = compat_ptr(arg);
 
@@ -1691,43 +1691,43 @@ static long hdmi_ioctl_compat(struct file *file,
 
 	case COMPAT_MTK_HDMI_READ_DEV:
 		{
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_READ_DEV\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_READ_DEV\n");
 			break;
 		}
 
 	case COMPAT_MTK_HDMI_ENABLE_LOG:
 		{
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_ENABLE_LOG\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_ENABLE_LOG\n");
 			break;
 		}
 
 	case COMPAT_MTK_HDMI_ENABLE_HDCP:
 		{
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_ENABLE_HDCP\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_ENABLE_HDCP\n");
 			break;
 		}
 
 	case COMPAT_MTK_HDMI_CECRX_MODE:
 		{
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_CECRX_MODE\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_CECRX_MODE\n");
 			break;
 		}
 
 	case COMPAT_MTK_HDMI_STATUS:
 		{
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_STATUS\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_STATUS\n");
 			break;
 		}
 
 	case COMPAT_MTK_HDMI_CHECK_EDID:
 		{
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_CHECK_EDID\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_CHECK_EDID\n");
 			break;
 		}
 
 	case COMPAT_MTK_HDMI_POWER_ENABLE:
 		{
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_POWER_ENABLE\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_POWER_ENABLE\n");
 			break;
 		}
 
@@ -1735,7 +1735,7 @@ static long hdmi_ioctl_compat(struct file *file,
 		{
 			int __user *data32;
 
-			HDMI_DRV_LOG(
+			HDMI_DRV_DBG(
 				">> COMPAT_MTK_HDMI_VIDEO_CONFIG arg = %ld\n",
 				arg);
 		 /* userspace passed argument */
@@ -1752,7 +1752,7 @@ static long hdmi_ioctl_compat(struct file *file,
 		{
 			unsigned int __user *data32;
 
-			HDMI_DRV_LOG(
+			HDMI_DRV_DBG(
 				">> COMPAT_MTK_HDMI_VRR_ENABLE arg = %ld\n",
 				arg);
 		 /* userspace passed argument */
@@ -1769,7 +1769,7 @@ static long hdmi_ioctl_compat(struct file *file,
 		{
 			unsigned int __user *data32;
 
-			HDMI_DRV_LOG(
+			HDMI_DRV_DBG(
 				">> COMPAT_MTK_HDMI_LOW_LATENCY_MODE arg = %ld\n",
 				arg);
 			data32 = compat_ptr(arg);
@@ -1782,13 +1782,13 @@ static long hdmi_ioctl_compat(struct file *file,
 
 	case COMPAT_MTK_HDMI_FACTORY_GET_STATUS:
 		{
-			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_FACTORY_GET_STATUS\n");
+			HDMI_DRV_DBG(">> COMPAT_MTK_HDMI_FACTORY_GET_STATUS\n");
 			break;
 
 		}
 
 	default:
-		HDMI_DRV_LOG(">> calling default cmd=0x%x\n", cmd);
+		HDMI_DRV_DBG(">> calling default cmd=0x%x\n", cmd);
 		hdmi_ioctl(file, cmd, arg);
 		break;
 
