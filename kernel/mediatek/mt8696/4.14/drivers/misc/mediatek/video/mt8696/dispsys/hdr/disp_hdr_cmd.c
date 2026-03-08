@@ -117,6 +117,10 @@ static void hdr_process_dbg_opt(const char *opt)
 		STR_CVT_U32(&p, &use_dv_s_type, goto Error);
 
 		hdr_printf("use_dv_s_type %d\n", use_dv_s_type);
+	} else if (strncmp(opt, "gfxallm:", 8) == 0) {
+		p = (char *)opt + 8;
+		STR_CVT_U32(&p, &osd_force_allm, goto Error);
+		hdr_printf("set gfx allm %d\n", osd_force_allm);
 	} else {
 		hdr_error("test debug cmd pass.\n");
 		goto Error;

@@ -69,6 +69,7 @@ extern uint32_t force_sdr_output;
 extern bool hdr_allm_ctl_by_cmd;
 extern uint32_t hdr_allm_type;
 extern uint32_t use_dv_s_type;
+extern uint32_t osd_force_allm;
 
 #define HDR_INFO_LOG (1 << 0)
 #define HDR_OSD_INFO_LOG (1 << 1)

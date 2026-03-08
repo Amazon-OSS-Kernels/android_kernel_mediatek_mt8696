@@ -85,6 +85,7 @@ extern enum dovi_signal_format_t dovi_out_format;
 extern struct mutex disp_hdr_path_mutex;
 extern struct mutex disp_hdr_stop_mutex;
 extern struct mutex disp_hdr_cfg_hdmi_mutex;
+extern struct mutex disp_hdr_gfx_allm_mutex;
 extern uint32_t disp_hdr_event;
 extern uint32_t dovi_path_ready2start;
 extern uint32_t dovi_path_en;
@@ -107,6 +108,8 @@ extern uint32_t idk_vsem;
 extern bool b_allm_ctl_force_hdr;
 extern bool hdr_allm_en;
 extern uint32_t hdr_allm_change;
+extern bool hdr_gfx_allm_en;
+extern uint32_t hdr_gfx_allm_change;
 extern enum ALLM_UI ui_allm_type;
 
 #ifdef CONFIG_MTK_INTERNAL_HDMI_SUPPORT
@@ -161,6 +164,7 @@ int disp_hdr_fe_set_clk(uint32_t layer_id, bool en);
 int disp_hdr_set_vdo_be_clk(bool en);
 extern int32_t disp_mix_hal_set_black_pattern(bool en);
 extern void disp_hdr_handle_allm_change(void *data);
+extern void disp_hdr_handle_allm_change_for_gfx(bool b_allm_gfx);
 void disp_hdr_allm_process(struct disp_hw_tv_capbility *tv_cap);
 uint32_t disp_hdr_allm_ctl_path(void);
 

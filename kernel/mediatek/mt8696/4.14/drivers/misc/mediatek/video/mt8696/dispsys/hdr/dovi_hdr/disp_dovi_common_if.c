@@ -627,8 +627,8 @@ const struct disp_hw_resolution *resolution)
 	else
 		tv_out_format = DOVI_FORMAT_SDR;
 
-	/*if game source, we keep output as lowlatency when tv support*/
-	if ((hdr_allm_en || (ui_allm_type == ALLM_EN))
+	/* if game source, we keep output as lowlatency when tv support */
+	if ((hdr_allm_en || hdr_gfx_allm_en || (ui_allm_type == ALLM_EN))
 		&& (tv_cap->is_support_dovi_low_latency)
 		&& ((tv_cap->u1_sink_allm_support) ||
 		(tv_cap->u1_sink_14gamemode_support))) {

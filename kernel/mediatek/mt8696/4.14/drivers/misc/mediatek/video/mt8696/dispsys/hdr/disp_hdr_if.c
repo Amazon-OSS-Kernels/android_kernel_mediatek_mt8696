@@ -74,10 +74,14 @@ unsigned char dovi_vs10_signal_type;
 
 /*add for allm*/
 bool hdr_allm_en;
+bool hdr_gfx_allm_en;
 bool old_hdr_allm_en;
+bool old_hdr_gfx_allm_en;
 uint32_t hdr_allm_change;
+uint32_t hdr_gfx_allm_change;
 bool hdr_allm_ctl_by_cmd;
 uint32_t hdr_allm_type;
+uint32_t osd_force_allm;
 /*ui allm type 0 auto, 1 disable, 2 always enable*/
 enum ALLM_UI ui_allm_type = ALLM_INVALID;
 enum ALLM_UI ui_allm_type_pre = ALLM_INVALID;
@@ -285,7 +289,8 @@ void disp_hdr_config_hdmi_signal(uint32_t path)
 	if ((out_format == HDR_OUT_TYPE_DV_LL)
 		|| (out_format == HDR_OUT_TYPE_VSEM_DV_LL)) {
 		if (p_vsif != NULL) {
-			if (hdr_allm_en || (ui_allm_type == ALLM_EN)) {
+			if (hdr_allm_en || hdr_gfx_allm_en
+				|| (ui_allm_type == ALLM_EN)) {
 				/* add dummy L11MD when source not contain */
 				if (p_vsif->L11_md_present == 0) {
 					p_vsif->L11_md_present = L11_MD_PRESENT;
@@ -439,12 +444,6 @@ void disp_hdr_config_hdmi_signal(uint32_t path)
 			}
 
 		}
-		/*game mode enable in dovi and non_dovi case*/
-		if (hdr_allm_change) {
-			hdmi_game_mode_enable(hdr_allm_en);
-			old_hdr_allm_en = hdr_allm_en;
-			hdr_allm_change = 0;
-		}
 		// update dynamic md
 		if (out_format == HDR_OUT_TYPE_HDR10PLUS_VSIF) {
 			disp_cfd_drv_fill_dyn_metadata(VID_PLA_DR_TYPE_HDR10_PLUS_VSIF,
@@ -459,9 +458,16 @@ void disp_hdr_config_hdmi_signal(uint32_t path)
 			line_cnt[3] = Dv_ReadREG(vdout_reg_base + 0x28) & 0xFFF;
 		hdr_video_info("confg hdmi done[%d] %d\n",
 			hdr_vsync_cnt, line_cnt[3]);
-		}
+	}
+	/* game mode enable/disable */
+	if (hdr_allm_change || hdr_gfx_allm_change) {
+		hdmi_game_mode_enable(hdr_allm_en | hdr_gfx_allm_en);
+		old_hdr_allm_en = hdr_allm_en;
+		old_hdr_gfx_allm_en = hdr_gfx_allm_en;
+		hdr_allm_change = 0;
+		hdr_gfx_allm_change = 0;
+	}
 	mutex_unlock(&disp_hdr_cfg_hdmi_mutex);
-
 }
 
 void disp_hdr_config_video_non(uint32_t id)
@@ -533,6 +539,7 @@ int disp_hdr_config_video_info(struct video_buffer_info *buf,
 int disp_hdr_config_osd_info(struct mtk_disp_buffer *buf)
 {
 	uint32_t thread_id = 0;
+	bool b_allm_src = false;
 
 	if (buf == NULL || buf->layer_id >= V_G_LAYER_MAX) {
 		hdr_printf("error osd buffer\n");
@@ -545,6 +552,17 @@ int disp_hdr_config_osd_info(struct mtk_disp_buffer *buf)
 	memcpy(&hdr_osd_layer[buf->layer_id], buf, sizeof(*buf));
 	hdr_osd_info("osd[%d][%d][%d] config %d\n", buf->layer_id,
 		befifo_irq_cnt, hdr_vsync_cnt, dovi_path_en);
+
+	/* add gfx allm flow when ALLM ui set as auto
+	 * and gfx frame set as allm source
+	 */
+	if (osd_force_allm)
+		hdr_osd_layer[buf->layer_id].allm_en = 1;
+
+	if (hdr_osd_layer[LAYER0].allm_en || hdr_osd_layer[LAYER1].allm_en)
+		b_allm_src = true;
+	disp_hdr_handle_allm_change_for_gfx(b_allm_src);
+
 	if (!dovi_path_en) {
 		thread_id = buf->layer_id + V_G_LAYER_MAX;
 		disp_hdr_wakeup_routine(thread_id);
@@ -847,6 +865,10 @@ int disp_hdr_handle_osd_stop(enum DISP_CMD cmd, void *data)
 		hdr_printf("%s idx err\n", __func__);
 		return -1;
 	}
+	/* need clean gfx allm_en when stop */
+	hdr_osd_layer[layer_id].allm_en = 0;
+	if (!hdr_osd_layer[LAYER0].allm_en && !hdr_osd_layer[LAYER1].allm_en)
+		disp_hdr_handle_allm_change_for_gfx(false);
 	#ifdef CONFIG_DOVI_SUPPORT
 	if (g_dovi_efuse)
 		disp_dovi_process_cmd(layer_id, cmd, data);
@@ -995,6 +1017,57 @@ void disp_hdr_handle_allm_change(void *data)
 	ui_allm_type_pre = ui_allm_type;
 }
 
+void disp_hdr_handle_allm_change_for_gfx(bool b_allm_gfx)
+{
+	struct disp_hw_tv_capbility *tv_cap = NULL;
+	enum DISP_CMD cmd = DISP_CMD_FORCE_HDR;
+	uint32_t forcehdr = DYNA_SET_INVALID;
+
+	tv_cap = &(disp_common_info.tv);
+
+	/* only ALLM ui set as auto will check gfx allm src */
+	if (tv_cap == NULL || (ui_allm_type != ALLM_AUTO))
+		return;
+
+	/* config allm once when change */
+	mutex_lock(&disp_hdr_gfx_allm_mutex);
+	if (b_allm_gfx && (tv_cap->u1_sink_allm_support
+		|| tv_cap->u1_sink_14gamemode_support
+		|| tv_cap->is_support_dovi_low_latency))
+		hdr_gfx_allm_en = 1;
+	else
+		hdr_gfx_allm_en = 0;
+
+	if (hdr_gfx_allm_en != old_hdr_gfx_allm_en) {
+		hdr_gfx_allm_change = 1;
+		if (hdr_gfx_allm_en) {
+			/* check need change path for std_only + allm tv
+			 * or dovi_ll support tv
+			 */
+			b_allm_ctl_force_hdr = false;
+			forcehdr = disp_hdr_allm_ctl_path();
+		} else {
+			/* check need change output format to non allm */
+			if (b_allm_ctl_force_hdr
+				|| tv_cap->is_support_dovi_low_latency) {
+				forcehdr = ui_force_hdr_type;
+				b_allm_ctl_force_hdr = false;
+			}
+		}
+
+		if (forcehdr != DYNA_SET_INVALID) {
+			disp_hdr_handle_forcehdr(cmd, (void *)(&forcehdr));
+			dovi_vs10_path_en = forcehdr;
+		}
+
+		disp_hdr_config_hdmi_signal(hdr_path_select);
+		hdr_osd_info("[gfx_allm] %d %d %d %d %d\n",
+		b_allm_gfx, hdr_gfx_allm_en, ui_force_hdr_type,
+		forcehdr, hdr_path_select);
+	}
+	mutex_unlock(&disp_hdr_gfx_allm_mutex);
+}
+
 void disp_hdr_stop_handle(uint32_t layer_id)
 {
 	//struct disp_hw *hdr_drv = disp_hdr_get_drv();
@@ -1065,7 +1138,7 @@ void disp_hdr_stop_handle(uint32_t layer_id)
 	/* here stop game mode when stop gamming content */
 	if (hdr_allm_en) {
 		hdr_allm_en = 0;
-		hdmi_game_mode_enable(hdr_allm_en);
+		hdmi_game_mode_enable(hdr_allm_en || hdr_gfx_allm_en);
 		old_hdr_allm_en = hdr_allm_en;
 	} else {
 		if ((ui_allm_type == ALLM_EN)
