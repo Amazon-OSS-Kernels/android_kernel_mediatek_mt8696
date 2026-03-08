@@ -2228,7 +2228,7 @@ UINT_8 rsnCheckSaQueryTimeout(IN P_ADAPTER_T prAdapter)
 
 	GET_CURRENT_SYSTIME(&now);
 
-	if (CHECK_FOR_TIMEOUT(now, prBssSpecInfo->u4SaQueryStart, TU_TO_MSEC(SA_QUERY_RETRY_TIMEOUT))) {
+	if (CHECK_FOR_TIMEOUT(now, prBssSpecInfo->u4SaQueryStart, TU_TO_MSEC(1000))) {
 		DBGLOG(RSN, INFO, "association SA Query timed out\n");
 
 		prBssSpecInfo->ucSaQueryTimedOut = 1;
@@ -2380,9 +2380,9 @@ void rsnStartSaQueryTimer(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
-	DBGLOG(RSN, INFO, "Set SA Query timer %lu (%d Tu)\n", prBssSpecInfo->u4SaQueryCount, SA_QUERY_TIMEOUT);
+	DBGLOG(RSN, INFO, "Set SA Query timer %lu (%d Tu)\n", prBssSpecInfo->u4SaQueryCount, 201);
 
-	cnmTimerStartTimer(prAdapter, &prBssSpecInfo->rSaQueryTimer, TU_TO_MSEC(SA_QUERY_TIMEOUT));
+	cnmTimerStartTimer(prAdapter, &prBssSpecInfo->rSaQueryTimer, TU_TO_MSEC(201));
 
 }
 
@@ -2730,7 +2730,7 @@ UINT_8 rsnApCheckSaQueryTimeout(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prSt
 
 	GET_CURRENT_SYSTIME(&now);
 
-	if (CHECK_FOR_TIMEOUT(now, prStaRec->rPmfCfg.u4SAQueryStart, TU_TO_MSEC(SA_QUERY_RETRY_TIMEOUT))) {
+	if (CHECK_FOR_TIMEOUT(now, prStaRec->rPmfCfg.u4SAQueryStart, TU_TO_MSEC(1000))) {
 		DBGLOG(RSN, INFO, "association SA Query timed out\n");
 
 		/* XXX PMF TODO how to report STA REC disconnect?? */
@@ -2844,9 +2844,9 @@ void rsnApStartSaQueryTimer(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
-	DBGLOG(RSN, INFO, "AP Set SA Query timer %lu (%d Tu)\n", prStaRec->rPmfCfg.u4SAQueryCount, SA_QUERY_TIMEOUT);
+	DBGLOG(RSN, INFO, "AP Set SA Query timer %lu (%d Tu)\n", prStaRec->rPmfCfg.u4SAQueryCount, 201);
 
-	cnmTimerStartTimer(prAdapter, &prStaRec->rPmfCfg.rSAQueryTimer, TU_TO_MSEC(SA_QUERY_TIMEOUT));
+	cnmTimerStartTimer(prAdapter, &prStaRec->rPmfCfg.rSAQueryTimer, TU_TO_MSEC(201));
 
 }
 

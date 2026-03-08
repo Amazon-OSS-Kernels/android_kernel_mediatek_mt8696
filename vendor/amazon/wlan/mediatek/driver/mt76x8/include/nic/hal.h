@@ -299,17 +299,6 @@ do { \
 	kalDevKickData(_prAdapter->prGlueInfo); \
 }
 
-#if CFG_FTV_62866_PATCH
-#define HAL_WRITE_TX_CMD(_prAdapter, _prCmdInfo, _ucTC) \
-({ \
-	uint32_t retval; \
-	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
-		ASSERT(0); \
-	} \
-	retval = kalDevWriteCmd(_prAdapter->prGlueInfo, _prCmdInfo, _ucTC); \
-	retval; \
-})
-#else
 #define HAL_WRITE_TX_CMD(_prAdapter, _prCmdInfo, _ucTC) \
 { \
 	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
@@ -317,7 +306,6 @@ do { \
 	} \
 	kalDevWriteCmd(_prAdapter->prGlueInfo, _prCmdInfo, _ucTC); \
 }
-#endif
 
 #if defined(_HIF_PCIE)
 #define HAL_READ_RX_PORT(prAdapter, u4PortId, u4Len, pvBuf, _u4ValidBufSize) \

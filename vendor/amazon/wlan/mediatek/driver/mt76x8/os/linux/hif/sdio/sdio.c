@@ -957,7 +957,7 @@ BOOL kalDevRegRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT
 		prAdapter->fgIsChipNoAck = TRUE;
 		DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 						prAdapter->fgIsChipNoAck);
-		GL_RESET_TRIGGER(prAdapter, RST_HIF_FAIL);
+		glResetTrigger(prAdapter);
 #endif
 	}
 	return (ret) ? FALSE : TRUE;
@@ -1090,7 +1090,7 @@ BOOL kalDevRegWrite(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN UINT_
 		prAdapter->fgIsChipNoAck = TRUE;
 		DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 					prAdapter->fgIsChipNoAck);
-		GL_RESET_TRIGGER(prAdapter, RST_HIF_FAIL);
+		glResetTrigger(prAdapter);
 #endif
 	}
 
@@ -1276,7 +1276,7 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 		prAdapter->fgIsChipNoAck = TRUE;
 		DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 						prAdapter->fgIsChipNoAck);
-		GL_RESET_TRIGGER(prAdapter, RST_HIF_FAIL);
+		glResetTrigger(prAdapter);
 #endif
 	}
 	return (ret) ? FALSE : TRUE;
@@ -1395,7 +1395,7 @@ kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
 		prAdapter->fgIsChipNoAck = TRUE;
 		DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 						prAdapter->fgIsChipNoAck);
-		GL_RESET_TRIGGER(prAdapter, RST_HIF_FAIL);
+		glResetTrigger(prAdapter);
 #endif
 	}
 	return (ret) ? FALSE : TRUE;
@@ -1508,7 +1508,7 @@ BOOL kalDevWriteWithSdioCmd52(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Addr, IN
 		prAdapter->fgIsChipNoAck = TRUE;
 		DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 					prAdapter->fgIsChipNoAck);
-		GL_RESET_TRIGGER(prAdapter, RST_HIF_FAIL);
+		glResetTrigger(prAdapter);
 #endif
 	}
 
@@ -1653,11 +1653,7 @@ BOOL kalDevKickData(IN P_GLUE_INFO_T prGlueInfo)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-#if CFG_FTV_62866_PATCH
-WLAN_STATUS kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN UINT_8 ucTC)
-#else
 BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN UINT_8 ucTC)
-#endif
 {
 	P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
 /*	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo; */
@@ -1672,11 +1668,7 @@ BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN U
 	if (TFCB_FRAME_PAD_TO_DW(prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen) >
 		prAdapter->u4CoalescingBufCachedSize) {
 		DBGLOG(HAL, ERROR, "Command TX buffer underflow!\n");
-#if CFG_FTV_62866_PATCH
-		return WLAN_STATUS_FAILURE;
-#else
 		return FALSE;
-#endif
 	}
 	if (prCmdInfo->u4TxdLen) {
 		memcpy((pucOutputBuf + u2OverallBufferLength), prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
@@ -1708,11 +1700,7 @@ BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN U
 	prGlueInfo->rHifInfo.au4PendingTxDoneCount[ucTC]++;
 
 	prGlueInfo->rHifInfo.rStatCounter.u4CmdPktWriteCnt++;
-#if CFG_FTV_62866_PATCH
-	return WLAN_STATUS_SUCCESS;
-#else
 	return TRUE;
-#endif
 }
 
 void glGetDev(PVOID ctx, struct device **dev)

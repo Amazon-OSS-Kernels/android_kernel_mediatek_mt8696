@@ -95,6 +95,9 @@ P_SW_RFB_T g_arGscnResultsTempBuffer[MAX_BUFFERED_GSCN_RESULTS];
 UINT_8 g_GscanResultsTempBufferIndex;
 UINT_8 g_arGscanResultsIndicateNumber[MAX_BUFFERED_GSCN_RESULTS] = { 0, 0, 0, 0, 0 };
 
+UINT_8 g_GetResultsBufferedCnt;
+UINT_8 g_GetResultsCmdCnt;
+
 extern struct wireless_dev *gprWdev;
 
 /*******************************************************************************

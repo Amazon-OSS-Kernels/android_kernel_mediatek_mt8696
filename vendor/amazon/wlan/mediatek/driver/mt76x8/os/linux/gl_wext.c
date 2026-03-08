@@ -98,12 +98,6 @@ const long channel_freq[] = {
 
 #define MAX_SSID_LEN    32
 
-#if CFG_SUPPORT_WAPI
-#define KEY_BUF_SIZE	1024
-#else
-#define KEY_BUF_SIZE	100
-#endif
-
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -2524,6 +2518,8 @@ wext_get_encode(IN struct net_device *prNetDev,
 * \note Securiry information is stored in pEnc.
 */
 /*----------------------------------------------------------------------------*/
+static UINT_8 wepBuf[48];
+
 static int
 wext_set_encode(IN struct net_device *prNetDev,
 		IN struct iw_request_info *prIwrInfo, IN struct iw_point *prEnc, IN char *pcExtra)
@@ -2532,7 +2528,6 @@ wext_set_encode(IN struct net_device *prNetDev,
 	ENUM_PARAM_ENCRYPTION_STATUS_T eEncStatus;
 	ENUM_PARAM_AUTH_MODE_T eAuthMode;
 	/* UINT_8 wepBuf[48]; */
-	UINT_8 wepBuf[48];
 	P_PARAM_WEP_T prWepKey = (P_PARAM_WEP_T) wepBuf;
 
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -2908,19 +2903,20 @@ wext_set_auth(IN struct net_device *prNetDev,
 * \note Securiry information is stored in pEnc.
 */
 /*----------------------------------------------------------------------------*/
+#if CFG_SUPPORT_WAPI
+UINT_8 keyStructBuf[1024];	/* add/remove key shared buffer */
+#else
+UINT_8 keyStructBuf[100];	/* add/remove key shared buffer */
+#endif
+
 static int
 wext_set_encode_ext(IN struct net_device *prNetDev,
 		    IN struct iw_request_info *prIwrInfo, IN struct iw_point *prEnc, IN char *pcExtra)
 {
-	UINT_8 wepBuf[48];
-	P_PARAM_WEP_T prWepKey = (P_PARAM_WEP_T) wepBuf;
+	P_PARAM_REMOVE_KEY_T prRemoveKey = (P_PARAM_REMOVE_KEY_T) keyStructBuf;
+	P_PARAM_KEY_T prKey = (P_PARAM_KEY_T) keyStructBuf;
 
-	uint8_t *keyStructBuf;
-	P_PARAM_REMOVE_KEY_T prRemoveKey;
-	P_PARAM_KEY_T prKey;
-#if CFG_SUPPORT_WAPI
-	P_PARAM_WPI_KEY_T prWpiKey;
-#endif
+	P_PARAM_WEP_T prWepKey = (P_PARAM_WEP_T) wepBuf;
 
 	struct iw_encode_ext *prIWEncExt = (struct iw_encode_ext *)pcExtra;
 
@@ -2928,10 +2924,13 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 	ENUM_PARAM_AUTH_MODE_T eAuthMode;
 	/* ENUM_PARAM_OP_MODE_T eOpMode = NET_TYPE_AUTO_SWITCH; */
 
+#if CFG_SUPPORT_WAPI
+	P_PARAM_WPI_KEY_T prWpiKey = (P_PARAM_WPI_KEY_T) keyStructBuf;
+#endif
+
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
 	UINT_32 u4BufLen = 0;
-	int ret = 0;
 
 	ASSERT(prNetDev);
 	ASSERT(prEnc);
@@ -2939,36 +2938,27 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 		return -EINVAL;
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 
-	keyStructBuf = kalMemAlloc(KEY_BUF_SIZE, VIR_MEM_TYPE);
-	if (keyStructBuf == NULL) {
-		DBGLOG(REQ, ERROR, "Alloc key buffer fail\n");
-		return -ENOMEM;
-	}
-	kalMemSet(keyStructBuf, 0, KEY_BUF_SIZE);
+	memset(keyStructBuf, 0, sizeof(keyStructBuf));
 
 #if CFG_SUPPORT_WAPI
 	if (prIWEncExt->alg == IW_ENCODE_ALG_SMS4) {
 		if (prEnc->flags & IW_ENCODE_DISABLED) {
 			/* printk(KERN_INFO "[wapi] IW_ENCODE_DISABLED\n"); */
-			ret = 0;
-			goto freeBuf;
+			return 0;
 		}
-		prWpiKey = (P_PARAM_WPI_KEY_T) keyStructBuf;
 		/* KeyID */
 		prWpiKey->ucKeyID = (prEnc->flags & IW_ENCODE_INDEX);
 		prWpiKey->ucKeyID--;
 		if (prWpiKey->ucKeyID > 1) {
 			/* key id is out of range */
 			/* printk(KERN_INFO "[wapi] add key error: key_id invalid %d\n", prWpiKey->ucKeyID); */
-			ret = -EINVAL;
-			goto freeBuf;
+			return -EINVAL;
 		}
 
 		if (prIWEncExt->key_len != 32) {
 			/* key length not valid */
 			/* printk(KERN_INFO "[wapi] add key error: key_len invalid %d\n", prIWEncExt->key_len); */
-			ret = -EINVAL;
-			goto freeBuf;
+			return -EINVAL;
 		}
 		/* printk(KERN_INFO "[wapi] %d ext_flags %d\n", prEnc->flags, prIWEncExt->ext_flags); */
 
@@ -3006,7 +2996,6 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 	{
 
 		if ((prEnc->flags & IW_ENCODE_MODE) == IW_ENCODE_DISABLED) {
-			prRemoveKey = (P_PARAM_REMOVE_KEY_T) keyStructBuf;
 			/* Reset flag to prevent the unexpected operation */
 			prRemoveKey->ucCtrlFlag = 0;
 			prRemoveKey->u4Length = sizeof(*prRemoveKey);
@@ -3022,8 +3011,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 
 			if (rStatus != WLAN_STATUS_SUCCESS)
 				DBGLOG(INIT, INFO, "remove key error:%lx\n", rStatus);
-			ret = 0;
-			goto freeBuf;
+			return 0;
 		}
 		/* return 0; */
 		/* printk ("alg %x\n", prIWEncExt->alg); */
@@ -3043,8 +3031,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 				    (prEnc->flags & IW_ENCODE_INDEX) - 1 : 0;
 				if (prWepKey->u4KeyIndex > 3) {
 					/* key id is out of range */
-					ret = -EINVAL;
-					goto freeBuf;
+					return -EINVAL;
 				}
 				prWepKey->u4KeyIndex |= 0x80000000;
 				prWepKey->u4Length = 12 + prIWEncExt->key_len;
@@ -3058,8 +3045,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 
 				if (rStatus != WLAN_STATUS_SUCCESS) {
 					DBGLOG(INIT, INFO, "wlanoidSetAddWep fail 0x%lx\n", rStatus);
-					ret = -EFAULT;
-					goto freeBuf;
+					return -EFAULT;
 				}
 
 				/* change to auto switch */
@@ -3072,8 +3058,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 
 				if (rStatus != WLAN_STATUS_SUCCESS) {
 					DBGLOG(INIT, INFO, "wlanoidSetAuthMode fail 0x%lx\n", rStatus);
-					ret = -EFAULT;
-					goto freeBuf;
+					return -EFAULT;
 				}
 
 				prGlueInfo->rWpaInfo.u4CipherPairwise = IW_AUTH_CIPHER_WEP104 | IW_AUTH_CIPHER_WEP40;
@@ -3089,8 +3074,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 
 				if (rStatus != WLAN_STATUS_SUCCESS) {
 					DBGLOG(INIT, INFO, "wlanoidSetEncryptionStatus fail 0x%lx\n", rStatus);
-					ret = -EFAULT;
-					goto freeBuf;
+					return -EFAULT;
 				}
 
 			} else {
@@ -3105,7 +3089,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 		case IW_ENCODE_ALG_AES_CMAC:
 #endif
 			{
-				prKey = (P_PARAM_KEY_T) keyStructBuf;
+
 				/* KeyID */
 				prKey->u4KeyIndex = (prEnc->flags & IW_ENCODE_INDEX) ?
 				    (prEnc->flags & IW_ENCODE_INDEX) - 1 : 0;
@@ -3116,8 +3100,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 #endif
 					DBGLOG(INIT, INFO, "key index error:0x%lx\n", prKey->u4KeyIndex);
 					/* key id is out of range */
-					ret = -EINVAL;
-					goto freeBuf;
+					return -EINVAL;
 				}
 
 				/* bit(31) and bit(30) are shared by pKey and pRemoveKey */
@@ -3153,8 +3136,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 				if (prIWEncExt->key_len > 32) {
 					DBGLOG(REQ, ERROR, "prIWEncExt->key_len: %d is too long!\n",
 						prIWEncExt->key_len);
-					ret = -EFAULT;
-					goto freeBuf;
+					return -EFAULT;
 				}
 				memcpy(prKey->aucKeyMaterial, prIWEncExt->key, prIWEncExt->key_len);
 			}
@@ -3167,19 +3149,13 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 
 			if (rStatus != WLAN_STATUS_SUCCESS) {
 				DBGLOG(INIT, INFO, "add key error:%lx\n", rStatus);
-				ret = -EFAULT;
-				goto freeBuf;
+				return -EFAULT;
 			}
 			break;
 		}
 	}
 
-	ret = 0;
-
-freeBuf:
-	if (keyStructBuf)
-		kalMemFree(keyStructBuf, VIR_MEM_TYPE, KEY_BUF_SIZE);
-	return ret;
+	return 0;
 }				/* wext_set_encode_ext */
 
 
@@ -3432,7 +3408,7 @@ int wext_support_ioctl(IN struct net_device *prDev, IN struct ifreq *prIfReq, IN
 
 			if (req->essid_len > MAX_SSID_LEN) {
 				ret = -EFAULT;
-			} else if (kalMemCopy
+			} else if (copy_from_user
 			    (prExtraBuf, req->essid, req->essid_len)) {
 				ret = -EFAULT;
 			} else {
@@ -3902,14 +3878,15 @@ wext_indicate_wext_event(IN P_GLUE_INFO_T prGlueInfo,
 	unsigned char aucExtraInfoBuf[200];
 #endif
 #if WIRELESS_EXT < 18
-	int len;
-	int ret;
 	int i;
 #endif
 
 	memset(&wrqu, 0, sizeof(wrqu));
 
 	switch (u4Cmd) {
+	case SIOCGIWTXPOW:
+		memcpy(&wrqu.power, pucData, u4dataLen);
+		break;
 	case SIOCGIWSCAN:
 		complete_all(&prGlueInfo->rScanComp);
 		break;
@@ -3956,33 +3933,11 @@ wext_indicate_wext_event(IN P_GLUE_INFO_T prGlueInfo,
 		/* under WE-18, only IWEVCUSTOM can be used */
 		u4Cmd = IWEVCUSTOM;
 		pucExtraInfo = aucExtraInfoBuf;
-		len = sizeof(aucExtraInfoBuf);
-		ret = sprintf(pucExtraInfo, "ASSOCINFO(ReqIEs=");
-		if (ret < 0) {
-			DBGLOG(INIT, ERROR, "%s:%d:sprintf return %d\n",
-					__FUNCTION__, __LINE__, ret);
-			goto skip_indicate_event;
-		}
-		len -= ret;
-		pucExtraInfo += ret;
-
+		pucExtraInfo += sprintf(pucExtraInfo, "ASSOCINFO(ReqIEs=");
+		/* printk(KERN_DEBUG "assoc info buffer size needed:%d\n", infoElemLen * 2 + 17); */
 		/* translate binary string to hex string, requirement of IWEVCUSTOM */
-
-		if(((pucDesiredIE[1] + 2) * 2) > (len - 1)) {
-			DBGLOG(INIT, INFO, "size of pucDesiredIE[1] exceeds buffer size\n");
-			goto skip_indicate_event;
-		}
-
-		for (i = 0; i < pucDesiredIE[1] + 2; ++i) {
-			ret = snprintf(pucExtraInfo, len, "%02x", pucDesiredIE[i]);
-			if (ret < 0) {
-				DBGLOG(INIT, ERROR, "%s:%d:snprintf return %d\n",
-					__FUNCTION__, __LINE__, ret);
-				goto skip_indicate_event;
-			}
-			len -= ret;
-			pucExtraInfo += ret;
-		}
+		for (i = 0; i < pucDesiredIE[1] + 2; ++i)
+			pucExtraInfo += sprintf(pucExtraInfo, "%02x", pucDesiredIE[i]);
 		pucExtraInfo = aucExtraInfoBuf;
 		wrqu.data.length = 17 + (pucDesiredIE[1] + 2) * 2;
 #else

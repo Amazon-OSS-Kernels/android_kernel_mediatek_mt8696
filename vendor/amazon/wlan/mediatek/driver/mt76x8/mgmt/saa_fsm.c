@@ -789,13 +789,6 @@ saaFsmRunEventTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN E
 
 	ASSERT(prStaRec);
 
-#if CFG_CHIP_RESET_SUPPORT
-	if (kalIsResetting()) {
-		DBGLOG(SAA, WARN, "Skip TxDone event due to chip resetting\n");
-		return WLAN_STATUS_SUCCESS;
-	}
-#endif
-
 	DBGLOG(SAA, LOUD, "EVENT-TX DONE: Current Time = %d\n", kalGetTimeTick());
 
 	/* Trigger statistics log if Auth/Assoc Tx failed */
@@ -1004,9 +997,7 @@ VOID saaFsmRunEventRxRespTimeOut(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 #if CFG_SUPPORT_CFG80211_AUTH
 	if (!IS_STA_IN_P2P(prStaRec)) {
 		/* Retry the last sent frame if possible */
-		if (prStaRec->ucStaState != STA_STATE_3) {
-			saaSendAuthAssoc(prAdapter, prStaRec);
-		}
+		saaSendAuthAssoc(prAdapter, prStaRec);
 	} else {
 #endif
 	eNextState = prStaRec->eAuthAssocState;
@@ -1462,7 +1453,7 @@ WLAN_STATUS saaFsmRunEventRxDeauth(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwR
 	prDeauthFrame = (P_WLAN_DEAUTH_FRAME_T) prSwRfb->pvHeader;
 	ucWlanIdx = (UINT_8) HAL_RX_STATUS_GET_WLAN_IDX(prSwRfb->prRxStatus);
 
-	DBGLOG(SAA, EVENT, "Rx Deauth frame ,DA[" MACSTR "] SA[" MACSTR "] BSSID[" MACSTR "] ReasonCode[0x%x]\n",
+	DBGLOG(SAA, INFO, "Rx Deauth frame ,DA[" MACSTR "] SA[" MACSTR "] BSSID[" MACSTR "] ReasonCode[0x%x]\n",
 	       MAC2STR(prDeauthFrame->aucDestAddr), MAC2STR(prDeauthFrame->aucSrcAddr),
 	       MAC2STR(prDeauthFrame->aucBSSID), prDeauthFrame->u2ReasonCode);
 
@@ -1768,7 +1759,7 @@ WLAN_STATUS saaFsmRunEventRxDisassoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prS
 	wdev = prAdapter->prGlueInfo->prDevHandler->ieee80211_ptr;
 #endif
 
-	DBGLOG(SAA, EVENT,
+	DBGLOG(SAA, INFO,
 	       "Rx Disassoc frame from BSSID[" MACSTR "] DA[" MACSTR "] ReasonCode[0x%x]\n",
 	       MAC2STR(prDisassocFrame->aucBSSID), MAC2STR(prDisassocFrame->aucDestAddr),
 	       prDisassocFrame->u2ReasonCode);

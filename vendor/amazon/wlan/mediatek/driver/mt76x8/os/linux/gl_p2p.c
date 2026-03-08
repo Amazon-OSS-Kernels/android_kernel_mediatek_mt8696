@@ -750,7 +750,7 @@ BOOLEAN p2pNetRegister(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgIsRtnlLockAcquired)
 
 	/* register for net device */
 	if (register_netdev(prGlueInfo->prP2PInfo[0]->prDevHandler) < 0) {
-		DBGLOG(INIT, WARN, "unable to register netdevice for p2p[0]\n");
+		DBGLOG(INIT, WARN, "unable to register netdevice for p2p\n");
 
 		free_netdev(prGlueInfo->prP2PInfo[0]->prDevHandler);
 
@@ -758,9 +758,6 @@ BOOLEAN p2pNetRegister(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgIsRtnlLockAcquired)
 	} else {
 		prGlueInfo->prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
 		gPrP2pDev[0] = prGlueInfo->prP2PInfo[0]->prDevHandler;
-#if CFG_RESET_DUE_TO_REG_NETDEV_FAIL
-		prGlueInfo->prP2PInfo[0]->fgIsNetDevRegistered = TRUE;
-#endif
 		ret = TRUE;
 	}
 
@@ -771,7 +768,7 @@ BOOLEAN p2pNetRegister(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgIsRtnlLockAcquired)
 
 		/* register for net device */
 		if (register_netdev(prGlueInfo->prP2PInfo[1]->prDevHandler) < 0) {
-			DBGLOG(INIT, WARN, "unable to register netdevice for p2p[1]\n");
+			DBGLOG(INIT, WARN, "unable to register netdevice for p2p\n");
 
 			free_netdev(prGlueInfo->prP2PInfo[1]->prDevHandler);
 
@@ -779,12 +776,7 @@ BOOLEAN p2pNetRegister(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgIsRtnlLockAcquired)
 		} else {
 			prGlueInfo->prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
 			gPrP2pDev[1] = prGlueInfo->prP2PInfo[1]->prDevHandler;
-#if CFG_RESET_DUE_TO_REG_NETDEV_FAIL
-			DBGLOG(P2P, STATE, "P2P 2nd NetDev registered\n");
-			prGlueInfo->prP2PInfo[1]->fgIsNetDevRegistered = TRUE;
-#else
 			ret = TRUE;
-#endif
 		}
 
 
@@ -870,15 +862,8 @@ BOOLEAN p2pNetUnregister(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgIsRtnlLockAcquired)
 		DBGLOG(INIT, INFO, "unregister p2p[0]\n");
 		unregister_netdev(prGlueInfo->prP2PInfo[0]->aprRoleHandler);
 	}
-#if CFG_RESET_DUE_TO_REG_NETDEV_FAIL
-	if (prGlueInfo->prP2PInfo[0]->fgIsNetDevRegistered == TRUE) {
-		prGlueInfo->prP2PInfo[0]->fgIsNetDevRegistered = FALSE;
-#endif
-		DBGLOG(INIT, INFO, "unregister p2pdev[0]\n");
-		unregister_netdev(prGlueInfo->prP2PInfo[0]->prDevHandler);
-#if CFG_RESET_DUE_TO_REG_NETDEV_FAIL
-	}
-#endif
+	DBGLOG(INIT, INFO, "unregister p2pdev\n");
+	unregister_netdev(prGlueInfo->prP2PInfo[0]->prDevHandler);
 
 	/* unregister the netdev and index > 0 */
 	if (prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum >= 2) {
@@ -894,15 +879,8 @@ BOOLEAN p2pNetUnregister(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgIsRtnlLockAcquired)
 				rtnl_unlock();
 			}
 			/* Here are functions which need rtnl_lock */
-#if CFG_RESET_DUE_TO_REG_NETDEV_FAIL
-			if (prGlueInfo->prP2PInfo[ucRoleIdx]->fgIsNetDevRegistered == TRUE) {
-				prGlueInfo->prP2PInfo[ucRoleIdx]->fgIsNetDevRegistered = FALSE;
-				DBGLOG(INIT, INFO, "unregister p2pdev[%d]\n", ucRoleIdx);
-#endif
-				unregister_netdev(prGlueInfo->prP2PInfo[ucRoleIdx]->prDevHandler);
-#if CFG_RESET_DUE_TO_REG_NETDEV_FAIL
-			}
-#endif
+
+			unregister_netdev(prGlueInfo->prP2PInfo[ucRoleIdx]->prDevHandler);
 		}
 	}
 

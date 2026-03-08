@@ -659,12 +659,6 @@ static VOID cnmStaRoutinesForAbort(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRe
 		prStaRec->u2AssocReqIeLen = 0;
 	}
 
-	/* Free previous allocated TCM memory */
-	if (prStaRec->prChallengeText) {
-		cnmMemFree(prAdapter, prStaRec->prChallengeText);
-		prStaRec->prChallengeText = (P_IE_CHALLENGE_TEXT_T) NULL;
-	}
-
 	qmDeactivateStaRec(prAdapter, prStaRec);
 
 	/* Update the driver part table setting */

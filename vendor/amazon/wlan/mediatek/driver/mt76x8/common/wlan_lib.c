@@ -676,7 +676,6 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 #if CFG_SUPPORT_LAST_SEC_MCS_INFO
 		prAdapter->fgIsMcsInfoValid = FALSE;
 #endif
-		prAdapter->r1xTxDoneStatus = TX_RESULT_UNINITIALIZED;
 
 	} while (FALSE);
 
@@ -718,9 +717,6 @@ WLAN_STATUS wlanAdapterStop(IN P_ADAPTER_T prAdapter)
 
 	/* Release all CMD/MGMT/SEC frame in command queue */
 	kalClearCommandQueue(prAdapter->prGlueInfo);
-
-	/* Release all CMD in pending command queue */
-	wlanClearPendingCommandQueue(prAdapter);
 
 #if CFG_SUPPORT_MULTITHREAD
 
@@ -1277,10 +1273,6 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 *	UINT_32 u4Address;
 */
 	UINT_32 u4TxDoneQueueSize;
-#if CFG_FTV_62866_PATCH
-	UINT_32 tx_status;
-	UINT_32 tx_retry_cnt = 0;
-#endif
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1306,34 +1298,6 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 		prCmdInfo = (P_CMD_INFO_T) prQueueEntry;
 		prCmdInfo->pfHifTxCmdDoneCb = wlanTxCmdDoneCb;
 
-#if CFG_FTV_62866_PATCH
-		if(tx_retry_cnt == 0) {
-			if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
-				KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
-				QUEUE_INSERT_TAIL(&(prAdapter->rPendingCmdQueue),
-						  (P_QUE_ENTRY_T) prCmdInfo);
-				KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
-			} else {
-				QUEUE_INSERT_TAIL(prTempCmdDoneQue, prQueueEntry);
-			}
-		}
-		tx_status = nicTxCmd(prAdapter, prCmdInfo, TC4_INDEX);
-		if(tx_retry_cnt < NIC_TX_RESOURCE_POLLING_TIMEOUT) {
-			if(tx_status == WLAN_STATUS_RESOURCES) {
-				tx_retry_cnt++;
-				kalMsleep(NIC_TX_RESOURCE_POLLING_DELAY_MSEC);
-				continue;
-			}
-		}
-		else {
-			P_WIFI_CMD_T prWifiCmd =
-			(P_WIFI_CMD_T) prCmdInfo->pucInfoBuffer;
-			DBGLOG(INIT, ERROR,
-				"RETRY[%d] TX CMD: ID[0x%02X] SEQ[%u] CMD cannot send\n",
-			tx_retry_cnt, prWifiCmd->ucCID, prWifiCmd->ucSeqNum);
-			tx_retry_cnt = 0;
-		}
-#else
 		if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 			QUEUE_INSERT_TAIL(&(prAdapter->rPendingCmdQueue), (P_QUE_ENTRY_T) prCmdInfo);
@@ -1343,7 +1307,6 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 		}
 
 		nicTxCmd(prAdapter, prCmdInfo, TC4_INDEX);
-#endif
 
 		/* DBGLOG(INIT, INFO,
 		 * ("==> TX CMD QID: %d (Q:%d)\n", prCmdInfo->ucCID, prTempCmdQue->u4NumElem));
@@ -1351,17 +1314,6 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 
 		GLUE_DEC_REF_CNT(prAdapter->prGlueInfo->i4TxPendingCmdNum);
 		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, P_QUE_ENTRY_T);
-
-#if CFG_FTV_62866_PATCH
-		if(tx_retry_cnt) {
-			P_WIFI_CMD_T prWifiCmd =
-			(P_WIFI_CMD_T) prCmdInfo->pucInfoBuffer;
-			DBGLOG(INIT, STATE, "RETRY[%d] TX CMD: ID[0x%02X] SEQ[%u]\n",
-				tx_retry_cnt, prWifiCmd->ucCID, prWifiCmd->ucSeqNum);
-		}
-		tx_retry_cnt = 0;
-#endif
-
 	}
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_CMD_DONE_QUE);
@@ -1667,48 +1619,6 @@ VOID wlanClearRxToOsQueue(IN P_ADAPTER_T prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is used to clear all commands in pending command queue
- * \param prAdapter  Pointer of Adapter Data Structure
- *
- * \retval none
-*/
-/*----------------------------------------------------------------------------*/
-void wlanClearPendingCommandQueue(IN P_ADAPTER_T prAdapter)
-{
-    QUE_T rTempCmdQue;
-    P_QUE_T prTempCmdQue = &rTempCmdQue;
-    P_QUE_ENTRY_T prQueueEntry = (P_QUE_ENTRY_T) NULL;
-    P_CMD_INFO_T prCmdInfo = (P_CMD_INFO_T) NULL;
-
-	KAL_SPIN_LOCK_DECLARATION();
-    QUEUE_INITIALIZE(prTempCmdQue);
-
-	ASSERT(prAdapter);
-
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
-
-	QUEUE_MOVE_ALL(prTempCmdQue,&prAdapter->rPendingCmdQueue);
-
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
-
-	QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, P_QUE_ENTRY_T);
-
-	while (prQueueEntry) {
-		prCmdInfo = (P_CMD_INFO_T) prQueueEntry;
-
-		if (prCmdInfo->pfCmdTimeoutHandler)
-			prCmdInfo->pfCmdTimeoutHandler(prAdapter, prCmdInfo);
-		else
-			wlanReleaseCommand(prAdapter, prCmdInfo, TX_RESULT_QUEUE_CLEARANCE);
-
-		nicTxCancelSendingCmd(prAdapter, prCmdInfo);
-		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
-		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, P_QUE_ENTRY_T);
-    }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief This function will release thd CMD_INFO upon its attribution
  *
  * \param prAdapter  Pointer of Adapter Data Structure
@@ -1819,7 +1729,7 @@ VOID wlanReleasePendingOid(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 			DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 						prAdapter->fgIsChipNoAck);
 			if (!checkResetState())
-				GL_RESET_TRIGGER(prAdapter, RST_OID_TIMEOUT);
+				glResetTrigger(prAdapter);
 #endif
 		}
 		set_bit(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT, &(prAdapter->prGlueInfo->ulFlag));
@@ -2355,7 +2265,7 @@ WLAN_STATUS wlanSendNicPowerCtrlCmd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPowerM
 #if CFG_CHIP_RESET_SUPPORT
 				DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 						prAdapter->fgIsChipNoAck);
-				GL_RESET_TRIGGER(prAdapter, RST_DRV_OWN_FAIL);
+				glResetTrigger(prAdapter);
 #endif
 				break;
 			}
@@ -5603,13 +5513,6 @@ WLAN_STATUS wlanEnqueueTxPacket(IN P_ADAPTER_T prAdapter, IN P_NATIVE_PACKET prN
 					cnmPktFree(prAdapter, prMsduInfo);
 					return WLAN_STATUS_PENDING;
 				}
-
-			prAdapter->r1xTxDoneStatus = TX_RESULT_1XTX_CLEAR;
-			if (prAdapter->fgIsTest1xTx == 1) {
-				DBGLOG(RSN, STATE, "%s: (fgIsTest1xTx == 1) test 1XTX frame skip\n", __func__);
-				cnmPktFree(prAdapter, prMsduInfo);
-				return WLAN_STATUS_SUCCESS;
-			}
 		}
 
 		/* Tx profiling */
@@ -8594,86 +8497,6 @@ exit:
 	return WLAN_STATUS_SUCCESS;
 }
 
-#if CFG_SUPPORT_SEND_ONLY_ONE_CFG
-WLAN_STATUS wlanFeatureToFwOnlyOneCfg(IN P_ADAPTER_T prAdapter,
-		     const PCHAR pucKey, PCHAR pucValue)
-{
-	CMD_HEADER_T rCmdV1Header;
-	CMD_FORMAT_V1_T rCmd_v1;
-	WLAN_STATUS rStatus;
-	UCHAR roffset = 0;
-
-	ASSERT(pucKey);
-
-	rCmdV1Header.cmdType = CMD_TYPE_SET;
-	rCmdV1Header.cmdVersion = CMD_VER_1;
-	rCmdV1Header.cmdBufferLen = 0;
-	rCmdV1Header.itemNum = 0;
-
-	kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
-	kalMemSet(&rCmd_v1, 0, sizeof(CMD_FORMAT_V1_T));
-
-	if (pucKey != NULL && pucValue != NULL) {
-
-		rCmd_v1.itemType = ITEM_TYPE_STR;
-
-
-		/*send string format to firmware */
-		rCmd_v1.itemStringLength = kalStrLen(pucKey);
-
-		if (rCmd_v1.itemStringLength > MAX_CMD_NAME_MAX_LENGTH)
-			return WLAN_STATUS_INVALID_LENGTH;
-
-		kalMemZero(rCmd_v1.itemString, MAX_CMD_NAME_MAX_LENGTH);
-		kalMemCopy(rCmd_v1.itemString, pucKey, rCmd_v1.itemStringLength);
-
-
-		rCmd_v1.itemValueLength = kalStrLen(pucValue);
-
-		if (rCmd_v1.itemValueLength > MAX_CMD_VALUE_MAX_LENGTH)
-			return WLAN_STATUS_INVALID_LENGTH;
-
-		kalMemZero(rCmd_v1.itemValue, MAX_CMD_VALUE_MAX_LENGTH);
-		kalMemCopy(rCmd_v1.itemValue, pucValue, rCmd_v1.itemValueLength);
-
-
-		DBGLOG(INIT, INFO, "Send key word (%s) WITH (%s) to firmware\n",
-			rCmd_v1.itemString, rCmd_v1.itemValue);
-
-		kalMemCopy(((P_CMD_FORMAT_V1_T)rCmdV1Header.buffer)+roffset,
-			&rCmd_v1,  sizeof(CMD_FORMAT_V1_T));
-
-		rCmdV1Header.cmdBufferLen = sizeof(CMD_FORMAT_V1_T);
-		rCmdV1Header.itemNum = 1;
-
-		/* Send to FW */
-
-		rStatus = wlanSendSetQueryCmd(
-			prAdapter,				/* prAdapter */
-			CMD_ID_GET_SET_CUSTOMER_CFG,	/* 0x70 */
-			TRUE,					/* fgSetQuery */
-			FALSE,					/* fgNeedResp */
-			FALSE,					/* fgIsOid */
-			NULL,					/* pfCmdDoneHandler*/
-			NULL,	/* pfCmdTimeoutHandler */
-			sizeof(CMD_HEADER_T),	/* u4SetQueryInfoLen */
-			(PUINT_8)&rCmdV1Header, /* pucInfoBuffer */
-			NULL,	/* pvSetQueryBuffer */
-			0	/* u4SetQueryBufferLen */
-		);
-
-		if (rStatus == WLAN_STATUS_FAILURE)
-			DBGLOG(INIT, INFO, "[Fail]kalIoctl wifiSefCFG fail 0x%x\n", rStatus);
-
-		kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
-		rCmdV1Header.cmdBufferLen = 0;
-	} else {
-		return WLAN_STATUS_INVALID_DATA;
-	}
-	return rStatus;
-}
-#endif
-
 #else
 WLAN_STATUS wlanCfgParse(IN P_ADAPTER_T prAdapter, PUINT_8 pucConfigBuf, UINT_32 u4ConfigBufLen)
 {
@@ -9215,8 +9038,6 @@ WLAN_STATUS wlan1xTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 {
 	DBGLOG(SW4, STATE, "1x PKT[0x%08x] WIDX:PID[%u:%u] Status[%u]\n",
 		prMsduInfo->u4TxDoneTag, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID, rTxDoneStatus);
-
-		prAdapter->r1xTxDoneStatus = rTxDoneStatus;
 
 	return WLAN_STATUS_SUCCESS;
 }

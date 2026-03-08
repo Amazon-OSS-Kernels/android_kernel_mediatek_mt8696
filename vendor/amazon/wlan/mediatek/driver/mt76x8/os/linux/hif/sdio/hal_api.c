@@ -385,7 +385,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 				if (prAdapter->u4OwnFailedLogCount > LP_OWN_BACK_FAILED_RESET_CNT) {
 					/* Trigger RESET */
 #if CFG_CHIP_RESET_SUPPORT
-					GL_RESET_TRIGGER(prAdapter, RST_DRV_OWN_FAIL);
+					glResetTrigger(prAdapter);
 #endif
 				}
 				GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
@@ -459,7 +459,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 				if (fgTimeout) {
 					/* Trigger RESET */
 #if CFG_CHIP_RESET_SUPPORT
-					GL_RESET_TRIGGER(prAdapter, RST_DRV_OWN_FAIL);
+					glResetTrigger(prAdapter);
 #endif
 				}
 
@@ -1941,7 +1941,7 @@ VOID halProcessSoftwareInterrupt(IN P_ADAPTER_T prAdapter)
 	if ((u4IntrBits & WHISR_D2H_SW_ASSERT_INFO_INT) != 0) {
 		halPrintFirmwareAssertInfo(prAdapter);
 #if CFG_CHIP_RESET_SUPPORT
-		GL_RESET_TRIGGER(prAdapter, RST_PROCESS_ABNORMAL_INT);
+		glResetTrigger(prAdapter);
 #endif
 	}
 

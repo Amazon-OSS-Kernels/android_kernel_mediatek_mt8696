@@ -61,7 +61,6 @@ static wait_queue_head_t fw_log_inq;
 static struct fasync_struct *fasync;
 
 static int need_reset_stack;
-static int need_reset_stack_type;
 static int need_reopen;
 static int wlan_remove_done;
 
@@ -2997,6 +2996,7 @@ static int btmtk_sdio_card_to_host(struct btmtk_private *priv, const u8 *event, 
 		dump_len = (rxbuf[SDIO_HEADER_LEN + 1] & 0x0F) * 256
 				+ rxbuf[SDIO_HEADER_LEN + 2];
 		pr_debug("%s: get dump length %d\n", __func__, dump_len);
+
 		if (print_dump_data_counter < PRINT_DUMP_COUNT) {
 			print_dump_data_counter++;
 			pr_warn("%s : dump %d %s\n", __func__, print_dump_data_counter,
@@ -3023,8 +3023,6 @@ static int btmtk_sdio_card_to_host(struct btmtk_private *priv, const u8 *event, 
 		if (print_dump_data_counter == 1) {
 			whole_chip_rst_ready = COREDUMP_START;
 			/* #if SAVE_FW_DUMP_IN_KERNEL */
-			if (need_reset_stack_type == HW_ERR_NONE)
-				need_reset_stack_type = HW_ERR_CODE_BT_FW;
 			g_card->dongle_state = BT_SDIO_DONGLE_STATE_FW_DUMP;
 			btmtk_sdio_hci_snoop_print();
 			pr_info("%s: create btmtk_sdio_wait_dump_complete_thread\n", __func__);
@@ -3801,6 +3799,10 @@ static int btmtk_sdio_reset_fw(struct btmtk_sdio_card *card)
 	pr_info("%s Mediatek Bluetooth driver Version=%s\n",
 			__func__, VERSION);
 
+#if SUPPORT_EINT
+	btmtk_sdio_RegisterBTIrq(card);
+	btmtk_sdio_woble_input_init(card);
+#endif
 	pr_debug("%s func device %X\n", __func__, card->func->device);
 	pr_debug("%s Call btmtk_sdio_register_dev\n", __func__);
 	btmtk_sdio_reset_dev(card);
@@ -3938,8 +3940,7 @@ int btmtk_sdio_bt_trigger_core_dump(int trigger_dump)
 				pr_err("%s: wait_wlan_rst_done_task is NULL\n", __func__);
 #endif
 	}
-	if (need_reset_stack_type == HW_ERR_NONE)
-		need_reset_stack_type = HW_ERR_CODE_WIFI;
+
 	return 0;
 }
 EXPORT_SYMBOL(btmtk_sdio_bt_trigger_core_dump);
@@ -3972,8 +3973,6 @@ int btmtk_sdio_reset_dongle(void)
 	probe_ready = false;
 
 	wlan_remove_done = 0;
-	if (need_reset_stack_type == HW_ERR_NONE)
-		need_reset_stack_type = HW_ERR_CODE_BT_DRIVER;
 
 retry_reset:
 	retry--;
@@ -4022,12 +4021,8 @@ rst_dongle_err:
 	print_dump_data_counter = 0;
 	fw_is_doing_coredump = false;
 
-	if (need_reset_stack_type != HW_ERR_NONE)
-		need_reset_stack = need_reset_stack_type;
-	else {
-		pr_info("%s need_reset_stack is HW_ERR_NONE when do chip reset\n", __func__);
-		need_reset_stack = HW_ERR_CODE_BT_DRIVER;
-	}
+	if (need_reset_stack == HW_ERR_NONE)
+		need_reset_stack = HW_ERR_CODE_CHIP_RESET;
 	probe_ready = true;
 
 	pr_info("%s return ret = %d\n", __func__, ret);
@@ -4969,7 +4964,6 @@ static int btmtk_fops_open(struct inode *inode, struct file *file)
 	sema_init(&g_priv->wr_mtx, 1);
 	sema_init(&g_priv->rd_mtx, 1);
 	need_reset_stack = HW_ERR_NONE;
-	need_reset_stack_type = HW_ERR_NONE;
 	need_reopen = 0;
 	pr_info("%s fops_mode=%d end\n", __func__, g_priv->adapter->fops_mode);
 	return 0;
@@ -5146,8 +5140,6 @@ ssize_t btmtk_fops_write(struct file *filp, const char __user *buf,
 		if (skb->len == sizeof(fw_assert_cmd) &&
 			!memcmp(&skb->data[0], fw_assert_cmd, sizeof(fw_assert_cmd)))
 			pr_info("%s: Donge FW Assert Triggered by upper layer\n", __func__);
-			if (need_reset_stack_type == HW_ERR_NONE)
-				need_reset_stack_type = HW_ERR_CODE_BT_HOST;
 		else if (skb->len == sizeof(reset_cmd) &&
 			!memcmp(&skb->data[0], reset_cmd, sizeof(reset_cmd)))
 			pr_info("%s: got command: 0x03 0C 00 (HCI_RESET)\n", __func__);
@@ -5224,7 +5216,6 @@ ssize_t btmtk_fops_read(struct file *filp, char __user *buf,
 				send_hw_err_event_count  = 0;
 				pr_warn("%s: set need_reset_stack=0", __func__);
 				need_reset_stack = HW_ERR_NONE;
-				need_reset_stack_type = HW_ERR_NONE;
 				need_reopen = 1;
 			}
 			pr_warn("%s: set call up", __func__);
