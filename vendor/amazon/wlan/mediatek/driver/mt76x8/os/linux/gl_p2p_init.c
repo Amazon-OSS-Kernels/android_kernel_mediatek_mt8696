@@ -121,9 +121,7 @@ VOID p2pSetSuspendMode(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgEnable)
 	if (!prGlueInfo)
 		return;
 
-	if (!prGlueInfo->prAdapter->fgIsP2PRegistered ||
-		(prGlueInfo->prAdapter->rP2PNetRegState !=
-			ENUM_NET_REG_STATE_REGISTERED)) {
+	if (!prGlueInfo->prAdapter->fgIsP2PRegistered) {
 		DBGLOG(INIT, INFO, "%s: P2P is not enabled, SKIP!\n", __func__);
 		return;
 	}

@@ -4859,7 +4859,7 @@ BOOLEAN kalSetSdioTestPattern(IN P_GLUE_INFO_T prGlueInfo, IN BOOLEAN fgEn, IN B
 #define PROC_MET_PROF_PORT                 "met_port"
 
 struct proc_dir_entry *pMetProcDir;
-void *pMetGlobalData = NULL;
+void *pMetGlobalData;
 
 #endif
 /*----------------------------------------------------------------------------*/
@@ -5439,12 +5439,6 @@ int kalMetRemoveProcfs(IN P_GLUE_INFO_T prGlueInfo)
 		DBGLOG(INIT, WARN, "remove proc fs fail: proc_net == NULL\n");
 		return -ENOENT;
 	}
-
-	if (pMetGlobalData == NULL) {
-		DBGLOG(INIT, WARN, "Skip MET remove Procfs due to init was not done\n");
-		return 0;
-	}
-
 	remove_proc_entry(PROC_MET_PROF_CTRL, pMetProcDir);
 	remove_proc_entry(PROC_MET_PROF_PORT, pMetProcDir);
 	/* remove root directory (proc/net/wlan0) */

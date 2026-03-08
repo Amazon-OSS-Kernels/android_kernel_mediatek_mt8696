@@ -82,9 +82,6 @@
 #if CFG_ENABLE_WIFI_DIRECT
 #include "gl_p2p_os.h"
 #endif
-#if CFG_CHIP_RESET_SUPPORT
-#include "gl_rst.h"
-#endif
 
 /*
 * #if CFG_SUPPORT_QA_TOOL
@@ -2543,11 +2540,6 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_DETC_ANT_DIV_ARG_NUM	1
 #define CMD_SWH_ANT_DIV_ARG_NUM		1
 
-#endif
-
-#if CFG_CHIP_RESET_SUPPORT
-#define CMD_GET_FW_RESET_CNT		"GET_FW_RESET_CNT"
-#define CMD_RESET_FW_RESET_CNT		"RST_FW_RESET_CNT"
 #endif
 
 #define	CMD_SEND_BEACONTIMEOUT	"SEND_BEACONTIMEOUT"
@@ -9348,7 +9340,7 @@ static int priv_driver_set_wow_par(IN struct net_device *prNetDev, IN char *pcCo
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
-	if (i4Argc >= 7) {
+	if (i4Argc > 3) {
 
 		u4Ret = kalkStrtou8(apcArgv[1], 0, &ucWakeupHif);
 		if (u4Ret)
@@ -14014,90 +14006,6 @@ static int priv_driver_get_disconnect_reason(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
-#if CFG_CHIP_RESET_SUPPORT
-static int priv_driver_get_chip_reset_cnt(IN struct net_device *prNetDev,
-				IN char *pcCommand, IN int i4TotalLen)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	int32_t i4BytesWritten = 0;
-	uint32_t i = 0;
-	extern const char *const apcChipResetReason[];
-
-	typedef uint32_t (*p_get_func_type) (uint32_t);
-	p_get_func_type get_func;
-	char *reason_func_name = "getChipResetReasonCnt";
-	void *pvAddrReason = NULL;
-
-	if (!prNetDev) {
-		DBGLOG(REQ, ERROR, "prNetDev == NULL unexpected\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-	return -1;
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
-	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
-
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n");
-	pvAddrReason = (void *) kallsyms_lookup_name(reason_func_name);
-
-	if(pvAddrReason) {
-		get_func = (p_get_func_type) pvAddrReason;
-
-		for(i=0; i<RST_REASON_MAX; i++) {
-			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-				"\t[%s] = %d\n",
-				apcChipResetReason[i], get_func(i));
-		}
-	}
-	else {
-		DBGLOG(REQ, ERROR, "%s does not exist\n", reason_func_name);
-	}
-
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n");
-
-	return i4BytesWritten;
-}
-static int priv_driver_rst_chip_rst_cnt(IN struct net_device *prNetDev,
-				IN char *pcCommand, IN int i4TotalLen)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	int32_t i4BytesWritten = 0;
-
-	typedef void (*p_rst_func_type) (void);
-	p_rst_func_type rst_func;
-	char *reason_func_name = "rstChipResetReasonCnt";
-	void *pvAddrReason = NULL;
-
-	if (!prNetDev) {
-		DBGLOG(REQ, ERROR, "prNetDev == NULL unexpected\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-	return -1;
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
-	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
-
-	pvAddrReason = (void *) kallsyms_lookup_name(reason_func_name);
-
-	if(pvAddrReason) {
-		rst_func = (p_rst_func_type) pvAddrReason;
-		rst_func();
-	}
-	else {
-		DBGLOG(REQ, ERROR, "%s does not exist\n", reason_func_name);
-	}
-
-	return i4BytesWritten;
-}
-#endif
-
-
 INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN INT_32 i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -14537,16 +14445,6 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 					strlen(CMD_GET_DISCONNECT_REASON)) == 0) {
 			i4BytesWritten = priv_driver_get_disconnect_reason(prNetDev,
 					pcCommand, i4TotalLen);
-#if CFG_CHIP_RESET_SUPPORT
-		} else if (!strnicmp(pcCommand, CMD_GET_FW_RESET_CNT,
-					strlen(CMD_GET_FW_RESET_CNT))) {
-			i4BytesWritten = priv_driver_get_chip_reset_cnt(
-				prNetDev, pcCommand, i4TotalLen);
-		} else if (!strnicmp(pcCommand, CMD_RESET_FW_RESET_CNT,
-					strlen(CMD_RESET_FW_RESET_CNT))) {
-			i4BytesWritten = priv_driver_rst_chip_rst_cnt(
-				prNetDev, pcCommand, i4TotalLen);
-#endif
 		} else
 			i4BytesWritten = priv_cmd_not_support(prNetDev, pcCommand, i4TotalLen);
 

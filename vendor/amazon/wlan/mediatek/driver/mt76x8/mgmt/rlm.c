@@ -2139,7 +2139,7 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 			prCSAParams->ucVhtBw = prWideBandChannelIE->ucNewChannelWidth;
 			prCSAParams->ucVhtS1  = prWideBandChannelIE->ucChannelS1;
 			prCSAParams->ucVhtS2  = prWideBandChannelIE->ucChannelS2;
-			DBGLOG(RLM, STATE,
+			DBGLOG(RLM, INFO,
 			       "[Ch] BW=%d, s1=%d, s2=%d\n", prCSAParams->ucVhtBw, prCSAParams->ucVhtS1,
 			       prCSAParams->ucVhtS2);
 			break;
@@ -2370,16 +2370,6 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 	rlmRevisePreferBandwidthNss(prAdapter, prBssInfo->ucBssIndex, prStaRec);
 
 	/*printk("Modify ChannelWidth (%d) and Extend (%d)\n",prBssInfo->eBssSCO,prBssInfo->ucVhtChannelWidth);*/
-
-	/* Revise and align S1 to primary channel */
-	if (prBssInfo->ucVhtChannelFrequencyS1 != nicGetVhtS1(
-			prBssInfo->ucPrimaryChannel, prBssInfo->ucVhtChannelWidth)) {
-		DBGLOG(RLM, STATE, "Revise BSS %d Ch=%d BW=%d S1=%d\n",
-		       prBssInfo->ucBssIndex,
-		       prBssInfo->ucPrimaryChannel,
-		       prBssInfo->ucVhtChannelWidth,
-		       prBssInfo->ucVhtChannelFrequencyS1);
-	}
 
 	if (!rlmDomainIsValidRfSetting(prAdapter, prBssInfo->eBand,
 				       prBssInfo->ucPrimaryChannel, prBssInfo->eBssSCO,
@@ -3001,7 +2991,7 @@ VOID rlmFillSyncCmdParam(P_CMD_SET_BSS_RLM_PARAM_T prCmdBody, P_BSS_INFO_T prBss
 	prCmdBody->ucNss = prBssInfo->ucNss;
 
 	if (RLM_NET_PARAM_VALID(prBssInfo)) {
-		DBGLOG(RLM, WARN, "N=%d b=%d c=%d s=%d e=%d h=%d I=0x%02x l=%d p=%d w=%d s1=%d s2=%d n=%d\n",
+		DBGLOG(RLM, INFO, "N=%d b=%d c=%d s=%d e=%d h=%d I=0x%02x l=%d p=%d w=%d s1=%d s2=%d n=%d\n",
 		       prCmdBody->ucBssIndex, prCmdBody->ucRfBand,
 		       prCmdBody->ucPrimaryChannel, prCmdBody->ucRfSco,
 		       prCmdBody->ucErpProtectMode, prCmdBody->ucHtProtectMode,
@@ -3011,7 +3001,7 @@ VOID rlmFillSyncCmdParam(P_CMD_SET_BSS_RLM_PARAM_T prCmdBody, P_BSS_INFO_T prBss
 		       prCmdBody->ucVhtChannelFrequencyS1, prCmdBody->ucVhtChannelFrequencyS2,
 		       prCmdBody->ucNss);
 	} else {
-		DBGLOG(RLM, STATE, "N=%d closed\n", prCmdBody->ucBssIndex);
+		DBGLOG(RLM, INFO, "N=%d closed\n", prCmdBody->ucBssIndex);
 	}
 }
 
@@ -3808,8 +3798,6 @@ VOID rlmProcessSpecMgtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 				prCSAParams->ucVhtBw = prWideBandChannelIE->ucNewChannelWidth;
 				prCSAParams->ucVhtS1 = prWideBandChannelIE->ucChannelS1;
 				prCSAParams->ucVhtS2 = prWideBandChannelIE->ucChannelS2;
-				DBGLOG(RLM, STATE, "[CSA Mgt] ACT BW=%d, s1=%d, s2=%d\n",
-					prCSAParams->ucVhtBw, prCSAParams->ucVhtS1,	prCSAParams->ucVhtS2);
 				break;
 
 			case ELEM_ID_CH_SW_ANNOUNCEMENT:
@@ -3820,7 +3808,7 @@ VOID rlmProcessSpecMgtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 
 				prChannelSwitchAnnounceIE = (P_IE_CHANNEL_SWITCH_T) pucIE;
 
-				DBGLOG(RLM, STATE,
+				DBGLOG(RLM, INFO,
 					"[CSA Mgt] switch channel [%d]->[%d]\n",
 					prBssInfo->ucPrimaryChannel,
 					prChannelSwitchAnnounceIE
@@ -4110,16 +4098,6 @@ VOID rlmCsaTimeout(IN P_ADAPTER_T prAdapter,
 		       &prBssInfo->ucPrimaryChannel);
 
 	rlmRevisePreferBandwidthNss(prAdapter, prBssInfo->ucBssIndex, prStaRec);
-
-	/* Revise and align S1 to primary channel */
-	if (prBssInfo->ucVhtChannelFrequencyS1 != nicGetVhtS1(
-			prBssInfo->ucPrimaryChannel, prBssInfo->ucVhtChannelWidth)) {
-		DBGLOG(RLM, STATE, "DFS:Revise BSS %d Ch=%d BW=%d S1=%d\n",
-		       prBssInfo->ucBssIndex,
-		       prBssInfo->ucPrimaryChannel,
-		       prBssInfo->ucVhtChannelWidth,
-		       prBssInfo->ucVhtChannelFrequencyS1);
-	}
 
 	if (!rlmDomainIsValidRfSetting(
 		    prAdapter, prBssInfo->eBand, prBssInfo->ucPrimaryChannel,

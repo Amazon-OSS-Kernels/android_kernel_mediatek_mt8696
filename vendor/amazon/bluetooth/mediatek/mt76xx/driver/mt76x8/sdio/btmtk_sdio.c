@@ -3799,6 +3799,10 @@ static int btmtk_sdio_reset_fw(struct btmtk_sdio_card *card)
 	pr_info("%s Mediatek Bluetooth driver Version=%s\n",
 			__func__, VERSION);
 
+#if SUPPORT_EINT
+	btmtk_sdio_RegisterBTIrq(card);
+	btmtk_sdio_woble_input_init(card);
+#endif
 	pr_debug("%s func device %X\n", __func__, card->func->device);
 	pr_debug("%s Call btmtk_sdio_register_dev\n", __func__);
 	btmtk_sdio_reset_dev(card);

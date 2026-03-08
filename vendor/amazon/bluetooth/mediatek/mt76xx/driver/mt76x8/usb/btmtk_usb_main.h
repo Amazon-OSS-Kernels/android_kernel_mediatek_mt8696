@@ -20,19 +20,7 @@
 #endif
 
 #include <linux/timer.h>
-#ifdef CONFIG_AMAZON_METRICS_LOG
-#include <linux/metricslog.h>
-#endif
 
-
-#ifdef CONFIG_AMAZON_METRICS_LOG
-#define BT_DOMAIN                  "Kernel"
-#define BT_PROGRAM                 "remote-wireless"
-#define BT_OPERATION               "bt-driver"
-#define BT_KEY_BUS_DISC            "7668-bus-disc"
-#define BT_KEY_WOBLE               "7668-woble"
-#define BT_KEY_PROBE               "7668-probe"
-#endif
 
 #define BD_ADDRESS_SIZE 6
 

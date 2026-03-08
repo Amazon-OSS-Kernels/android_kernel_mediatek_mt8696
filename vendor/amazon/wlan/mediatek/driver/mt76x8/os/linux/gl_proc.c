@@ -367,20 +367,20 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count, lo
 static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 		size_t count, loff_t *data)
 {
+
+	/*	UINT_32 u4DriverCmd, u4DriverValue;
+	*UINT_8 *temp = &g_aucProcBuf[0];
+	*/
 	INT_32 u4CopySize = sizeof(g_aucProcBuf);
 	PUINT_8	pucTmp;
 	INT_32 i4Pos = 0;
+	/*	PARAM_CUSTOM_P2P_SET_STRUCT_T rSetP2P; */
 	P_GLUE_INFO_T prGlueInfo = g_prGlueInfo_proc;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
 	if (!prGlueInfo)
 		return -EFAULT;
-
-	if (count <= 0) {
-		DBGLOG(INIT, ERROR, "wrong copy size\n");
-		return -EFAULT;
-	}
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
 
@@ -950,7 +950,7 @@ static ssize_t procReset(struct file *filp, char __user *buf, size_t count,
 				"Reset\n");
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
 
-		GL_RESET_TRIGGER(prAdapter, RST_CMD_TRIGGER);
+		glResetTrigger(prAdapter);
 		u4CopySize = i4Pos;
 		if (u4CopySize > count)
 			u4CopySize = count;

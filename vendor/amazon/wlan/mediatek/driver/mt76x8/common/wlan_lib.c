@@ -1276,10 +1276,6 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 *	UINT_32 u4Address;
 */
 	UINT_32 u4TxDoneQueueSize;
-#if CFG_FTV_62866_PATCH
-	UINT_32 tx_status;
-	UINT_32 tx_retry_cnt = 0;
-#endif
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1305,34 +1301,6 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 		prCmdInfo = (P_CMD_INFO_T) prQueueEntry;
 		prCmdInfo->pfHifTxCmdDoneCb = wlanTxCmdDoneCb;
 
-#if CFG_FTV_62866_PATCH
-		if(tx_retry_cnt == 0) {
-			if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
-				KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
-				QUEUE_INSERT_TAIL(&(prAdapter->rPendingCmdQueue),
-						  (P_QUE_ENTRY_T) prCmdInfo);
-				KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
-			} else {
-				QUEUE_INSERT_TAIL(prTempCmdDoneQue, prQueueEntry);
-			}
-		}
-		tx_status = nicTxCmd(prAdapter, prCmdInfo, TC4_INDEX);
-		if(tx_retry_cnt < NIC_TX_RESOURCE_POLLING_TIMEOUT) {
-			if(tx_status == WLAN_STATUS_RESOURCES) {
-				tx_retry_cnt++;
-				kalMsleep(NIC_TX_RESOURCE_POLLING_DELAY_MSEC);
-				continue;
-			}
-		}
-		else {
-			P_WIFI_CMD_T prWifiCmd =
-			(P_WIFI_CMD_T) prCmdInfo->pucInfoBuffer;
-			DBGLOG(INIT, ERROR,
-				"RETRY[%d] TX CMD: ID[0x%02X] SEQ[%u] CMD cannot send\n",
-			tx_retry_cnt, prWifiCmd->ucCID, prWifiCmd->ucSeqNum);
-			tx_retry_cnt = 0;
-		}
-#else
 		if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 			QUEUE_INSERT_TAIL(&(prAdapter->rPendingCmdQueue), (P_QUE_ENTRY_T) prCmdInfo);
@@ -1342,7 +1310,6 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 		}
 
 		nicTxCmd(prAdapter, prCmdInfo, TC4_INDEX);
-#endif
 
 		/* DBGLOG(INIT, INFO,
 		 * ("==> TX CMD QID: %d (Q:%d)\n", prCmdInfo->ucCID, prTempCmdQue->u4NumElem));
@@ -1350,17 +1317,6 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 
 		GLUE_DEC_REF_CNT(prAdapter->prGlueInfo->i4TxPendingCmdNum);
 		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, P_QUE_ENTRY_T);
-
-#if CFG_FTV_62866_PATCH
-		if(tx_retry_cnt) {
-			P_WIFI_CMD_T prWifiCmd =
-			(P_WIFI_CMD_T) prCmdInfo->pucInfoBuffer;
-			DBGLOG(INIT, STATE, "RETRY[%d] TX CMD: ID[0x%02X] SEQ[%u]\n",
-				tx_retry_cnt, prWifiCmd->ucCID, prWifiCmd->ucSeqNum);
-		}
-		tx_retry_cnt = 0;
-#endif
-
 	}
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_CMD_DONE_QUE);
@@ -1818,7 +1774,7 @@ VOID wlanReleasePendingOid(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 			DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 						prAdapter->fgIsChipNoAck);
 			if (!checkResetState())
-				GL_RESET_TRIGGER(prAdapter, RST_OID_TIMEOUT);
+				glResetTrigger(prAdapter);
 #endif
 		}
 		set_bit(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT, &(prAdapter->prGlueInfo->ulFlag));
@@ -2354,7 +2310,7 @@ WLAN_STATUS wlanSendNicPowerCtrlCmd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPowerM
 #if CFG_CHIP_RESET_SUPPORT
 				DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 						prAdapter->fgIsChipNoAck);
-				GL_RESET_TRIGGER(prAdapter, RST_DRV_OWN_FAIL);
+				glResetTrigger(prAdapter);
 #endif
 				break;
 			}

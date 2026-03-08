@@ -143,9 +143,6 @@ const UINT_32 USB_TX_DATA_BUF_SIZE[TC_NUM] = { NIC_TX_PAGE_COUNT_TC0 / (USB_REQ_
 extern KAL_WAKE_LOCK_T g_suspend_wakelock;
 #endif
 #endif
-#if CFG_CHIP_RESET_SUPPORT
-extern void RSTClearState(void);
-#endif
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -234,9 +231,6 @@ static int mtk_usb_probe(struct usb_interface *intf, const struct usb_device_id 
 		g_fgDriverProbed = TRUE;
 	}
 
-#if CFG_CHIP_RESET_SUPPORT
-	RSTClearState();
-#endif
 	DBGLOG(HAL, EVENT, "mtk_usb_probe(): done\n");
 
 	return ret;
@@ -352,7 +346,7 @@ static int mtk_usb_resume(struct usb_interface *intf)
 		{
 			/* wakelock will be released in chip reset flow (wlanRemove) */
 			DBGLOG(HAL, ERROR, "USB State Error(could be caused by suspend), do reset\n");
-			GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_HIF_FAIL);
+			glResetTrigger(prGlueInfo->prAdapter);
 			return -EBADFD;
 		}
 	}
@@ -476,7 +470,7 @@ int mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddres
 	if(fail_count >= 5) {
 		DBGLOG(REQ, ERROR, "USB bus failure, trigger chip reset\n");
 		fail_count =0;
-		GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_HIF_FAIL);
+		glResetTrigger(prGlueInfo->prAdapter);
 	}
 
 	return (ret == TransferBufferLength) ? 0 : ret;
@@ -1491,7 +1485,7 @@ BOOL kalDevRegRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT
 				prAdapter->fgIsChipNoAck = TRUE;
 				DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 						prAdapter->fgIsChipNoAck);
-				GL_RESET_TRIGGER(prAdapter, RST_HIF_FAIL);
+				glResetTrigger(prAdapter);
 			}
 		}
 #endif
@@ -1575,7 +1569,7 @@ BOOL kalDevRegWrite(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN UINT_
 				prAdapter->fgIsChipNoAck = TRUE;
 				DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 						prAdapter->fgIsChipNoAck);
-				GL_RESET_TRIGGER(prAdapter, RST_HIF_FAIL);
+				glResetTrigger(prAdapter);
 			}
 		}
 #endif
@@ -1685,7 +1679,7 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 				prAdapter->fgIsChipNoAck = TRUE;
 				DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 						prAdapter->fgIsChipNoAck);
-				GL_RESET_TRIGGER(prAdapter, RST_HIF_FAIL);
+				glResetTrigger(prAdapter);
 			}
 		}
 #endif
@@ -1785,7 +1779,7 @@ kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
 				prAdapter->fgIsChipNoAck = TRUE;
 				DBGLOG(HAL, ERROR, "fgIsChipNoAck = %d\n",
 						prAdapter->fgIsChipNoAck);
-				GL_RESET_TRIGGER(prAdapter, RST_HIF_FAIL);
+				glResetTrigger(prAdapter);
 			}
 		}
 #endif
@@ -1860,11 +1854,7 @@ BOOL kalDevKickData(IN P_GLUE_INFO_T prGlueInfo)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-#if CFG_FTV_62866_PATCH
-WLAN_STATUS kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN UINT_8 ucTC)
-#else
 BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN UINT_8 ucTC)
-#endif
 {
 	WLAN_STATUS status;
 
@@ -1872,11 +1862,7 @@ BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN U
 	if (status != WLAN_STATUS_SUCCESS)
 		DBGLOG(HAL, ERROR, "usb hal tx fail (0x%x)\n", status);
 
-#if CFG_FTV_62866_PATCH
-	return status;
-#else
 	return status == WLAN_STATUS_SUCCESS;
-#endif
 }
 
 void glGetDev(PVOID ctx, struct device **dev)
