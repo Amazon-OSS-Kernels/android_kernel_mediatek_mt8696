@@ -3,7 +3,7 @@
 #
 #  build_kernel.sh
 #
-#  Copyright (c) 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  Copyright (c) 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 ################################################################################
 
@@ -35,7 +35,7 @@ WORKSPACE_DIR="$(mktemp -d)"
 
 TOOLCHAIN_DIR="${WORKSPACE_DIR}/toolchain"
 PLATFORM_EXTRACT_DIR="${WORKSPACE_DIR}/src"
-WORKSPACE_OUT_DIR="${PLATFORM_EXTRACT_DIR}/out/target/product/quartz/obj/KERNEL_OBJ"
+WORKSPACE_OUT_DIR="${PLATFORM_EXTRACT_DIR}/out/target/product/karat/obj/KERNEL_OBJ"
 
 for d in "${TOOLCHAIN_DIR}" "${PLATFORM_EXTRACT_DIR}" "$WORKSPACE_OUT_DIR"
 do
@@ -121,9 +121,18 @@ function extract_tarball {
 function exec_build_kernel {
     CCOMPILE="${TOOLCHAIN_DIR}/bin/${TOOLCHAIN_PREFIX}"
     CC="${CLANG_COMPILER_PATH}/bin/clang"
+    PROCONFIG_NAME="karat"
+    LD="${CLANG_COMPILER_PATH}/bin/ld.lld"
+    LD_LIBRARY_PATH="../${CLANG_COMPILER_PATH}/lib64:$LD_LIBRARY_PATH"
+    NM="${CLANG_COMPILER_PATH}/bin/llvm-nm"
+    OBJCOPY="${CLANG_COMPILER_PATH}/bin/llvm-objcopy"
 
-    MAKE_ARGS="-C ${KERNEL_SUBPATH} O=${WORKSPACE_OUT_DIR} ARCH=${TARGET_ARCH}"
-    MAKE_ARGS1="-C ${KERNEL_SUBPATH} O=${WORKSPACE_OUT_DIR} ARCH=${TARGET_ARCH} CROSS_COMPILE=${CCOMPILE} CLANG_TRIPLE=aarch64-linux-gnu- CC=${CC}"
+    MAKE_ARGS="-C ${KERNEL_SUBPATH} ARCH=${TARGET_ARCH} CC=${CC} CROSS_COMPILE=${CCOMPILE} CLANG_TRIPLE=aarch64-linux-gnu- LD=${LD} NM=${NM} OBJCOPY=${OBJCOPY} LLVM_IAS=1 DEPMOD=depmod O=${WORKSPACE_OUT_DIR} ${DEFCONFIG_NAME}"
+
+    MAKE_ARGS1=" O=${WORKSPACE_OUT_DIR} -C ${KERNEL_SUBPATH} ARCH=${TARGET_ARCH} CROSS_COMPILE=${CCOMPILE} CLANG_TRIPLE=aarch64-linux-gnu- CC=${CC} LD=${LD} NM=${NM} OBJCOPY=${OBJCOPY} LLVM_IAS=1 DEPMOD=depmod"
+
+    cp -p ${PLATFORM_EXTRACT_DIR}/${KERNEL_SUBPATH}/arch/arm64/configs/${PROCONFIG_NAME}_defconfig ${PLATFORM_EXTRACT_DIR}/${KERNEL_SUBPATH}/arch/arm64/configs/${PROCONFIG_NAME}.config
+
     echo "MAKE_ARGS: ${MAKE_ARGS}"
     echo "MAKE_ARGS1: ${MAKE_ARGS1}"
 
@@ -131,8 +140,8 @@ function exec_build_kernel {
     pushd "${PLATFORM_EXTRACT_DIR}"
 
     # Step 1: defconfig
-    echo "Make defconfig: make ${MAKE_ARGS} ${DEFCONFIG_NAME}"
-    make ${MAKE_ARGS} ${DEFCONFIG_NAME}
+    echo "Make defconfig: make ${MAKE_ARGS}"
+    make ${MAKE_ARGS}
 
     # Step 2: output config, for reference
     echo ".config contents"
