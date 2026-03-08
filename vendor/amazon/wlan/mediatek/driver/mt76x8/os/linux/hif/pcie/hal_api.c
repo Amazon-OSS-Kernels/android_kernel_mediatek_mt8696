@@ -683,6 +683,13 @@ P_MSDU_TOKEN_ENTRY_T halAcquireMsduToken(IN P_ADAPTER_T prAdapter)
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
 
 	prToken = prTokenInfo->aprTokenStack[prTokenInfo->i4UsedCnt];
+	if (!prToken) {
+		DBGLOG(HAL, ERROR, "Acquire MSDU token failed, Used[%u]\n",
+		prTokenInfo->u4UsedCnt);
+		spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
+		return NULL;
+	}
+
 	prToken->fgInUsed = TRUE;
 	prTokenInfo->i4UsedCnt++;
 

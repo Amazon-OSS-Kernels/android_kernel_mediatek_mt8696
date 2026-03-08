@@ -1206,6 +1206,12 @@ P_BSS_DESC_T scanAddToBssDesc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 
 	prWlanBeaconFrame = (P_WLAN_BEACON_FRAME_T) prSwRfb->pvHeader;
 
+	if (prSwRfb->u2PacketLen < sizeof(WLAN_BEACON_FRAME_T) ||
+		(PUINT_8)prWlanBeaconFrame < prSwRfb->pucRecvBuff ||
+		(PUINT_8)prWlanBeaconFrame + sizeof(WLAN_BEACON_FRAME_T)
+		>= prSwRfb->pucRecvBuff + prSwRfb->prRxStatus->u2RxByteCount)
+		return NULL;
+
 	WLAN_GET_FIELD_16(&prWlanBeaconFrame->u2CapInfo, &u2CapInfo);
 	WLAN_GET_FIELD_64(&prWlanBeaconFrame->au4Timestamp[0], &u8Timestamp);
 
@@ -1500,6 +1506,11 @@ P_BSS_DESC_T scanAddToBssDesc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 			break;
 
 		case ELEM_ID_TIM:
+			if (IE_LEN(pucIE) < ELEM_MIN_LEN_TIM) {
+				DBGLOG(SCN, WARN, "TIM IE_LEN err(%u)!\n",
+						IE_LEN(pucIE));
+				break;
+			}
 			if (IE_LEN(pucIE) <= ELEM_MAX_LEN_TIM)
 				prBssDesc->ucDTIMPeriod = TIM_IE(pucIE)->ucDTIMPeriod;
 			break;

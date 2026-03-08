@@ -9226,7 +9226,7 @@ WLAN_STATUS wlanTriggerStatsLog(IN P_ADAPTER_T prAdapter, IN UINT_32 u4DurationI
 WLAN_STATUS
 wlanDhcpTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus)
 {
-	DBGLOG(SW4, INFO, "DHCP PKT[0x%08x] WIDX:PID[%u:%u] Status[%u]\n",
+	DBGLOG(SW4, STATE, "DHCP PKT[0x%08x] WIDX:PID[%u:%u] Status[%u]\n",
 	       prMsduInfo->u4TxDoneTag, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID, rTxDoneStatus);
 
 	return WLAN_STATUS_SUCCESS;
@@ -9234,7 +9234,7 @@ wlanDhcpTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX
 
 WLAN_STATUS wlanArpTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus)
 {
-	DBGLOG(SW4, INFO, "ARP PKT[0x%08x] WIDX:PID[%u:%u] Status[%u]\n",
+	DBGLOG(SW4, STATE, "ARP PKT[0x%08x] WIDX:PID[%u:%u] Status[%u]\n",
 	       prMsduInfo->u4TxDoneTag, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID, rTxDoneStatus);
 
 	return WLAN_STATUS_SUCCESS;

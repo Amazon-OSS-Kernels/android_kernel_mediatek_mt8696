@@ -4839,11 +4839,24 @@ static void btmtk_usb_bulk_in_complete(struct urb *urb)
 		} else {
 			length = urb->actual_length + 1;
 
+			if (leftACLSize == 0 && (urb->actual_length < HCI_ACL_HEADER_LEN - 1)) {
+				BTUSB_INFO_RAW(urb->transfer_buffer, urb->actual_length, "btmtk_usb Discard ACL:");
+				goto bulk_intr_resub;
+			}
+
 			actual_length =
 				1 * (event_buf[2] & 0x0f) +
 				16 * ((event_buf[2] & 0xf0) >> 4)
 				+ 256 * ((event_buf[3] & 0x0f)) +
 				4096 * ((event_buf[3] & 0xf0) >> 4);
+
+			//Core Spec ACL Data header size(not include type): 4 Byte
+			/* maximum receieved data size of one packet is 1025 (4byte header + 1021 byte data) */
+			if (leftACLSize == 0 && (actual_length < (1025 - HCI_ACL_HEADER_LEN + 1)) &&
+				(actual_length + HCI_ACL_HEADER_LEN - 1) != urb->actual_length) {
+				BTUSB_INFO_RAW(urb->transfer_buffer, urb->actual_length, "btmtk_usb Discard ACL:");
+				goto bulk_intr_resub;
+			}
 
 			btmtk_usb_lock_unsleepable_lock(&(g_data->metabuffer->spin_lock));
 

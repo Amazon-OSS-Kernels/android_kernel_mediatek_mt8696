@@ -458,6 +458,10 @@ static int p2pSetMACAddress(IN struct net_device *prDev, void *addr);
 
 static int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIFReq, int i4Cmd);
 
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+static int p2pDoPrivIOCTL(struct net_device *prDev, struct ifreq *prIfReq,
+			void __user *prData, int i4Cmd);
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -497,6 +501,9 @@ const struct net_device_ops p2p_netdev_ops = {
 	.ndo_set_rx_mode = p2pSetMulticastList,
 	.ndo_get_stats = p2pGetStats,
 	.ndo_do_ioctl = p2pDoIOCTL,
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+	.ndo_siocdevprivate = p2pDoPrivIOCTL,
+#endif
 	.ndo_start_xmit = p2pHardStartXmit,
 	/* .ndo_select_queue       = p2pSelectQueue, */
 	.ndo_select_queue = wlanSelectQueue,
@@ -2083,6 +2090,17 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 	return ret;
 }				/* end of p2pDoIOCTL() */
 
+
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+int p2pDoPrivIOCTL(struct net_device *prDev, struct ifreq *prIfReq,
+		void __user *prData, int i4Cmd)
+{
+	if (!prIfReq->ifr_data && prData) {
+		prIfReq->ifr_data = prData;
+	}
+	return p2pDoIOCTL(prDev, prIfReq, i4Cmd);
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

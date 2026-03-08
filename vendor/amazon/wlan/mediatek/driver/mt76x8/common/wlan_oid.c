@@ -9367,6 +9367,7 @@ wlanoidSetWapiKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 	UINT_8 ucCmdSeqNum;
 	P_STA_RECORD_T prStaRec;
 	P_BSS_INFO_T prBssInfo;
+	UINT_32 u4Ret = 0;
 
 	DEBUGFUNC("wlanoidSetWapiKey");
 	DBGLOG(REQ, LOUD, "\r\n");
@@ -9478,7 +9479,12 @@ wlanoidSetWapiKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 	if ((prCmdKey->aucPeerAddr[0] & prCmdKey->aucPeerAddr[1] & prCmdKey->aucPeerAddr[2] &
 	     prCmdKey->aucPeerAddr[3] & prCmdKey->aucPeerAddr[4] & prCmdKey->aucPeerAddr[5]) == 0xFF) {
 		prStaRec = cnmGetStaRecByAddress(prAdapter, prBssInfo->ucBssIndex, prBssInfo->aucBSSID);
-		ASSERT(prStaRec);	/* AIS RSN Group key, addr is BC addr */
+		if (prStaRec == NULL) {
+			DBGLOG(INIT, ERROR, "prStaRec == NULL return failure.\n");
+			u4Ret = WLAN_STATUS_FAILURE;
+			goto Error;
+		}
+		/* AIS RSN Group key, addr is BC addr */
 		kalMemCopy(prCmdKey->aucPeerAddr, prStaRec->aucMacAddr, MAC_ADDR_LEN);
 	} else {
 		prStaRec = cnmGetStaRecByAddress(prAdapter, prBssInfo->ucBssIndex, prCmdKey->aucPeerAddr);
@@ -9504,7 +9510,9 @@ wlanoidSetWapiKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 				prCmdKey->ucWlanIndex = prStaRec->ucWlanIndex;
 				prStaRec->fgTransmitKeyExist = TRUE;	/* wait for CMD Done ? */
 			} else {
-				ASSERT(FALSE);
+				DBGLOG(INIT, ERROR, "Wrong key type.\n");
+				u4Ret = WLAN_STATUS_INVALID_DATA;
+				goto Error;
 			}
 		}
 #if 0
@@ -9546,7 +9554,9 @@ wlanoidSetWapiKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 							     prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId);
 				prStaRec->ucWlanIndex = prCmdKey->ucWlanIndex;
 			} else {	/* Exist this case ? */
-				ASSERT(FALSE);
+				DBGLOG(INIT, ERROR, "prStaRec == NULL return failure.\n");
+				u4Ret = WLAN_STATUS_FAILURE;
+				goto Error;
 				/* prCmdKey->ucWlanIndex = */
 				/* secPrivacySeekForBcEntry(prAdapter, */
 				/* prBssInfo->ucBssIndex, */
@@ -9565,6 +9575,11 @@ wlanoidSetWapiKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 	GLUE_SET_EVENT(prGlueInfo);
 
 	return WLAN_STATUS_PENDING;
+
+Error:
+	if (prCmdInfo)
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+	return u4Ret;
 }				/* wlanoidSetAddKey */
 #endif
 

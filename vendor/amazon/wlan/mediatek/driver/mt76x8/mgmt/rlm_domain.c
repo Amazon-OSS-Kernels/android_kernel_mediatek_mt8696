@@ -923,6 +923,51 @@ rlmDomainGetChnlList(P_ADAPTER_T prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
+void rlmDomainGetDfsChnls_V2(P_ADAPTER_T prAdapter,
+			  UINT_8 ucMaxChannelNum, PUINT_8 pucNumOfChannel,
+			  P_RF_CHANNEL_INFO_T paucChannelList)
+{
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+	UINT_8 idx, start_idx, end_idx, ucNum;
+	struct channel *prCh;
+
+	/* 5G band */
+	start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
+	end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ) +
+			rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+
+	ucNum = 0;
+	for (idx = start_idx; idx < end_idx; idx++) {
+		prCh = rlmDomainGetActiveChannels() + idx;
+		if (!((prCh->flags & IEEE80211_CHAN_RADAR)
+				== IEEE80211_CHAN_RADAR))
+			continue;
+
+		paucChannelList[ucNum].eBand = BAND_5G;
+		paucChannelList[ucNum].ucChannelNum = prCh->chNum;
+
+		ucNum++;
+		if (ucMaxChannelNum == ucNum)
+			break;
+	}
+
+	*pucNumOfChannel = ucNum;
+#else
+	*pucNumOfChannel = 0;
+#endif /* CFG_SUPPORT_SINGLE_SKU */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve DFS channels from 5G band
+ *
+ * \param[in/out] ucMaxChannelNum: max array size
+ *                pucNumOfChannel: pointer to returned channel number
+ *                paucChannelList: pointer to returned channel list array
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
 void rlmDomainGetDfsChnls(P_ADAPTER_T prAdapter,
 		     UINT_8 ucMaxChannelNum, PUINT_8 pucNumOfChannel,
 		     P_RF_CHANNEL_INFO_T paucChannelList)
@@ -934,6 +979,10 @@ void rlmDomainGetDfsChnls(P_ADAPTER_T prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(paucChannelList);
 	ASSERT(pucNumOfChannel);
+
+	if (regd_is_single_sku_en())
+		return rlmDomainGetDfsChnls_V2(prAdapter, ucMaxChannelNum,
+				pucNumOfChannel, paucChannelList);
 
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
 	ASSERT(prDomainInfo);
@@ -1277,12 +1326,45 @@ BOOLEAN rlmDomainIsLegalChannel_V2(P_ADAPTER_T prAdapter, ENUM_BAND_T eBand, UIN
 #endif
 }
 #ifdef CFG_SUPPORT_SAP_DFS_CHANNEL
+UINT_8 rlmDomainIsLegalDfsChannel_V2(P_ADAPTER_T prAdapter,
+		ENUM_BAND_T eBand, UINT_8 ucChannel)
+{
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+	UINT_8 idx, start_idx, end_idx;
+	struct channel *prCh;
+
+	if (eBand != BAND_5G)
+		return FALSE;
+
+	start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
+	end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ) +
+			rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+
+	for (idx = start_idx; idx < end_idx; idx++) {
+		prCh = rlmDomainGetActiveChannels() + idx;
+		if (prCh->chNum == ucChannel &&
+			((prCh->flags & IEEE80211_CHAN_RADAR)
+				== IEEE80211_CHAN_RADAR)) {
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+#else
+	return FALSE;
+#endif
+}
+
 UINT_8 rlmDomainIsLegalDfsChannel(P_ADAPTER_T prAdapter,
 		ENUM_BAND_T eBand, UINT_8 ucChannel)
 {
 	UINT_8 i, j;
 	P_DOMAIN_SUBBAND_INFO prSubband;
 	P_DOMAIN_INFO_ENTRY prDomainInfo;
+
+	if (regd_is_single_sku_en())
+		return rlmDomainIsLegalDfsChannel_V2(
+				prAdapter, eBand, ucChannel);
 
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
 	ASSERT(prDomainInfo);

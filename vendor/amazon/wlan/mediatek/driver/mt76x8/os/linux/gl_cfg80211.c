@@ -515,7 +515,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 	WLAN_STATUS rStatus;
 	PARAM_MAC_ADDRESS arBssid;
 	UINT_32 u4BufLen, u4Rate = 0;
-	INT_32 i4Rssi = 0;
+	INT_32 i4Rssi = PARAM_WHQL_RSSI_MIN_DBM;
 	PARAM_GET_STA_STA_STATISTICS rQueryStaStatistics;
 	UINT_32 u4TotalError;
 	struct net_device_stats *prDevStats;

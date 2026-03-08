@@ -414,6 +414,7 @@ static int mtk_usb_reset_resume(struct usb_interface *intf)
 *         non-zero   if fail, the return value of usb_control_msg()
 */
 /*----------------------------------------------------------------------------*/
+extern int IS_WLAN_REMOVING(void);
 int mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddress, IN UCHAR RequestType,
 			    IN UCHAR Request, IN UINT_16 Value, IN UINT_16 Index, IN PVOID TransferBuffer,
 			    IN UINT_32 TransferBufferLength)
@@ -472,11 +473,15 @@ int mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddres
 	else
 		fail_count = 0;
 
-	// trigger chip reset to recover usb bus if we see 5 consecutive failures
-	if(fail_count >= 5) {
-		DBGLOG(REQ, ERROR, "USB bus failure, trigger chip reset\n");
-		fail_count =0;
-		GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_HIF_FAIL);
+	if (IS_WLAN_REMOVING() == 0) {
+		// trigger chip reset to recover usb bus if we see 5 consecutive failures
+		if(fail_count >= 5) {
+			DBGLOG(REQ, ERROR, "USB bus failure, trigger chip reset\n");
+			fail_count =0;
+			GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_HIF_FAIL);
+		}
+	} else {
+		DBGLOG(REQ, ERROR, "USB bus failure, skip chip reset because wlan is removing\n");
 	}
 
 	return (ret == TransferBufferLength) ? 0 : ret;

@@ -1668,7 +1668,8 @@ WLAN_STATUS nicPmIndicateBssConnected(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssI
 		&& (prAdapter->fgIsP2PRegistered))
 #endif
 	    ) {
-		if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
+		if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE &&
+		    prBssInfo->prStaRecOfAP) {
 			rCmdIndicatePmBssConnected.fgIsUapsdConnection =
 			    (UINT_8) prBssInfo->prStaRecOfAP->fgIsUapsdSupported;
 		} else {
@@ -3361,8 +3362,12 @@ VOID nicUpdateLinkQuality(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN P_E
 	UINT_16 u2AdjustRssi = 10;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
 	ASSERT(prEventLinkQuality);
+
+	if (ucBssIndex > MAX_BSS_INDEX) {
+		DBGLOG(NIC, ERROR, "Invalid ucBssIndex [%d].\n", ucBssIndex);
+		return;
+	}
 
 	switch (GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->eNetworkType) {
 	case NETWORK_TYPE_AIS:

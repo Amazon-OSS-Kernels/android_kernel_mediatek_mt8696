@@ -3566,7 +3566,12 @@ WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSw
 
 	if (prSwRfb->u2PacketLen < sizeof(WLAN_ACTION_FRAME) - 1)
 		return WLAN_STATUS_INVALID_PACKET;
+
 	prActFrame = (P_WLAN_ACTION_FRAME) prSwRfb->pvHeader;
+	if ((PUINT_8)prActFrame < prSwRfb->pucRecvBuff ||
+		(PUINT_8)prActFrame + sizeof(WLAN_ACTION_FRAME) >=
+		prSwRfb->pucRecvBuff + prSwRfb->prRxStatus->u2RxByteCount)
+		return WLAN_STATUS_INVALID_PACKET;
 
 	DBGLOG(RSN, INFO, "Action frame category=%d\n", prActFrame->ucCategory);
 

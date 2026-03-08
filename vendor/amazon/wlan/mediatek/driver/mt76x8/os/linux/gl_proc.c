@@ -148,6 +148,29 @@ static UINT_8 aucDbModuleName[][PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN] = {
 
 /* This u32 is only for DriverCmdRead/Write, should not be used by other function */
 static INT_32 g_i4NextDriverReadLen;
+
+enum ENUM_PROC_ENTRY_TYPE_T {
+	PROC_CORE_DUMP_ENTRY,
+	PROC_MCR_ACCESS_ENTRY,
+	PROC_DRIVER_CMD_ENTRY,
+	PROC_CFG_ENTRY,
+	PROC_EFUSE_DUMP_ENTRY,
+	PROC_GET_TXPWR_TBL_ENTRY,
+	PROC_PKT_DELAY_DBG_ENTRY,
+	PROC_SET_CAM_ENTRY,
+	PROC_ROAM_PARAM_ENTRY,
+	PROC_CSI_DATA_NAME_ENTRY,
+	PROC_COUNTRY_ENTRY,
+	PROC_MET_PROF_CTRL_ENTRY,
+	PROC_MET_PROF_PORT_ENTRY,
+	PROC_DBG_LEVEL_NAME_ENTRY,
+	PROC_AUTO_PERF_CFG_ENTRY,
+	PROC_GET_TEMPETATURE_ENTRY,
+	PROC_RESET_CMD_ENTRY,
+	PROC_ENTRY_NUM
+};
+
+struct proc_dir_entry *g_createdProcFsEntry[PROC_ENTRY_NUM];
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -1297,65 +1320,141 @@ INT_32 procUninitProcFs(VOID)
 /*----------------------------------------------------------------------------*/
 INT_32 procRemoveProcfs(VOID)
 {
-	remove_proc_entry(PROC_MCR_ACCESS, gprProcRoot);
-	remove_proc_entry(PROC_DRIVER_CMD, gprProcRoot);
-	remove_proc_entry(PROC_DBG_LEVEL_NAME, gprProcRoot);
-	remove_proc_entry(PROC_CFG, gprProcRoot);
-	remove_proc_entry(PROC_EFUSE_DUMP, gprProcRoot);
+	uint32_t i;
+	for(i=0; i<PROC_ENTRY_NUM ; i++) {
+		DBGLOG(INIT, INFO, "g_createdProcFsEntry[%d] %x\n", i,
+		g_createdProcFsEntry[i]);
+	}
+	if(g_createdProcFsEntry[PROC_MCR_ACCESS_ENTRY] != NULL) {
+		remove_proc_entry(PROC_MCR_ACCESS, gprProcRoot);
+		g_createdProcFsEntry[PROC_MCR_ACCESS_ENTRY] = NULL;
+	}
+	else {
+		DBGLOG(INIT, ERROR, "PROC_MCR_ACCESS does not exist\n");
+	}
+#if WLAN_INCLUDE_PROC
+#if	CFG_SUPPORT_EASY_DEBUG
+	if(g_createdProcFsEntry[PROC_DRIVER_CMD_ENTRY] != NULL) {
+		remove_proc_entry(PROC_DRIVER_CMD, gprProcRoot);
+		g_createdProcFsEntry[PROC_DRIVER_CMD_ENTRY] = NULL;
+	}
+	else {
+		DBGLOG(INIT, ERROR, "PROC_DRIVER_CMD does not exist\n");
+	}
+
+	if(g_createdProcFsEntry[PROC_CFG_ENTRY] != NULL) {
+		remove_proc_entry(PROC_CFG, gprProcRoot);
+		g_createdProcFsEntry[PROC_CFG_ENTRY] = NULL;
+	}
+	else {
+		DBGLOG(INIT, ERROR, "PROC_CFG does not exist\n");
+	}
+
+	if(g_createdProcFsEntry[PROC_EFUSE_DUMP_ENTRY] != NULL) {
+		remove_proc_entry(PROC_EFUSE_DUMP, gprProcRoot);
+		g_createdProcFsEntry[PROC_EFUSE_DUMP_ENTRY] = NULL;
+	}
+	else {
+		DBGLOG(INIT, ERROR, "PROC_EFUSE_DUMP does not exist\n");
+	}
+#endif /* CFG_SUPPORT_EASY_DEBUG */
+#endif /* WLAN_INCLUDE_PROC */
+	if(g_createdProcFsEntry[PROC_DBG_LEVEL_NAME_ENTRY] != NULL) {
+		remove_proc_entry(PROC_DBG_LEVEL_NAME, gprProcRoot);
+		g_createdProcFsEntry[PROC_DBG_LEVEL_NAME_ENTRY] = NULL;
+	}
+	else {
+		DBGLOG(INIT, ERROR, "PROC_DBG_LEVEL_NAME does not exist\n");
+	}
 #ifdef CFG_DUMP_TXPOWR_TABLE
-	remove_proc_entry(PROC_GET_TXPWR_TBL, gprProcRoot);
+	if(g_createdProcFsEntry[PROC_GET_TXPWR_TBL_ENTRY] != NULL) {
+		remove_proc_entry(PROC_GET_TXPWR_TBL, gprProcRoot);
+		g_createdProcFsEntry[PROC_GET_TXPWR_TBL_ENTRY] = NULL;
+	}
+	else {
+		DBGLOG(INIT, ERROR, "PROC_GET_TXPWR_TBL does not exist\n");
+	}
 #endif
 #ifdef CFG_GET_TEMPURATURE
-	remove_proc_entry(PROC_GET_TEMPETATURE, gprProcRoot);
+	if(g_createdProcFsEntry[PROC_GET_TEMPETATURE_ENTRY] != NULL) {
+		remove_proc_entry(PROC_GET_TEMPETATURE, gprProcRoot);
+		g_createdProcFsEntry[PROC_GET_TEMPETATURE_ENTRY] = NULL;
+	}
+	else {
+		DBGLOG(INIT, ERROR, "PROC_GET_TEMPETATURE does not exist\n");
+	}
 #endif
 #if CFG_SUPPORT_DEBUG_FS
-	remove_proc_entry(PROC_COUNTRY, gprProcRoot);
+	if(g_createdProcFsEntry[PROC_COUNTRY_ENTRY] != NULL) {
+		remove_proc_entry(PROC_COUNTRY, gprProcRoot);
+		g_createdProcFsEntry[PROC_COUNTRY_ENTRY] = NULL;
+	}
+	else {
+		DBGLOG(INIT, ERROR, "PROC_COUNTRY does not exist\n");
+	}
 #endif
 #if CFG_CHIP_RESET_SUPPORT
-	remove_proc_entry(PROC_RESET_CMD, gprProcRoot);
+	if(g_createdProcFsEntry[PROC_RESET_CMD_ENTRY] != NULL) {
+		remove_proc_entry(PROC_RESET_CMD, gprProcRoot);
+		g_createdProcFsEntry[PROC_RESET_CMD_ENTRY] = NULL;
+	}
+	else {
+		DBGLOG(INIT, ERROR, "PROC_RESET_CMD does not exist\n");
+	}
 #endif
+	g_prGlueInfo_proc = NULL;
 	return 0;
 } /* end of procRemoveProcfs() */
 
 INT_32 procCreateFsEntry(P_GLUE_INFO_T prGlueInfo)
 {
 	struct proc_dir_entry *prEntry;
+	uint32_t i;
 
 	DBGLOG(INIT, INFO, "[%s]\n", __func__);
 	g_prGlueInfo_proc = prGlueInfo;
+
+	for(i=0; i<PROC_ENTRY_NUM ; i++) {
+		g_createdProcFsEntry[i] = 0;
+	}
 
 	prEntry = proc_create(PROC_MCR_ACCESS, 0664, gprProcRoot, &mcr_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR, "Unable to create /proc entry\n\r");
 		return -1;
 	}
+	g_createdProcFsEntry[PROC_MCR_ACCESS_ENTRY] = prEntry;
 #if CFG_SUPPORT_DEBUG_FS
 	prEntry = proc_create(PROC_COUNTRY, 0664, gprProcRoot, &country_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR, "Unable to create /proc entry\n\r");
 		return -1;
 	}
+	g_createdProcFsEntry[PROC_COUNTRY_ENTRY] = prEntry;
 #endif
 #if WLAN_INCLUDE_PROC
 #if	CFG_SUPPORT_EASY_DEBUG
 
 	prEntry = proc_create(PROC_DRIVER_CMD, 0664, gprProcRoot, &drivercmd_ops);
-		if (prEntry == NULL) {
-			DBGLOG(INIT, ERROR, "Unable to create /proc entry for driver command\n\r");
-			return -1;
-		}
+	if (prEntry == NULL) {
+		DBGLOG(INIT, ERROR, "Unable to create /proc entry for driver command\n\r");
+		return -1;
+	}
+	g_createdProcFsEntry[PROC_DRIVER_CMD_ENTRY] = prEntry;
 
 	prEntry = proc_create(PROC_CFG, 0664, gprProcRoot, &cfg_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR, "Unable to create /proc entry for driver command\n\r");
 		return -1;
 	}
+	g_createdProcFsEntry[PROC_CFG_ENTRY] = prEntry;
 
 	prEntry = proc_create(PROC_EFUSE_DUMP, 0664, gprProcRoot, &efusedump_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR, "Unable to create /proc entry efuse\n\r");
 		return -1;
 	}
+	g_createdProcFsEntry[PROC_EFUSE_DUMP_ENTRY] = prEntry;
 #endif
 #endif
 
@@ -1366,6 +1465,7 @@ INT_32 procCreateFsEntry(P_GLUE_INFO_T prGlueInfo)
 		DBGLOG(INIT, ERROR, "Unable to create /proc entry efuse\n\r");
 		return -1;
 	}
+	g_createdProcFsEntry[PROC_GET_TXPWR_TBL_ENTRY] = prEntry;
 #endif
 #ifdef CFG_GET_TEMPURATURE
 	prEntry = proc_create(PROC_GET_TEMPETATURE, 0664, gprProcRoot,
@@ -1374,13 +1474,15 @@ INT_32 procCreateFsEntry(P_GLUE_INFO_T prGlueInfo)
 		DBGLOG(INIT, ERROR, "Unable to create /proc entry efuse\n\r");
 		return -1;
 	}
+	g_createdProcFsEntry[PROC_GET_TEMPETATURE_ENTRY] = prEntry;
 #endif
 
 	prEntry = proc_create(PROC_DBG_LEVEL_NAME, 0664, gprProcRoot, &dbglevel_ops);
-		if (prEntry == NULL) {
-			DBGLOG(INIT, ERROR, "Unable to create /proc entry dbgLevel\n\r");
-			return -1;
-		}
+	if (prEntry == NULL) {
+		DBGLOG(INIT, ERROR, "Unable to create /proc entry dbgLevel\n\r");
+		return -1;
+	}
+	g_createdProcFsEntry[PROC_DBG_LEVEL_NAME_ENTRY] = prEntry;
 #if CFG_CHIP_RESET_SUPPORT
 	prEntry = proc_create(PROC_RESET_CMD, 0660, gprProcRoot, &reset_ops);
 	if (prEntry == NULL) {
@@ -1388,6 +1490,7 @@ INT_32 procCreateFsEntry(P_GLUE_INFO_T prGlueInfo)
 			"Unable to create /proc entry for driver command\n\r");
 		return -1;
 	}
+	g_createdProcFsEntry[PROC_RESET_CMD_ENTRY] = prEntry;
 #endif
 	return 0;
 }

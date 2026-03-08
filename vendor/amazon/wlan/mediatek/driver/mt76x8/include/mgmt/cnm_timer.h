@@ -90,6 +90,11 @@
 
 #define MSEC_PER_MIN                    (60 * MSEC_PER_SEC)
 
+#define SEC_PER_HOUR			(3600)
+#define HOUR_MAX			(24)
+#define SEC_PER_MINUTE			(60)
+#define MINUTE_MAX			(60)
+
 #define MGMT_MAX_TIMEOUT_INTERVAL       ((UINT_32)0x7fffffff)
 
 #define WAKE_LOCK_MAX_TIME              5	/* Unit: sec */
@@ -144,17 +149,28 @@ typedef struct _TIMER_T {
 
 #define TIME_AFTER(a, b)         TIME_BEFORE(b, a)
 
+
+#define TIME_BEFORE64(a, b) \
+	((uint64_t)((uint64_t)(a) - (uint64_t)(b)) > 0x7fffffffffffffff)
+
+#define TIME_AFTER64(a, b)		TIME_BEFORE64(b, a)
+
+#define TIME_ABS_DIFF64(a, b) \
+	(((a) > (b)) ? ((a) - (b)) : ((b) - (a)))
 #define SYSTIME_TO_SEC(_systime)            ((_systime) / KAL_HZ)
 #define SEC_TO_SYSTIME(_sec)                ((_sec) * KAL_HZ)
 
 /* The macros to convert second & millisecond */
 #define MSEC_TO_SEC(_msec)                  ((_msec) / MSEC_PER_SEC)
+#define NSEC_TO_USEC(_nsec)		((_nsec) / NSEC_PER_USEC)
 #define SEC_TO_MSEC(_sec)                   ((UINT_32)(_sec) * MSEC_PER_SEC)
 #define SEC_TO_USEC(_sec)                   ((UINT_32)(_sec) * USEC_PER_SEC)
 
 /* The macros to convert millisecond & microsecond */
 #define USEC_TO_MSEC(_usec)                 ((_usec) / USEC_PER_MSEC)
 #define MSEC_TO_USEC(_msec)                 ((UINT_32)(_msec) * USEC_PER_MSEC)
+#define USEC_TO_SEC(_usec)		((_usec) / USEC_PER_SEC)
+#define USEC_REM_TO_SEC(_usec)	((_usec) % USEC_PER_SEC)
 
 /* The macros to convert TU & microsecond, TU & millisecond */
 #define TU_TO_USEC(_tu)                     ((_tu) * USEC_PER_TU)
@@ -187,6 +203,16 @@ typedef struct _TIMER_T {
 #define CHECK_FOR_TIMEOUT(_currentTime, _timeoutStartingTime, _timeout) \
 	CHECK_FOR_EXPIRATION((_currentTime), ((_timeoutStartingTime) + (_timeout)))
 
+/* The macro to check for expiration using 64-bit unsigned integers */
+#define CHECK_FOR_EXPIRATION64(_currentTime, _expirationTime) \
+	(((uint64_t)(_currentTime) - (uint64_t)(_expirationTime)) \
+		<= 0x7FFFFFFFFFFFFFFFULL)
+
+/* The macro to check for the timeout using 64-bit unsigned integers */
+#define CHECK_FOR_TIMEOUT64(_currentTime, _timeoutStartingTime, _timeout) \
+	CHECK_FOR_EXPIRATION64((_currentTime), \
+		((_timeoutStartingTime) + (_timeout)))
+
 /* The macro to set the expiration time with a specified timeout *//* Watch out for round up. */
 #define SET_EXPIRATION_TIME(_expirationTime, _timeout) \
 	{ \
@@ -199,6 +225,13 @@ typedef struct _TIMER_T {
 
 #define MGMT_INIT_TIMER(_adapter_p, _timer, _callbackFunc) \
 	timerInitTimer(_adapter_p, &(_timer), (UINT_32)(_callbackFunc))
+
+/* The macros to convert second & hours/minutes */
+#define SEC_TO_TIME_HOUR(_sec) \
+	(((uint32_t)(_sec) / SEC_PER_HOUR) % HOUR_MAX)
+#define SEC_TO_TIME_MINUTE(_sec) \
+	(((uint32_t)(_sec) / SEC_PER_MINUTE) % MINUTE_MAX)
+#define SEC_TO_TIME_SECOND(_sec)	((uint32_t)(_sec) % SEC_PER_MINUTE)
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S

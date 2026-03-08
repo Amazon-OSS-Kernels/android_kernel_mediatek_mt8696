@@ -870,7 +870,7 @@
 #define ELEM_CF_PARM_LEN                            8
 
 /* 7.3.2.6 TIM */
-#define ELEM_MIX_LEN_TIM                            4
+#define ELEM_MIN_LEN_TIM                            4
 #define ELEM_MAX_LEN_TIM                            254
 
 /* 7.3.2.7 IBSS Parameter Set element */

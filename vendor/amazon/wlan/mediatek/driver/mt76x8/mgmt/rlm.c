@@ -3742,17 +3742,12 @@ VOID rlmProcessSpecMgtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 	P_IE_TPC_REPORT_T prTpcRepIE;
 	P_IE_MEASUREMENT_REQ_T prMeasurementReqIE;
 	P_IE_MEASUREMENT_REPORT_T prMeasurementRepIE;
-	P_ACTION_SM_REQ_FRAME prRxFrame;
+	P_WLAN_ACTION_FRAME prActFrame;
+	u_int8_t ucAction;
 
 	DBGLOG(RLM, INFO, "[Mgt Action]rlmProcessSpecMgtAction\n");
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
-
-	u2IELength = prSwRfb->u2PacketLen -
-		(UINT_16) OFFSET_OF(ACTION_SM_REQ_FRAME, aucInfoElem[0]);
-
-	prRxFrame = (P_ACTION_SM_REQ_FRAME) prSwRfb->pvHeader;
-	pucIE = prRxFrame->aucInfoElem;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	if (!prStaRec)
@@ -3761,13 +3756,35 @@ VOID rlmProcessSpecMgtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 	if (prStaRec->ucBssIndex > MAX_BSS_INDEX)
 		return;
 
+	prActFrame = (P_WLAN_ACTION_FRAME) prSwRfb->pvHeader;
+	if (prActFrame->ucAction == ACTION_CHNL_SWITCH) {
+		P_ACTION_CHANNEL_SWITCH_FRAME prRxFrame;
+
+		u2IELength = prSwRfb->u2PacketLen -
+			(uint16_t)OFFSET_OF(ACTION_CHANNEL_SWITCH_FRAME,
+					aucInfoElem[0]);
+		prRxFrame =
+			(P_ACTION_CHANNEL_SWITCH_FRAME)prSwRfb->pvHeader;
+		pucIE = prRxFrame->aucInfoElem;
+		ucAction = prRxFrame->ucAction;
+	} else {
+		P_ACTION_SM_REQ_FRAME prRxFrame;
+
+		u2IELength = prSwRfb->u2PacketLen -
+			(uint16_t)OFFSET_OF(ACTION_SM_REQ_FRAME,
+					aucInfoElem[0]);
+		prRxFrame =
+			(P_ACTION_SM_REQ_FRAME)prSwRfb->pvHeader;
+		pucIE = prRxFrame->aucInfoElem;
+		ucAction = prRxFrame->ucAction;
+		prStaRec->ucSmDialogToken = prRxFrame->ucDialogToken;
+	}
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 	prBssDesc = prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
 
-	prStaRec->ucSmDialogToken = prRxFrame->ucDialogToken;
-
 	DBGLOG_MEM8(RLM, INFO, pucIE, u2IELength);
-	switch (prRxFrame->ucAction) {
+	switch (ucAction) {
 	case ACTION_MEASUREMENT_REQ:
 		DBGLOG(RLM, INFO, "[Mgt Action] Measure Request\n");
 		prMeasurementReqIE = SM_MEASUREMENT_REQ_IE(pucIE);

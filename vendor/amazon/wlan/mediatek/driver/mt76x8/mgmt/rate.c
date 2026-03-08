@@ -284,7 +284,7 @@ rateGetDataRatesFromRateSet(IN UINT_16 u2OperationalRateSet,
 	ASSERT(pucDataRates);
 	ASSERT(pucDataRatesLen);
 
-	ASSERT(u2BSSBasicRateSet == (u2OperationalRateSet & u2BSSBasicRateSet));
+	//ASSERT(u2BSSBasicRateSet == (u2OperationalRateSet & u2BSSBasicRateSet));
 
 	for (i = RATE_1M_SW_INDEX, j = 0; i < RATE_NUM_SW; i++) {
 		if (u2OperationalRateSet & BIT(i)) {

@@ -914,6 +914,17 @@ int wlanDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 	return ret;
 }				/* end of wlanDoIOCTL() */
 
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+int wlanDoPrivIOCTL(struct net_device *prDev, struct ifreq *prIfReq,
+		void __user *prData, int i4Cmd)
+{
+	if (!prIfReq->ifr_data && prData) {
+		prIfReq->ifr_data = prData;
+	}
+	return wlanDoIOCTL(prDev, prIfReq, i4Cmd);
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief Export wlan GLUE_INFO_T pointer to p2p module
@@ -1818,6 +1829,9 @@ static const struct net_device_ops wlan_netdev_ops = {
 	.ndo_set_rx_mode = wlanSetMulticastList,
 	.ndo_get_stats = wlanGetStats,
 	.ndo_do_ioctl = wlanDoIOCTL,
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+	.ndo_siocdevprivate = wlanDoPrivIOCTL,
+#endif
 	.ndo_start_xmit = wlanHardStartXmit,
 	.ndo_init = wlanInit,
 	.ndo_uninit = wlanUninit,
@@ -3138,9 +3152,14 @@ INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 #if CFG_CHIP_RESET_SUPPORT
 		if (g_u4ProbeChipResetTimes < PROBE_CHIP_RESET_LIMIT) {
-			DBGLOG(INIT, ERROR, "wlanProbe: trigger whole reset\n");
-			g_u4ProbeChipResetTimes++;
-			GL_RESET_TRIGGER(prAdapter, RST_PROBE_FAIL);
+			//	prAdatper will be NULL before the "Setup IRQ" step
+			if( prAdapter != NULL ) {
+				DBGLOG(INIT, ERROR, "wlanProbe: trigger whole reset\n");
+				g_u4ProbeChipResetTimes++;
+				GL_RESET_TRIGGER(prAdapter, RST_PROBE_FAIL);
+			} else {
+				DBGLOG(INIT, ERROR, "wlanProbe: skip reset, prAdapter is NULL\n");
+			}
 		}
 #endif
 	}
@@ -3225,6 +3244,11 @@ VOID wlanRemove(VOID)
 #ifdef CONFIG_PM_SLEEP
 	unregister_pm_notifier(&pm_resume_notifier_func);
 #endif
+
+	//	Let the kernel stops sending data packet to wlan
+	//	Try to avoid the netdev_pick_tx crash
+
+	netif_tx_stop_all_queues(prDev);
 
 #if CFG_ENABLE_BT_OVER_WIFI
 	if (prGlueInfo->rBowInfo.fgIsNetRegistered) {
