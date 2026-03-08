@@ -1298,6 +1298,9 @@ wlanCfgSetCb(IN P_ADAPTER_T prAdapter, const PCHAR pucKey, WLAN_CFG_SET_CB pfSet
 
 WLAN_STATUS wlanCfgParse(IN P_ADAPTER_T prAdapter, PUINT_8 pucConfigBuf, UINT_32 u4ConfigBufLen, BOOLEAN isFwConfig);
 VOID wlanFeatureToFw(IN P_ADAPTER_T prAdapter);
+#if CFG_SUPPORT_SEND_ONLY_ONE_CFG
+WLAN_STATUS wlanFeatureToFwOnlyOneCfg(IN P_ADAPTER_T prAdapter, const PCHAR pucKey, PCHAR pucValue);
+#endif
 #endif
 
 VOID wlanLoadDefaultCustomerSetting(IN P_ADAPTER_T prAdapter);

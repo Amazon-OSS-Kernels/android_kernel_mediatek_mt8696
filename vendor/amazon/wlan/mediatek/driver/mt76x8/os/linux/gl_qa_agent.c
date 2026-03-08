@@ -1817,7 +1817,9 @@ static INT_32 HQA_RfRegBulkRead(struct net_device *prNetDev,
 	else if (u4WfSel == 1)
 		u4Offset = u4Offset | 0x99910000;
 
-	if ((2 + (u4Length * 4)) > sizeof(HqaCmdFrame->Data)) {
+	if ((2 + (u4Length * 4)) > sizeof(HqaCmdFrame->Data)
+		|| (u4Length >> 30) != 0) {
+                /* avoid integer overflow by checking u4Length * 4: checking whether 2 MSB is 0*/
 		i4Status = WLAN_STATUS_INVALID_LENGTH;
 		return i4Status;
 	}
@@ -1939,6 +1941,12 @@ static INT_32 HQA_ReadEEPROM(struct net_device *prNetDev, IN union iwreq_data *p
 	Offset = ntohs(Offset);
 	memcpy(&Len, HqaCmdFrame->Data + 2 * 1, 2);
 	Len = ntohs(Len);
+
+	/*  HQA_ReadEEPROM read size  only 16 bytes is used */
+	if (Len > EFUSE_BLOCK_SIZE) {
+		DBGLOG(INIT, ERROR, "QA_AGENT HQA_ReadEEPROM Len : %d not supported\n", Len);
+		return WLAN_STATUS_FAILURE;
+	}
 
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
@@ -2094,8 +2102,18 @@ static INT_32 HQA_ReadBulkEEPROM(struct net_device *prNetDev,
 
 	memcpy(&Offset, HqaCmdFrame->Data + 2 * 0, 2);
 	Offset = ntohs(Offset);
+	if (Offset > (MAX_EEPROM_BUFFER_SIZE - 1)) {
+		DBGLOG(INIT, ERROR, "%s Offset : %d out of range (0x%x)\n", __func__, Offset, MAX_EEPROM_BUFFER_SIZE);
+		return WLAN_STATUS_FAILURE;
+	}
+
 	memcpy(&Len, HqaCmdFrame->Data + 2 * 1, 2);
 	Len = ntohs(Len);
+	/* for bulk read, only 16 bytes is used */
+	if (Len > EFUSE_BLOCK_SIZE) {
+		DBGLOG(INIT, ERROR, "QA_AGENT HQA_ReadBulkEEPROM Len : %d not supported\n", Len);
+		return WLAN_STATUS_FAILURE;
+	}
 	tmp = Offset;
 	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadBulkEEPROM Offset : %d\n", Offset);
 	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadBulkEEPROM Len : %d\n", Len);
@@ -2237,13 +2255,13 @@ static INT_32 HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 
 	UINT_32 u4BufLen = 0;
 	PARAM_CUSTOM_ACCESS_EFUSE_T rAccessEfuseInfoRead, rAccessEfuseInfoWrite;
-	UINT_16 testBuffer1[EFUSE_BLOCK_SIZE], testBuffer;
 	UINT_16	*Buffer = NULL;
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
 	UINT_8  u4Loop = 0, u4Index = 0;
 	UINT_16 ucTemp2;
 	UINT_16 i = 0;
+	UINT_32 u4TotalOffset = 0;
 
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
@@ -2268,10 +2286,6 @@ static INT_32 HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 		DBGLOG(INIT, ERROR, "Invalid efuse Offset address: %x, Len: %lu\n", Offset, Len);
 		return -EINVAL;
 	}
-
-	memcpy(&testBuffer1, HqaCmdFrame->Data + 2 * 2, Len);
-	testBuffer = ntohs(testBuffer1[0]);
-
 
 	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM Offset : %x\n", Offset);
 	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM Len : %d\n", Len);
@@ -2335,8 +2349,8 @@ static INT_32 HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 				memcpy(rAccessEfuseInfoWrite.aucData, Buffer, 16);
 			} else {
 				u4Index = Offset % EFUSE_BLOCK_SIZE;
-				DBGLOG(INIT, INFO, "MT6632:QA_AGENT HQA_WriteBulkEEPROM Wr,u4Index=%x,Buffer=%x\n",
-						u4Index, testBuffer);
+				DBGLOG(INIT, INFO, "MT6632:QA_AGENT HQA_WriteBulkEEPROM Wr,u4Index=%x\n",
+						u4Index);
 
 				if (u4Index >= EFUSE_BLOCK_SIZE - 1) {
 					DBGLOG(INIT, ERROR, "MT6632 : efuse Offset error\n");
@@ -2381,9 +2395,15 @@ static INT_32 HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 			memcpy(uacEEPROMImage + Offset, &ucTemp2, Len);
 		} else {
 			for (i = 0 ; i < 8 ; i++) {
+				/* Fix coverity issue: CID10708595 */
+				u4TotalOffset = Offset + 2 * i;
+				if (u4TotalOffset > MAX_EEPROM_BUFFER_SIZE - 1) {
+					DBGLOG(INIT, ERROR, "%s u4TotalOffset : %d not supported\n", __func__, u4TotalOffset);
+					return WLAN_STATUS_FAILURE;
+				}
 				memcpy(&ucTemp2, HqaCmdFrame->Data + 2 * 2 + 2*i, 2);
 				ucTemp2 = ntohs(ucTemp2);
-				memcpy(uacEEPROMImage + Offset + 2*i, &ucTemp2, 2);
+				memcpy(uacEEPROMImage + u4TotalOffset, &ucTemp2, 2);
 			}
 
 			if (!g_BufferDownload) {

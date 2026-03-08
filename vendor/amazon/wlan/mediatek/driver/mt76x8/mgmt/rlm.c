@@ -2207,10 +2207,9 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 			}
 
 #if CFG_DFS_NEWCH_DFS_FORCE_DISCONNECT
-			i = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
 			max_count = rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ) +
 							rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
-			for (; i < max_count; i++) {
+			for (i = 0; i < max_count; i++) {
 				Channel = rlmDomainGetActiveChannels() + i;
 
 				if (Channel->chNum != prCSAIE->ucNewChannelNum) {
@@ -3852,10 +3851,9 @@ VOID rlmProcessSpecMgtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 				}
 
 #if CFG_DFS_NEWCH_DFS_FORCE_DISCONNECT
-				i = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
 				max_count = rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ) +
 								rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
-				for (; i < max_count; i++) {
+				for (i = 0; i < max_count; i++) {
 					Channel = rlmDomainGetActiveChannels() + i;
 
 					if (Channel->chNum != prChannelSwitchAnnounceIE->ucNewChannelNum) {

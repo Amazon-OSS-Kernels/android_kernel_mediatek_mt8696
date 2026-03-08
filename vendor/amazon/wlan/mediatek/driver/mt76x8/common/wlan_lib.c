@@ -8594,6 +8594,86 @@ exit:
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if CFG_SUPPORT_SEND_ONLY_ONE_CFG
+WLAN_STATUS wlanFeatureToFwOnlyOneCfg(IN P_ADAPTER_T prAdapter,
+		     const PCHAR pucKey, PCHAR pucValue)
+{
+	CMD_HEADER_T rCmdV1Header;
+	CMD_FORMAT_V1_T rCmd_v1;
+	WLAN_STATUS rStatus;
+	UCHAR roffset = 0;
+
+	ASSERT(pucKey);
+
+	rCmdV1Header.cmdType = CMD_TYPE_SET;
+	rCmdV1Header.cmdVersion = CMD_VER_1;
+	rCmdV1Header.cmdBufferLen = 0;
+	rCmdV1Header.itemNum = 0;
+
+	kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
+	kalMemSet(&rCmd_v1, 0, sizeof(CMD_FORMAT_V1_T));
+
+	if (pucKey != NULL && pucValue != NULL) {
+
+		rCmd_v1.itemType = ITEM_TYPE_STR;
+
+
+		/*send string format to firmware */
+		rCmd_v1.itemStringLength = kalStrLen(pucKey);
+
+		if (rCmd_v1.itemStringLength > MAX_CMD_NAME_MAX_LENGTH)
+			return WLAN_STATUS_INVALID_LENGTH;
+
+		kalMemZero(rCmd_v1.itemString, MAX_CMD_NAME_MAX_LENGTH);
+		kalMemCopy(rCmd_v1.itemString, pucKey, rCmd_v1.itemStringLength);
+
+
+		rCmd_v1.itemValueLength = kalStrLen(pucValue);
+
+		if (rCmd_v1.itemValueLength > MAX_CMD_VALUE_MAX_LENGTH)
+			return WLAN_STATUS_INVALID_LENGTH;
+
+		kalMemZero(rCmd_v1.itemValue, MAX_CMD_VALUE_MAX_LENGTH);
+		kalMemCopy(rCmd_v1.itemValue, pucValue, rCmd_v1.itemValueLength);
+
+
+		DBGLOG(INIT, INFO, "Send key word (%s) WITH (%s) to firmware\n",
+			rCmd_v1.itemString, rCmd_v1.itemValue);
+
+		kalMemCopy(((P_CMD_FORMAT_V1_T)rCmdV1Header.buffer)+roffset,
+			&rCmd_v1,  sizeof(CMD_FORMAT_V1_T));
+
+		rCmdV1Header.cmdBufferLen = sizeof(CMD_FORMAT_V1_T);
+		rCmdV1Header.itemNum = 1;
+
+		/* Send to FW */
+
+		rStatus = wlanSendSetQueryCmd(
+			prAdapter,				/* prAdapter */
+			CMD_ID_GET_SET_CUSTOMER_CFG,	/* 0x70 */
+			TRUE,					/* fgSetQuery */
+			FALSE,					/* fgNeedResp */
+			FALSE,					/* fgIsOid */
+			NULL,					/* pfCmdDoneHandler*/
+			NULL,	/* pfCmdTimeoutHandler */
+			sizeof(CMD_HEADER_T),	/* u4SetQueryInfoLen */
+			(PUINT_8)&rCmdV1Header, /* pucInfoBuffer */
+			NULL,	/* pvSetQueryBuffer */
+			0	/* u4SetQueryBufferLen */
+		);
+
+		if (rStatus == WLAN_STATUS_FAILURE)
+			DBGLOG(INIT, INFO, "[Fail]kalIoctl wifiSefCFG fail 0x%x\n", rStatus);
+
+		kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
+		rCmdV1Header.cmdBufferLen = 0;
+	} else {
+		return WLAN_STATUS_INVALID_DATA;
+	}
+	return rStatus;
+}
+#endif
+
 #else
 WLAN_STATUS wlanCfgParse(IN P_ADAPTER_T prAdapter, PUINT_8 pucConfigBuf, UINT_32 u4ConfigBufLen)
 {

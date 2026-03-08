@@ -20,18 +20,22 @@
 #endif
 
 #include <linux/timer.h>
-#ifdef CONFIG_AMAZON_METRICS_LOG
+#if defined (CONFIG_AMAZON_METRICS_LOG) || defined(CONFIG_AMAZON_MINERVA_METRICS_LOG)
 #include <linux/metricslog.h>
 #endif
 
-
-#ifdef CONFIG_AMAZON_METRICS_LOG
+#if defined (CONFIG_AMAZON_METRICS_LOG) || defined(CONFIG_AMAZON_MINERVA_METRICS_LOG)
 #define BT_DOMAIN                  "Kernel"
 #define BT_PROGRAM                 "remote-wireless"
 #define BT_OPERATION               "bt-driver"
 #define BT_KEY_BUS_DISC            "7668-bus-disc"
 #define BT_KEY_WOBLE               "7668-woble"
 #define BT_KEY_PROBE               "7668-probe"
+#endif
+
+#ifdef CONFIG_AMAZON_MINERVA_METRICS_LOG
+#define BT_GROUP_ID                "2999trpq"
+#define BT_SCHEMA_ID               "os59/2/02330400"
 #endif
 
 #define BD_ADDRESS_SIZE 6
