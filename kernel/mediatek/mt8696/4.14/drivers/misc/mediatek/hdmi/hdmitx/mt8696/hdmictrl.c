@@ -81,7 +81,6 @@ unsigned int hdmi_boot_forcedolby;
 unsigned int hdmi_boot_forcehdr;
 unsigned int dovi_vsif_ver = 1; //for debug
 
-
 struct hdmi_emp_t hdmi_emp;
 bool emp_data_is_sending = FALSE;
 
@@ -1467,9 +1466,21 @@ void vSetHDMIAudioIn(void)
 
 	HDMI_AUDIO_FUNC();
 
-	vWriteByteHdmiGRL(TOP_AUD_MAP,
-			  C_SD7 + C_SD6 + C_SD5 + C_SD4 +
-			  C_SD3 + C_SD2 + C_SD1 + C_SD0);
+	/* 7.1 PCM swap Ls <->Lrs & Rs <-> Rrs
+	 * to make from L R LFE C Lrs Rrs Ls Rs
+	 * to  L R LFE C Ls Rs Lrs Rrs
+	 */
+	if ((_stAvdAVInfo.e_aud_code == AVD_LPCM) &&
+		((_stAvdAVInfo.u1Aud_Input_Chan_Cnt == AUD_INPUT_7_1) ||
+		(_stAvdAVInfo.u1Aud_Input_Chan_Cnt == AUD_INPUT_7_0))) {
+		vWriteByteHdmiGRL(TOP_AUD_MAP,
+			C_SD7 + C_SD6 + C_SD5 + C_SD4 +
+			C_SD3_SWAP + C_SD2_SWAP + C_SD1 + C_SD0);
+	} else {
+		vWriteByteHdmiGRL(TOP_AUD_MAP,
+			C_SD7 + C_SD6 + C_SD5 + C_SD4 +
+			C_SD3 + C_SD2 + C_SD1 + C_SD0);
+	}
 	vWriteHdmiGRLMsk(AIP_SPDIF_CTRL, 0, 0x0F << 20);
 	vWriteHdmiGRLMsk(AIP_CTRL, 0, SPDIF_EN | DSD_EN | HBRA_ON |
 			 CTS_CAL_N4 | HBR_FROM_SPDIF | SPDIF_INTERNAL_MODULE);
@@ -3434,7 +3445,7 @@ void vHalSendAVIInfoFrame(unsigned char *pr_bData)
 
 }
 
-void vHalSendHFVendorSpecificInfoFrame(bool fgEnable, unsigned char *pr_bData)
+void vHalSendHFVendorSpecificInfoFrame(bool fgEnable, unsigned char *pr_bData, bool fgDelayOff)
 {
 	unsigned char bHFVS_CHSUM = 0;
 	unsigned char bData1 = 0, bData2 = 0, bData3 = 0,
@@ -3484,6 +3495,12 @@ void vHalSendHFVendorSpecificInfoFrame(bool fgEnable, unsigned char *pr_bData)
 	vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 20, 0);
 	vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 24, 0);
 	vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 28, 0);
+
+	if ((fgEnable == FALSE) && (fgDelayOff == FALSE)) {
+		TX_DEF_LOG("disable delay off hfvsif\n");
+		return;
+	}
+
 	if (fgEnable || u4Data) {
 		vWriteHdmiGRLMsk(pkthw[u2VsifIdx].addr_rep_en, pkthw[u2VsifIdx].mask_rep_en,
 			pkthw[u2VsifIdx].mask_rep_en);
@@ -3521,11 +3538,13 @@ void vSendHFVendorSpecificInfoFrame(void)
 		bHfvsInfoFm[4] = 0x0;
 	if ((_fgLowLatencyDolbyVisionEnable || _fgDolbyHdrEnable)
 		&& fgUseDolbyVSIF()
+		&& (_HdmiSinkAvCap.ui1_sink_ifdb_exist == 1)
 		&& (_HdmiSinkAvCap.ui1_sink_support_vsif_number == 0)) {
-		vHalSendHFVendorSpecificInfoFrame(0, &bHfvsInfoFm[0]);
+		vHalSendHFVendorSpecificInfoFrame(0, &bHfvsInfoFm[0], false);
 		_fghfvsifenable = 0;
+		return;
 	} else {
-		vHalSendHFVendorSpecificInfoFrame(allmenable, &bHfvsInfoFm[0]);
+		vHalSendHFVendorSpecificInfoFrame(allmenable, &bHfvsInfoFm[0], true);
 		_fghfvsifenable = allmenable;
 	}
 	queue_delayed_work(hdmi_wq, &hfvsif_delay_work, msecs_to_jiffies(500));
@@ -5424,6 +5443,11 @@ void vDoviHdrEnable(bool fgEnable)
 		vHDMIVOutMuteBG(_stAvdAVInfo.e_resolution,
 		_stAvdAVInfo.e_video_color_space);
 	}
+
+	/*
+	 * If IFDB is present and vsif num is 0,
+	 * send DoVi VSIF and don't send HF-VSIF
+	*/
 	if ((_HdmiSinkAvCap.ui1_sink_ifdb_exist == 1) &&
 		(_HdmiSinkAvCap.ui1_sink_support_vsif_number == 0))
 		vSendHFVendorSpecificInfoFrame();
@@ -5487,6 +5511,10 @@ void vLowLatencyDoviEnable(bool fgEnable)
 		_bHdrType = VID_PLA_DR_TYPE_SDR;
 	}
 
+	/*
+	 * If IFDB is present and vsif num is 0,
+	 * send DoVi VSIF and don't send HF-VSIF
+	*/
 	if ((_HdmiSinkAvCap.ui1_sink_ifdb_exist == 1) &&
 		(_HdmiSinkAvCap.ui1_sink_support_vsif_number == 0))
 		vSendHFVendorSpecificInfoFrame();

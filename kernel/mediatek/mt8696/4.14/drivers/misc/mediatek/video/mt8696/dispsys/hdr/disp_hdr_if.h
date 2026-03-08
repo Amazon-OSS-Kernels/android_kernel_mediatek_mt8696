@@ -75,7 +75,7 @@ enum ALLM_UI {
 #define DYNA_SET_INVALID 3
 
 #define HDR_ReadREG(arg) __raw_readl((unsigned long *)(arg))
-
+#define DOVI_DM_VERSION_4 2
 
 extern bool dovi_idk_dump;
 extern int32_t idk_dump_vsync_cnt;

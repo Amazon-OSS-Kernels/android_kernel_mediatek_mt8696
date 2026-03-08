@@ -289,8 +289,9 @@ void disp_hdr_config_hdmi_signal(uint32_t path)
 	if ((out_format == HDR_OUT_TYPE_DV_LL)
 		|| (out_format == HDR_OUT_TYPE_VSEM_DV_LL)) {
 		if (p_vsif != NULL) {
-			if (hdr_allm_en || hdr_gfx_allm_en
-				|| (ui_allm_type == ALLM_EN)) {
+			if ((hdr_allm_en || hdr_gfx_allm_en
+				|| (ui_allm_type == ALLM_EN)) &&
+				(tv_cap->dovi_vsvdb_dm_version >= DOVI_DM_VERSION_4)) {
 				/* add dummy L11MD when source not contain */
 				if (p_vsif->L11_md_present == 0) {
 					p_vsif->L11_md_present = L11_MD_PRESENT;
