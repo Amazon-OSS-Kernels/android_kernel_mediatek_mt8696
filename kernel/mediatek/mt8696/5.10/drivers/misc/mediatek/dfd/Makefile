@@ -1,0 +1,1 @@
+obj-$(CONFIG_MTK_DFD_INTERNAL_DUMP) += dfd.o

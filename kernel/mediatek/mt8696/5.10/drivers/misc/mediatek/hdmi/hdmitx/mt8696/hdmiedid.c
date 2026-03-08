@@ -3778,6 +3778,27 @@ bool isBadMATSink(void)
 	if (((_bEdidData[0x08] == 0x4d) && (_bEdidData[0x09] ==  0xd9)) &&
 		((_bEdidData[0x11] == 0x1d) || (_bEdidData[0x11] == 0x1e)))
 		return true;
+	/* Philips - 2019/2020 model Dolby MAT TV's has MAT implementation issue
+	 * This leads no audio for MAT input.
+	 * Disable MAT audio capability of these Philips TV
+	 */
+	if (((_bEdidData[0x08] == 0x41) && (_bEdidData[0x09] ==  0x0c)) &&
+		((_bEdidData[0x11] == 0x1d) || (_bEdidData[0x11] == 0x1e)))
+		return true;
+	/* Panasonic - 2019/2020 model Dolby MAT TV's has MAT implementation issue
+	 * This leads no audio for MAT input.
+	 * Disable MAT audio capability of these Panasonic TV
+	 */
+	if (((_bEdidData[0x08] == 0x34) && (_bEdidData[0x09] ==  0xa9)) &&
+		((_bEdidData[0x11] == 0x1d) || (_bEdidData[0x11] == 0x1e)))
+		return true;
+	/* Hisense - 2019/2020 model Dolby MAT TV's has MAT implementation issue
+	 * This leads no audio for MAT input.
+	 * Disable MAT audio capability of these Hisense TV
+	 */
+	if (((_bEdidData[0x08] == 0x20) && (_bEdidData[0x09] ==  0xa3)) &&
+		((_bEdidData[0x11] == 0x1d) || (_bEdidData[0x11] == 0x1e)))
+		return true;
 
 	return false;
 }
@@ -4146,7 +4167,7 @@ void hdmi_AppGetEdidInfo(
 		pv_get_info->ui1rawdata_edid[i] = _bEdidData[i];
 
 	if (isThomsonUD9_India_TV()) {
-		HDMI_PLUG_LOG(
+		HDMI_AUDIO_LOG(
 "THOMSON UD9 43TH6000 TV (India only TV) remove Dolby audio capability\n");
 		pv_get_info->ui4_hdmi_ac3_ch_type = 0x00;
 		pv_get_info->ui4_hdmi_ac3_ch3ch4ch5ch7_type = 0x00;
@@ -4155,7 +4176,7 @@ void hdmi_AppGetEdidInfo(
 	}
 	if ((pv_get_info->ui1_sink_support_mat_profile >= 0x2) && isBadMATSink()) {
 		if ((pv_get_info->ui4_hdmi_dolby_truehd_ch_type & (1 << 6)) == 0x0) {
-                        HDMI_PLUG_LOG("Sony-G/H model MAT TV, remove Dolby MAT audio capability\n");
+			HDMI_AUDIO_LOG("Known bad MAT Sink, remove Dolby MAT audio capability\n");
 			pv_get_info->ui1_sink_support_mat_profile = 0x1;
                 }
 	}

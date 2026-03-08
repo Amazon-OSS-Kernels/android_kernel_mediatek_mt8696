@@ -1,0 +1,219 @@
+/*
+ * Copyright (C) 2015 MediaTek Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
+#include <linux/soc/mediatek/mtk-cmdq.h>
+#include "cmdq_device.h"
+
+#define DECLAR_EVENT(event_enum, dts_name) \
+	{event_enum, #event_enum, #dts_name},
+
+static struct cmdq_event_table cmdq_events[] = {
+	/* start frame */
+	DECLAR_EVENT(CMDQ_EVENT_M_VDO_MAIN_SOF, m_vdo_main_sof)
+	DECLAR_EVENT(CMDQ_EVENT_M_VDO_AUX_SOF, m_vdo_aux_sof)
+	DECLAR_EVENT(CMDQ_EVENT_M_FE_FIFO_SOF, m_fe_fifo_sof)
+	DECLAR_EVENT(CMDQ_EVENT_M_FILM_GRAIN_SOF_0, m_film_grain_sof_0)
+	DECLAR_EVENT(CMDQ_EVENT_M_FILM_GRAIN_SOF_1, m_film_grain_sof_1)
+	DECLAR_EVENT(CMDQ_EVENT_M_FILM_GRAIN_SOF_2, m_film_grain_sof_2)
+	DECLAR_EVENT(CMDQ_EVENT_M_DOLBY_FE_SOF, m_dolby_fe_sof)
+	DECLAR_EVENT(CMDQ_EVENT_S_VDO_MAIN_SOF, s_vdo_main_sof)
+	DECLAR_EVENT(CMDQ_EVENT_S_VDO_AUX_SOF, s_vdo_aux_sof)
+	DECLAR_EVENT(CMDQ_EVENT_S_FE_FIFO_SOF, s_fe_fifo_sof)
+	DECLAR_EVENT(CMDQ_EVENT_S_FILM_GRAIN_SOF_0, s_film_grain_sof_0)
+	DECLAR_EVENT(CMDQ_EVENT_S_FILM_GRAIN_SOF_1, s_film_grain_sof_1)
+	DECLAR_EVENT(CMDQ_EVENT_S_FILM_GRAIN_SOF_2, s_film_grain_sof_2)
+	DECLAR_EVENT(CMDQ_EVENT_S_DOLBY_FE_SOF, s_dolby_fe_sof)
+	DECLAR_EVENT(CMDQ_EVENT_UHD_OSD_SOF, uhd_osd_sof)
+	DECLAR_EVENT(CMDQ_EVENT_UHD_FE_FIFO_SOF, uhd_fe_fifo_sof)
+	DECLAR_EVENT(CMDQ_EVENT_UHD_DOLBY_FE_SOF, uhd_dolby_fe_sof)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_OSD_SOF, fhd_osd_sof)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_FE_FIFO_SOF, fhd_fe_fifo_sof)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_DOLBY_FE_SOF, fhd_dolby_fe_sof)
+	DECLAR_EVENT(CMDQ_EVENT_BE_FIFO_SOF, be_fifo_sof)
+	DECLAR_EVENT(CMDQ_EVENT_DISP_MENU_LOAD_SOF, disp_menu_load_sof)
+	DECLAR_EVENT(CMDQ_EVENT_MMSYS_MENU_LOAD_SOF, mmsys_menu_load_sof)
+	DECLAR_EVENT(CMDQ_EVENT_VM_SOF, vm_sof)
+	DECLAR_EVENT(CMDQ_EVENT_M_R2R_SOF, m_r2r_sof)
+	DECLAR_EVENT(CMDQ_EVENT_M_FILM_GRAIN_SOF_3, m_film_grain_sof_3)
+	DECLAR_EVENT(CMDQ_EVENT_M_FILM_GRAIN_SOF_4, m_film_grain_sof_4)
+	DECLAR_EVENT(CMDQ_EVENT_S_FILM_GRAIN_SOF_3, s_film_grain_sof_3)
+	DECLAR_EVENT(CMDQ_EVENT_S_FILM_GRAIN_SOF_4, s_film_grain_sof_4)
+	DECLAR_EVENT(CMDQ_EVENT_FMT_AUX0_IRQ, fmt_aux0_irq)
+	DECLAR_EVENT(CMDQ_EVENT_FMT_AUX1_IRQ, fmt_aux1_irq)
+	DECLAR_EVENT(CMDQ_EVENT_FMT_AUX2_IRQ, fmt_aux2_irq)
+	DECLAR_EVENT(CMDQ_EVENT_FMT_AUX3_IRQ, fmt_aux3_irq)
+	DECLAR_EVENT(CMDQ_EVENT_SCRAMBLE_CLIENT_TRIG,
+	scramble_client_trig)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_HDR_GFX_DM_AUTOD_TRIG,
+	fhd_hdr_gfx_dm_autod_trig)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_HDR_GFX_THDR_AUTOD_TRIG,
+	fhd_hdr_gfx_thdr_autod_trig)
+	DECLAR_EVENT(CMDQ_EVENT_UHD_HDR_GFX_THDR_AUTOD_TRIG,
+	uhd_hdr_gfx_thdr_autod_trig)
+	DECLAR_EVENT(CMDQ_EVENT_UHD_HDR_GFX_DM_AUTOD_TRIG,
+	uhd_hdr_gfx_dm_autod_trig)
+
+	/* mmsys_top_irq_b */
+	DECLAR_EVENT(CMDQ_EVENT_HDMI_METADATA_IRQ_B, hdmi_metadata_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_VIDEO_IN_IRQ_B, video_in_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_W2D_IRQ_B, w2d_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_VIDEO_MARK_IRQ_B, video_mark_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_OSD_UNDER_RUN_IRQ_B,
+	fhd_osd_under_run_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_OSD_FRAME_START_IRQ_B,
+	fhd_osd_frame_start_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_OSD_FRAME_END_IRQ_B,
+	fhd_osd_frame_end_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_OSD_IRQ_B, fhd_osd_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_OSD_DIV_OVFL_IRQ_B, fhd_osd_div_ovfl_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_UHD_GFX_FE_FIFO_IRQ_B, uhd_gfx_fe_fifo_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_UHD_HDR_GFX_FE_IRQ_B, uhd_hdr_gfx_fe_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_OSD_FBDC_IRQ_B, fhd_osd_fbdc_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_LARB0_IRQ_B, larb0_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_OSD_UHD_DUMMY_IRQ_B, osd_uhd_dummy_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_OSD2_UNDER_RUN_IRQ_B, osd2_under_run_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_OSD2_FRAME_START_IRQ_B, osd2_frame_start_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_OSD2_FRAME_END_IRQ_B, osd2_frame_end_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_OSD2_IRQ_B, osd2_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_OSD2_DIV_OVFL_IRQ_B, osd2_div_ovfl_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_GFX_FE_FIFO_IRQ_B, fhd_gfx_fe_fifo_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FHD_HDR_GFX_FE_IRQ_B, fhd_hdr_gfx_fe_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_OSD2_FBDC_IRQ_B, osd2_fbdc_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_LARB4_IRQ_B, larb4_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_VDO_BE_IRQ_B, vdo_be_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_VDO_BE_FIFO_FRAME_DONE_IRQ,
+	vdo_be_fifo_frame_done_irq)
+	DECLAR_EVENT(CMDQ_EVENT_VSYNC_IRQ_B, vsync_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_VSYNC_ACT_STA_IRQ_B, vsync_act_sta_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_VSYNC_ACT_END_IRQ_B, vsync_act_end_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FMT_INT0_IRQ_B, fmt_int0_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FMT_INT1_IRQ_B, fmt_int1_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FMT_INT2_IRQ_B, fmt_int2_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FMT_INT3_IRQ_B, fmt_int3_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FMT_SOF_MERGE_IRQ_B, fmt_sof_merge_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_DISP_MIX_IRQ_B, disp_mix_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_FMT_DUMMY0_IRQ_B, fmt_dummy0_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_VDO_BE_FIFO_RDY2DE_IRQ_B,
+	vdo_be_fifo_rdy2de_irq_b)
+
+	DECLAR_EVENT(CMDQ_EVENT_XIU_TIMEOUT_INT_B, xiu_timeout_int_b)
+	DECLAR_EVENT(CMDQ_EVENT_SC_ERROR_RESP_INT_B, sc_error_resp_int_b)
+	DECLAR_EVENT(CMDQ_EVENT_DYN_SCL_INT_B, dyn_scl_int_b)
+	DECLAR_EVENT(CMDQ_EVENT_MMSYS_DUMMY2_IRQ_B, mmsys_dummy2_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_MMSYS_DUMMY1_IRQ_B, mmsys_dummy1_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_MMSYS_DUMMY0_IRQ_B, mmsys_dummy0_irq_b)
+	DECLAR_EVENT(CMDQ_EVENT_HDMI_TX_EVENT, hdmi_tx_event)
+	DECLAR_EVENT(CMDQ_EVENT_DISP_MIX_FRAME_DONE, disp_mix_frame_done)
+
+	/* Keep this at the end of HW events */
+	DECLAR_EVENT(CMDQ_MAX_HW_EVENT_COUNT, hw_event_conunt)
+
+	/* SW Sync Tokens (Pre-defined) */
+
+	/**
+	 * Event for CMDQ to block executing command when append command
+	 * Plz sync CMDQ_SYNC_TOKEN_APPEND_THR(id) in cmdq_core source file.
+	 */
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR0, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR1, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR2, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR3, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR4, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR5, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR6, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR7, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR8, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR9, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR10, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR11, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR12, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR13, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR14, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR15, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR16, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR17, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR18, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR19, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR20, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR21, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR22, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_APPEND_THR23, sw_token)
+
+	/* GPR access tokens (for HW register backup)
+	 * There are 15 32-bit GPR, 3 GPR form a set
+	 * (64-bit for address, 32-bit for value)
+	 */
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_GPR_SET_0, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_GPR_SET_1, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_GPR_SET_2, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_GPR_SET_3, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_GPR_SET_4, sw_token)
+
+	/* Resource lock event to control resource in GCE thread */
+	DECLAR_EVENT(CMDQ_SYNC_RESOURCE_WROT0, sw_token)
+	DECLAR_EVENT(CMDQ_SYNC_RESOURCE_WROT1, sw_token)
+
+	/* GCE HW TPR Event*/
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_00, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_01, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_02, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_03, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_04, sw_token)
+	/* 5: 1us */
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_05, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_06, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_07, sw_token)
+	/* 8: 10us */
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_08, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_09, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_10, sw_token)
+	/* 11: 100us */
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_11, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_12, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_13, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_14, sw_token)
+	/* 15: 1ms */
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_15, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_16, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_17, sw_token)
+	/* 18: 10ms */
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_18, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_19, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_20, sw_token)
+	/* 21: 100ms */
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_21, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_22, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_23, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_24, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_25, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_26, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_27, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_28, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_29, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_30, sw_token)
+	DECLAR_EVENT(CMDQ_EVENT_TIMER_31, sw_token)
+
+	/* event id is 10 bit */
+	DECLAR_EVENT(CMDQ_SYNC_TOKEN_MAX, max_token)
+};
+
+
+struct cmdq_event_table *cmdq_event_get_table(void)
+{
+	return cmdq_events;
+}
+
+u32 cmdq_event_get_table_size(void)
+{
+	return ARRAY_SIZE(cmdq_events);
+}

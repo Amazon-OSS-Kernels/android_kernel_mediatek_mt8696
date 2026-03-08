@@ -1,0 +1,14 @@
+config MTK_IMGRZ_TEST
+    bool "unit test of imgrz driver"
+    default y
+    help
+	This option enabel imgrz unit test.
+	USAGE: echo [ACTION]>/d/imgresz
+	Test mode: OSD/JPEG/VIDEO mode
+	Depend on debugfs.
+
+config MTK_IMGRZ_TEST_PA
+    bool "use pa for unit test of imgrz driver"
+    default n
+    help
+	imgrz driver support unit test by pa.
