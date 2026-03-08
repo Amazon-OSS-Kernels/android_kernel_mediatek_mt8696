@@ -74,7 +74,6 @@ struct mtk_vcu_queue {
 	void *vcu;
 	struct mutex mmap_lock;
 	struct device *dev;
-	struct mutex dev_lock;
 	unsigned int num_buffers;
 	const struct vb2_mem_ops *mem_ops;
 	struct mtk_vcu_mem bufs[CODEC_MAX_BUFFER];

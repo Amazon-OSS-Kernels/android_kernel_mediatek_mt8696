@@ -237,30 +237,93 @@ static INLINE void DevmemIntHeapRelease(DEVMEMINT_HEAP *psDevmemHeap)
 PVRSRV_ERROR
 DevmemIntUnpin(PMR *psPMR)
 {
-	PVR_UNREFERENCED_PARAMETER(psPMR);
-	return PVRSRV_ERROR_NOT_IMPLEMENTED;
+	PVRSRV_ERROR eError;
+
+	/* Unpin */
+	eError = PMRUnpinPMR(psPMR, IMG_FALSE);
+
+	return eError;
 }
 
 PVRSRV_ERROR
 DevmemIntUnpinInvalidate(DEVMEMINT_MAPPING *psDevmemMapping, PMR *psPMR)
 {
-	PVR_UNREFERENCED_PARAMETER(psDevmemMapping);
-	PVR_UNREFERENCED_PARAMETER(psPMR);
-	return PVRSRV_ERROR_NOT_IMPLEMENTED;
+	PVRSRV_ERROR eError;
+
+	eError = PMRUnpinPMR(psPMR, IMG_TRUE);
+	if (eError != PVRSRV_OK)
+	{
+		goto e_exit;
+	}
+
+	/* Invalidate mapping */
+	eError = MMU_ChangeValidity(psDevmemMapping->psReservation->psDevmemHeap->psDevmemCtx->psMMUContext,
+	                            psDevmemMapping->psReservation->sBase,
+	                            psDevmemMapping->uiNumPages,
+	                            psDevmemMapping->psReservation->psDevmemHeap->uiLog2PageSize,
+	                            IMG_FALSE, /* !< Choose to invalidate PT entries */
+	                            psPMR);
+
+e_exit:
+	return eError;
 }
+
 PVRSRV_ERROR
 DevmemIntPin(PMR *psPMR)
 {
-	PVR_UNREFERENCED_PARAMETER(psPMR);
-	return PVRSRV_ERROR_NOT_IMPLEMENTED;
+	PVRSRV_ERROR eError = PVRSRV_OK;
+
+	/* Start the pinning */
+	eError = PMRPinPMR(psPMR);
+
+	return eError;
 }
 
 PVRSRV_ERROR
 DevmemIntPinValidate(DEVMEMINT_MAPPING *psDevmemMapping, PMR *psPMR)
 {
-	PVR_UNREFERENCED_PARAMETER(psDevmemMapping);
-	PVR_UNREFERENCED_PARAMETER(psPMR);
-	return PVRSRV_ERROR_NOT_IMPLEMENTED;
+	PVRSRV_ERROR eError;
+	PVRSRV_ERROR eErrorMMU = PVRSRV_OK;
+	IMG_UINT32 uiLog2PageSize = psDevmemMapping->psReservation->psDevmemHeap->uiLog2PageSize;
+
+	/* Start the pinning */
+	eError = PMRPinPMR(psPMR);
+
+	if (eError == PVRSRV_OK)
+	{
+		/* Make mapping valid again */
+		eErrorMMU = MMU_ChangeValidity(psDevmemMapping->psReservation->psDevmemHeap->psDevmemCtx->psMMUContext,
+		                            psDevmemMapping->psReservation->sBase,
+		                            psDevmemMapping->uiNumPages,
+		                            uiLog2PageSize,
+		                            IMG_TRUE, /* !< Choose to make PT entries valid again */
+		                            psPMR);
+	}
+	else if (eError == PVRSRV_ERROR_PMR_NEW_MEMORY)
+	{
+		/* If we lost the physical backing we have to map it again because
+		 * the old physical addresses are not valid anymore. */
+		IMG_UINT32 uiFlags;
+		uiFlags = PMR_Flags(psPMR);
+
+		eErrorMMU = MMU_MapPages(psDevmemMapping->psReservation->psDevmemHeap->psDevmemCtx->psMMUContext,
+		                         uiFlags,
+		                         psDevmemMapping->psReservation->sBase,
+		                         psPMR,
+		                         0,
+		                         psDevmemMapping->uiNumPages,
+		                         NULL,
+		                         uiLog2PageSize);
+	}
+
+	/* Just overwrite eError if the mappings failed.
+	 * PMR_NEW_MEMORY has to be propagated to the user. */
+	if (eErrorMMU != PVRSRV_OK)
+	{
+		eError = eErrorMMU;
+	}
+
+	return eError;
 }
 
 /*************************************************************************/ /*!
@@ -320,12 +383,6 @@ DevmemIntCtxCreate(CONNECTION_DATA *psConnection,
 	DEVMEMINT_CTX *psDevmemCtx;
 	IMG_HANDLE hPrivDataInt = NULL;
 	MMU_DEVICEATTRIBS      *psMMUDevAttrs;
-
-	/* Only allow request for a kernel context that comes from a direct bridge
-	 * (psConnection == NULL). Only the FW/KM Ctx is created over the direct bridge. */
-	PVR_LOGR_IF_FALSE(!bKernelMemoryCtx || psConnection == NULL,
-	                  "invalid bKernelMemoryCtx && psConnection",
-	                  PVRSRV_ERROR_INVALID_PARAMS);
 
 	if ((psDeviceNode->pfnCheckDeviceFeature) &&
 		PVRSRV_IS_FEATURE_SUPPORTED(psDeviceNode, MIPS))
