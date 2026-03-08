@@ -328,6 +328,9 @@ struct _BSS_DESC_T {
 	UINT_8 aucIEBuf[CFG_IE_BUFFER_SIZE];
 	UINT_8 ucJoinFailureCount;
 	OS_SYSTIME rJoinFailTime;
+#if CFG_SUPPORT_802_11K
+	UINT_8 aucRrmCap[5];
+#endif
 };
 
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP

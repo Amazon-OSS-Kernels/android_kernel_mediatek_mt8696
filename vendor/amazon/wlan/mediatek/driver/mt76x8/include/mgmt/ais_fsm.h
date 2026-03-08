@@ -256,6 +256,23 @@ typedef struct _AIS_FSM_INFO_T {
 	PARAM_SSID_T rRoamingSSID;
 } AIS_FSM_INFO_T, *P_AIS_FSM_INFO_T;
 
+enum WNM_AIS_BSS_TRANSITION {
+	BSS_TRANSITION_NO_MORE_ACTION,
+	BSS_TRANSITION_REQ_ROAMING,
+	BSS_TRANSITION_DISASSOC,
+	BSS_TRANSITION_MAX_NUM
+};
+
+typedef struct _MSG_AIS_BSS_TRANSITION_T {
+	MSG_HDR_T rMsgHdr;	/* Must be the first member */
+	UINT_8 ucToken;
+	BOOLEAN fgNeedResponse;
+	UINT_8 ucValidityInterval;
+	enum WNM_AIS_BSS_TRANSITION eTransitionType;
+	UINT_16 u2CandListLen;
+	PUINT_8 pucCandList;
+} MSG_AIS_BSS_TRANSITION_T, *P_MSG_AIS_BSS_TRANSITION_T;
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -439,6 +456,22 @@ aisFuncTxMgmtFrame(IN P_ADAPTER_T prAdapter,
 VOID aisFsmRunEventMgmtFrameTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
 
 VOID aisFuncValidateRxActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+VOID aisFsmRunEventBssTransition(IN P_ADAPTER_T prAdapter,
+				 IN P_MSG_HDR_T prMsgHdr);
+#endif
+
+#if CFG_SUPPORT_802_11K
+VOID aisSendNeighborRequest(IN P_ADAPTER_T prAdapter);
+#endif
+
+#if CFG_SUPPORT_802_11K || CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+VOID aisResetNeighborApList(IN P_ADAPTER_T prAdapter);
+
+VOID aisCollectNeighborAP(IN P_ADAPTER_T prAdapter, UINT_8 *pucApBuf,
+			  UINT_16 u2ApBufLen, UINT_8 ucValidInterval);
+#endif
 
 enum _ENUM_AIS_STATE_T aisFsmStateSearchAction(IN struct _ADAPTER_T *prAdapter, UINT_8 ucPhase);
 #if defined(CFG_TEST_MGMT_FSM) && (CFG_TEST_MGMT_FSM != 0)

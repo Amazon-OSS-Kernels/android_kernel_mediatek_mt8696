@@ -242,6 +242,11 @@ typedef struct _SWITCH_CH_AND_BAND_PARAMS_T {
 } SWITCH_CH_AND_BAND_PARAMS_T, *P_SWITCH_CH_AND_BAND_PARAMS_T;
 #endif
 
+struct SUB_ELEMENT_LIST {
+	struct SUB_ELEMENT_LIST *prNext;
+	struct SUB_ELEMENT rSubIE;
+};
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -461,6 +466,22 @@ VOID rlmRevisePreferBandwidthNss(
 	P_ADAPTER_T prAdapter,
 	UINT_8 ucBssIndex,
 	P_STA_RECORD_T prStaRec);
+
+#if CFG_SUPPORT_802_11K
+void rlmReqGenerateRRMEnabledCapIE(
+	P_ADAPTER_T prAdapter,
+	P_MSDU_INFO_T prMsduInfo);
+
+void rlmFillRrmCapa(PUINT_8 pucCapa);
+
+void rlmTxNeighborReportRequest(P_ADAPTER_T prAdapter,
+				P_STA_RECORD_T prStaRec,
+				struct SUB_ELEMENT_LIST *prSubIEs);
+
+void rlmProcessNeighborReportResponse(P_ADAPTER_T prAdapter,
+				     P_WLAN_ACTION_FRAME prAction,
+				     UINT_16 u2PacketLen);
+#endif
 
 #if CFG_SUPPORT_QUIET
 VOID rrmQuietIeNotExist(

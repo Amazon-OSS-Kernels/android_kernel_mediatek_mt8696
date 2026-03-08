@@ -824,6 +824,10 @@ static VOID rlmFillExtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSD
 	if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
 		prExtCap->aucCapabilities[0] &= ~ELEM_EXT_CAP_PSMP_CAP;
 
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP, ELEM_EXT_CAP_BSS_TRANSITION_BIT);
+#endif
+
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
 #if CFG_SUPPORT_802_11AC
@@ -862,6 +866,12 @@ static VOID rlmFillExtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSD
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP, ELEM_EXT_CAP_WNM_NOTIFICATION_BIT);
 	}
 #endif /* CFG_SUPPORT_PASSPOINT */
+
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+	prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
+	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+				ELEM_EXT_CAP_BSS_TRANSITION_BIT);
+#endif /* CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT */
 
 	ASSERT(IE_SIZE(prExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
@@ -4584,6 +4594,116 @@ BOOLEAN rlmChangeOperationMode(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, UINT_8 
 	}
 	return TRUE;
 }
+
+#if CFG_SUPPORT_802_11K
+VOID rlmReqGenerateRRMEnabledCapIE(P_ADAPTER_T prAdapter,
+				P_MSDU_INFO_T prMsduInfo)
+{
+	P_IE_RRM_ENABLED_CAP_T prRrmEnabledCap = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	prRrmEnabledCap =
+		(P_IE_RRM_ENABLED_CAP_T)(((UINT_8 *)
+						       prMsduInfo->prPacket) +
+					      prMsduInfo->u2FrameLength);
+	prRrmEnabledCap->ucId = ELEM_ID_RRM_ENABLED_CAP;
+	prRrmEnabledCap->ucLength = ELEM_MAX_LEN_RRM_CAP;
+	kalMemZero(&prRrmEnabledCap->aucCap[0], ELEM_MAX_LEN_RRM_CAP);
+	rlmFillRrmCapa(&prRrmEnabledCap->aucCap[0]);
+	prMsduInfo->u2FrameLength += IE_SIZE(prRrmEnabledCap);
+}
+
+VOID rlmFillRrmCapa(PUINT_8 pucCapa)
+{
+	UINT_8 ucIndex = 0;
+	UINT_8 aucEnabledBits[] = {RRM_CAP_INFO_LINK_MEASURE_BIT,
+				    RRM_CAP_INFO_NEIGHBOR_REPORT_BIT,
+				    RRM_CAP_INFO_REPEATED_MEASUREMENT,
+				    RRM_CAP_INFO_BEACON_PASSIVE_MEASURE_BIT,
+				    RRM_CAP_INFO_BEACON_ACTIVE_MEASURE_BIT,
+				    RRM_CAP_INFO_BEACON_TABLE_BIT,
+				    RRM_CAP_INFO_RRM_BIT};
+
+	for (; ucIndex < sizeof(aucEnabledBits); ucIndex++)
+		SET_EXT_CAP(pucCapa, ELEM_MAX_LEN_RRM_CAP,
+			    aucEnabledBits[ucIndex]);
+}
+
+VOID rlmTxNeighborReportRequest(P_ADAPTER_T prAdapter,
+				P_STA_RECORD_T prStaRec,
+				struct SUB_ELEMENT_LIST *prSubIEs)
+{
+	static UINT_8 ucDialogToken = 1;
+	P_MSDU_INFO_T prMsduInfo = NULL;
+	P_BSS_INFO_T prBssInfo = NULL;
+	UINT_8 *pucPayload = NULL;
+	P_ACTION_NEIGHBOR_REPORT_FRAME_T prTxFrame = NULL;
+	UINT_16 u2TxFrameLen = 500;
+	UINT_16 u2FrameLen = 0;
+
+	if (!prStaRec)
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	ASSERT(prBssInfo);
+	/* 1 Allocate MSDU Info */
+	prMsduInfo = (P_MSDU_INFO_T)cnmMgtPktAlloc(
+		prAdapter, MAC_TX_RESERVED_FIELD + u2TxFrameLen);
+	if (!prMsduInfo)
+		return;
+	prTxFrame = (ACTION_NEIGHBOR_REPORT_FRAME_T
+			     *)((unsigned long)(prMsduInfo->prPacket) +
+				MAC_TX_RESERVED_FIELD);
+
+	/* 2 Compose The Mac Header. */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+	prTxFrame->ucCategory = CATEGORY_RM_ACTION;
+	prTxFrame->ucAction = ACTION_NEIGHBOR_REPORT_REQ;
+	u2FrameLen =
+		OFFSET_OF(ACTION_NEIGHBOR_REPORT_FRAME_T, aucInfoElem);
+	/* 3 Compose the frame body's frame. */
+	prTxFrame->ucDialogToken = ucDialogToken++;
+	u2TxFrameLen -= sizeof(*prTxFrame) - 1;
+	pucPayload = &prTxFrame->aucInfoElem[0];
+	while (prSubIEs && u2TxFrameLen >= (prSubIEs->rSubIE.ucLength + 2)) {
+		kalMemCopy(pucPayload, &prSubIEs->rSubIE,
+			   prSubIEs->rSubIE.ucLength + 2);
+		pucPayload += prSubIEs->rSubIE.ucLength + 2;
+		u2FrameLen += prSubIEs->rSubIE.ucLength + 2;
+		prSubIEs = prSubIEs->prNext;
+	}
+	nicTxSetMngPacket(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
+			  prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+			  u2FrameLen, NULL, MSDU_RATE_MODE_AUTO);
+
+	/* 5 Enqueue the frame to send this action frame. */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+}
+
+VOID rlmProcessNeighborReportResponse(P_ADAPTER_T prAdapter,
+				     P_WLAN_ACTION_FRAME prAction,
+				     UINT_16 u2PacketLen)
+{
+	P_ACTION_NEIGHBOR_REPORT_FRAME_T prNeighborResponse =
+		(P_ACTION_NEIGHBOR_REPORT_FRAME_T)prAction;
+
+	ASSERT(prAdapter);
+	ASSERT(prNeighborResponse);
+	DBGLOG(RLM, INFO, "Neighbor Resp From " MACSTR ", DialogToken %d\n",
+	       MAC2STR(prNeighborResponse->aucSrcAddr),
+	       prNeighborResponse->ucDialogToken);
+	aisCollectNeighborAP(
+		prAdapter, &prNeighborResponse->aucInfoElem[0],
+		u2PacketLen - OFFSET_OF(ACTION_NEIGHBOR_REPORT_FRAME_T,
+					aucInfoElem),
+		0);
+}
+#endif
 
 #if CFG_SUPPORT_QUIET
 VOID rrmQuietIeNotExist(

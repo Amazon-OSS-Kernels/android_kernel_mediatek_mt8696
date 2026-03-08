@@ -1603,7 +1603,15 @@ P_BSS_DESC_T scanAddToBssDesc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 			}
 			break;
-
+#if CFG_SUPPORT_802_11K
+		case ELEM_ID_RRM_ENABLED_CAP:
+			/* RRM Capability IE is always in length 5 bytes */
+			kalMemZero(prBssDesc->aucRrmCap,
+				   sizeof(prBssDesc->aucRrmCap));
+			kalMemCopy(prBssDesc->aucRrmCap, pucIE + 2,
+				   sizeof(prBssDesc->aucRrmCap));
+			break;
+#endif
 			/* no default */
 		}
 	}

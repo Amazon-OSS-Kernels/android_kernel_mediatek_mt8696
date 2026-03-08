@@ -1618,6 +1618,10 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 #endif
 
 	ASSERT(prGlueInfo);
+	if (prGlueInfo == NULL) {
+		DBGLOG(HAL, ERROR, "%s prGlueInfo NULL\n", __func__);
+		ret = -EINVAL;
+	}
 
 #if CFG_CHIP_RESET_SUPPORT
 	prAdapter = prGlueInfo->prAdapter;
@@ -1629,6 +1633,11 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 
 	ASSERT(pucBuf);
 	pucDst = pucBuf;
+
+	if (pucBuf == NULL) {
+		DBGLOG(HAL, ERROR, "%s pucBuf NULL\n", __func__);
+		ret = -EINVAL;
+	}
 
 	ASSERT(u4Len <= u4ValidOutBufSize);
 

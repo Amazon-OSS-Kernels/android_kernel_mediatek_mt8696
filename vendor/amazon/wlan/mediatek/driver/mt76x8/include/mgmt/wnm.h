@@ -76,6 +76,27 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
+#define BTM_REQ_MODE_CAND_INCLUDED_BIT                  BIT(0)
+#define BTM_REQ_MODE_ABRIDGED                           BIT(1)
+#define BTM_REQ_MODE_DISC_IMM                           BIT(2)
+#define BTM_REQ_MODE_BSS_TERM_INCLUDE                   BIT(3)
+#define BTM_REQ_MODE_ESS_DISC_IMM                       BIT(4)
+
+#define BSS_TRANSITION_MGT_STATUS_ACCEPT                0
+#define BSS_TRANSITION_MGT_STATUS_UNSPECIFIED           1
+#define BSS_TRANSITION_MGT_STATUS_NEED_SCAN             2
+#define BSS_TRANSITION_MGT_STATUS_CAND_NO_CAPACITY      3
+#define BSS_TRANSITION_MGT_STATUS_TERM_UNDESIRED        4
+#define BSS_TRANSITION_MGT_STATUS_TERM_DELAY_REQUESTED  5
+#define BSS_TRANSITION_MGT_STATUS_CAND_LIST_PROVIDED    6
+#define BSS_TRANSITION_MGT_STATUS_CAND_NO_CANDIDATES    7
+#define BSS_TRANSITION_MGT_STATUS_LEAVING_ESS           8
+
+/* 802.11v: define Transtion and Transition Query reasons */
+#define BSS_TRANSITION_BETTER_AP_FOUND                  6
+#define BSS_TRANSITION_LOW_RSSI                         16
+#define BSS_TRANSITION_INCLUDE_PREFER_CAND_LIST         19
+#define BSS_TRANSITION_LEAVING_ESS                      20
 
 /*******************************************************************************
 *                         D A T A   T Y P E S
@@ -90,6 +111,28 @@ typedef struct _TIMINGMSMT_PARAM_T {
 	UINT_32 u4ToD;		/* Timestamp of Departure [10ns] */
 	UINT_32 u4ToA;		/* Timestamp of Arrival [10ns] */
 } TIMINGMSMT_PARAM_T, *P_TIMINGMSMT_PARAM_T;
+
+typedef struct _BSS_TRANSITION_MGT_PARAM_T {
+	/* for Query */
+	UINT_8 ucDialogToken;
+	UINT_8 ucQueryReason;
+	/* for Request */
+	UINT_8 ucRequestMode;
+	UINT_16 u2DisassocTimer;
+	UINT_16 u2TermDuration;
+	UINT_8 aucTermTsf[8];
+	UINT_8 ucSessionURLLen;
+	UINT_8 aucSessionURL[255];
+	/* for Respone */
+	UINT_8 fgPendingResponse:1;
+	UINT_8 fgUnsolicitedReq:1;
+	UINT_8 fgReserved:6;
+	UINT_8 ucStatusCode;
+	UINT_8 ucTermDelay;
+	UINT_8 aucTargetBssid[MAC_ADDR_LEN];
+	UINT_8 *pucOurNeighborBss;
+	UINT_16 u2OurNeighborBssLen;
+} BSS_TRANSITION_MGT_PARAM_T, *P_BSS_TRANSITION_MGT_PARAM_T;
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -120,6 +163,15 @@ VOID wnmReportTimingMeas(IN P_ADAPTER_T prAdapter, IN UINT_8 ucStaRecIndex, IN U
 #if WNM_UNIT_TEST
 VOID wnmTimingMeasUnitTest1(P_ADAPTER_T prAdapter, UINT_8 ucStaRecIndex);
 #endif
+
+UINT_8 wnmGetBtmToken(void);
+
+VOID wnmSendBTMQueryFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+
+VOID wnmSendBTMResponseFrame(IN P_ADAPTER_T prAdapter,
+			IN P_STA_RECORD_T prStaRec);
+
+VOID wnmRecvBTMRequest(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
 
 /*******************************************************************************
 *                              F U N C T I O N S

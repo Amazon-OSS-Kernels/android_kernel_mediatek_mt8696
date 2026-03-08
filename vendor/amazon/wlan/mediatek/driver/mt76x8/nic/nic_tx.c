@@ -1790,10 +1790,10 @@ VOID nicTxFreeDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
 		}
 	}
 
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
-
 	for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++)
 		prStaRec->aprTxDescTemplate[ucTid] = NULL;
+
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
 }
 #endif
 
@@ -3794,9 +3794,8 @@ static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T
 		wlanTxProfilingTagMsdu(prAdapter, prMsduInfo, TX_PROF_TAG_DRV_ENQUE);
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
-		prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
-		if (!prBssInfo || !prStaRec) {
+		if (!prBssInfo) {
 			/* No BSS_INFO or No STA_REC */
 			fgDropPacket = TRUE;
 		} else if (IS_BSS_ACTIVE(prBssInfo)) {
@@ -3869,6 +3868,8 @@ static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T
 		}
 
 		nicTxFillDataDesc(prAdapter, prMsduInfo);
+
+		prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
 		QUEUE_INSERT_TAIL(prProcessingQue, (P_QUE_ENTRY_T) prMsduInfo);
 

@@ -112,6 +112,10 @@ ifneq ($(CFG_IOCTL_WAIT_FOR_COMPLETION_TIMEOUT),)
 ccflags-y += -DCFG_IOCTL_WAIT_FOR_COMPLETION_TIMEOUT=$(CFG_IOCTL_WAIT_FOR_COMPLETION_TIMEOUT)
 endif
 
+ifeq ($(CFG_STR_DHCP_RENEW_OFFLOAD), y)
+ccflags-y += -DCFG_STR_DHCP_RENEW_OFFLOAD=1
+endif
+
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
@@ -366,6 +370,18 @@ ifeq ($(CFG_DFS_NEWCH_DFS_FORCE_DISCONNECT),n)
 	ccflags-y += -DCFG_DFS_NEWCH_DFS_FORCE_DISCONNECT=0
 endif
 
+ifeq ($(CFG_SUPPORT_802_11K),y)
+ccflags-y += -DCFG_SUPPORT_802_11K=1
+endif
+
+ifeq ($(CFG_SUPPORT_802_11V),y)
+ccflags-y += -DCFG_SUPPORT_802_11V=1
+endif
+
+ifeq ($(CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT),y)
+ccflags-y += -DCFG_SUPPORT_802_11V_BSS_TRANSITION_MGT=1
+endif
+
 ifneq ($(CFG_CFG80211_VERSION),)
 VERSION_STR = $(subst ",,$(subst ., , $(subst -, ,$(subst v,,$(CFG_CFG80211_VERSION)))))
 $(info VERSION_STR=$(VERSION_STR))
@@ -530,7 +546,8 @@ MGMT_OBJS := $(MGMT_DIR)ais_fsm.o \
              $(MGMT_DIR)roaming_fsm.o \
              $(MGMT_DIR)tkip_mic.o \
              $(MGMT_DIR)hs20.o \
-             $(MGMT_DIR)tdls.o
+             $(MGMT_DIR)tdls.o \
+			 $(MGMT_DIR)wnm.o
 
 CHIPS_OBJS := $(CHIPS)mt6632.o \
 			  $(CHIPS)mt7668.o

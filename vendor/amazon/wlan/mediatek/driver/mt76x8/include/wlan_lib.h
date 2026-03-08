@@ -227,6 +227,7 @@
 #if CFG_SUPPORT_ADVANCE_CONTROL
 #define KEEP_FULL_PWR_TRAFFIC_REPORT_BIT BIT(0)
 #define KEEP_FULL_PWR_NOISE_HISTOGRAM_BIT BIT(1)
+#define BLOCK_KEEP_FULL_PWR BIT(31)
 #endif
 
 typedef enum _CMD_VER_T {
@@ -1386,6 +1387,10 @@ WLAN_STATUS wlanAccessRegisterStatus(IN P_ADAPTER_T prAdapter, IN UINT_8 ucCmdSe
 			IN UINT_8 ucSetQuery, IN PVOID prEvent, IN UINT_32 u4EventLen);
 
 WLAN_STATUS wlanSetChipEcoInfo(IN P_ADAPTER_T prAdapter);
+
+#if CFG_STR_DHCP_RENEW_OFFLOAD
+VOID wlanSetDhcpOffloadInfo(P_GLUE_INFO_T prGlueInfo, struct net_device *prDev, BOOLEAN fgSuspend);
+#endif
 
 VOID wlanNotifyFwSuspend(P_GLUE_INFO_T prGlueInfo, struct net_device *prDev, BOOLEAN fgSuspend);
 

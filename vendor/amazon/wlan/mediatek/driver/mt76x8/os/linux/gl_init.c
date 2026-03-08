@@ -2215,6 +2215,10 @@ VOID wlanSetSuspendMode(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgEnable)
 	if (!prDev)
 		return;
 
+#if CFG_STR_DHCP_RENEW_OFFLOAD
+	wlanSetDhcpOffloadInfo(prGlueInfo, prDev, fgEnable);
+#endif
+
 	kalSetNetAddressFromInterface(prGlueInfo, prDev, fgEnable);
 	wlanNotifyFwSuspend(prGlueInfo, prDev, fgEnable);
 }
@@ -2875,13 +2879,16 @@ INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		if (prGlueInfo->prAdapter->rWifiVar.ucThreadPriority > 0) {
 			const struct sched_param param = {.sched_priority = prGlueInfo->prAdapter->rWifiVar.ucThreadPriority
 			};
-			sched_setscheduler(prGlueInfo->main_thread,
-					   prGlueInfo->prAdapter->rWifiVar.ucThreadScheduling, &param);
+			kal_sched_set(prGlueInfo->main_thread,
+					   prGlueInfo->prAdapter->rWifiVar.ucThreadScheduling, &param,
+					   prGlueInfo->prAdapter->rWifiVar.cThreadNice);
 #if CFG_SUPPORT_MULTITHREAD
-			sched_setscheduler(prGlueInfo->hif_thread,
-					   prGlueInfo->prAdapter->rWifiVar.ucThreadScheduling, &param);
-			sched_setscheduler(prGlueInfo->rx_thread,
-					   prGlueInfo->prAdapter->rWifiVar.ucThreadScheduling, &param);
+			kal_sched_set(prGlueInfo->hif_thread,
+					   prGlueInfo->prAdapter->rWifiVar.ucThreadScheduling, &param,
+					   prGlueInfo->prAdapter->rWifiVar.cThreadNice);
+			kal_sched_set(prGlueInfo->rx_thread,
+					   prGlueInfo->prAdapter->rWifiVar.ucThreadScheduling, &param,
+					   prGlueInfo->prAdapter->rWifiVar.cThreadNice);
 #endif
 			DBGLOG(INIT, INFO,
 			       "Set pri = %d, sched = %d\n",

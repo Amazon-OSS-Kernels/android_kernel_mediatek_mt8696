@@ -587,7 +587,7 @@
 #define CAP_INFO_QOS                                BIT(9)
 #define CAP_INFO_SHORT_SLOT_TIME                    BIT(10)
 #define CAP_INFO_APSD                               BIT(11)
-#define CAP_INFO_RESERVED                           BIT(12)
+#define CAP_INFO_RADIO_MEASUREMENT                  BIT(12)
 #define CAP_INFO_DSSS_OFDM                          BIT(13)
 #define CAP_INFO_DELAYED_BLOCK_ACK                  BIT(14)
 #define CAP_INFO_IMM_BLOCK_ACK                      BIT(15)
@@ -822,6 +822,7 @@
 #define ELEM_ID_QOS_CAP                             46	/* QoS capability */
 #define ELEM_ID_RSN                                 48	/* RSN IE */
 #define ELEM_ID_EXTENDED_SUP_RATES                  50	/* Extended supported rates */
+#define ELEM_ID_NEIGHBOR_REPORT                     52	/* Neighbor Report */
 #if CFG_SUPPORT_802_11W
 #define ELEM_ID_TIMEOUT_INTERVAL                    56	/* 802.11w SA Timeout interval */
 #endif
@@ -926,6 +927,10 @@
 #define ELEM_RM_TYPE_LCI_REPORT                     8
 #define ELEM_RM_TYPE_TS_REPORT                      9
 
+/* 7.3.2.37 Subelement IDs for Neighbor Report,  Table 7-43b  */
+#define ELEM_ID_NR_BSS_TRANSITION_CAND_PREF         3
+#define ELEM_ID_NR_BSS_TERMINATION_DURATION         4
+
 /* 7.3.2.25 RSN information element */
 #define ELEM_MAX_LEN_WPA                            34	/* one pairwise, one AKM suite, one PMKID */
 #define ELEM_MAX_LEN_RSN                            38	/* one pairwise, one AKM suite, one PMKID */
@@ -970,6 +975,17 @@
 #define TS_INFO_ACK_POLICY_OFFSET                   14
 #define TS_INFO_ACK_POLICY_MASK                     BITS(14, 15)
 #define TS_INFO_SCHEDULE_MASK                       16
+
+/* 7.3.2.45 RRM Enabled Capabilities element */
+#define ELEM_MAX_LEN_RRM_CAP                        5
+#define RRM_CAP_INFO_LINK_MEASURE_BIT               0
+#define RRM_CAP_INFO_NEIGHBOR_REPORT_BIT            1
+#define RRM_CAP_INFO_REPEATED_MEASUREMENT           3
+#define RRM_CAP_INFO_BEACON_PASSIVE_MEASURE_BIT     4
+#define RRM_CAP_INFO_BEACON_ACTIVE_MEASURE_BIT      5
+#define RRM_CAP_INFO_BEACON_TABLE_BIT               6
+#define RRM_CAP_INFO_TSM_BIT                        14
+#define RRM_CAP_INFO_RRM_BIT                        17
 
 /* 7.3.2.56 HT capabilities element */
 #define ELEM_MAX_LEN_HT_CAP                         (28 - ELEM_HDR_LEN)	/* sizeof(IE_HT_CAP_T)-2 */
@@ -1356,6 +1372,10 @@
 #define ACTION_UNPROTECTED_WNM_TIM                  0
 #define ACTION_UNPROTECTED_WNM_TIMING_MEASUREMENT   1
 
+#define ACTION_WNM_BSS_TRANSITION_MANAGEMENT_QUERY  6
+#define ACTION_WNM_BSS_TRANSITION_MANAGEMENT_REQ    7
+#define ACTION_WNM_BSS_TRANSITION_MANAGEMENT_RSP    8
+
 #define ACTION_UNPROTECTED_WNM_TIMING_MEAS_LEN      12
 
 /* 8.5.23.1 VHT Action */
@@ -1408,6 +1428,14 @@
 #define CTRL_BAR_BAR_CONTROL_TID_OFFSET             12
 #define CTRL_BAR_BAR_INFORMATION_OFFSET             18
 #define CTRL_BAR_BAR_INFORMATION_SSN_OFFSET         4
+
+/* 802.11-2012, 8.5.7 Radio Measurement action fields, table 8-206 */
+#define RM_ACTION_RM_REQUEST                        0
+#define RM_ACTION_RM_REPORT                         1
+#define RM_ACTION_LM_REQUEST                        2
+#define RM_ACTION_LM_REPORT                         3
+#define RM_ACTION_NEIGHBOR_REQUEST                  4
+#define RM_ACTION_REIGHBOR_RESPONSE                 5
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -1887,6 +1915,98 @@ typedef struct _IE_SUP_OPERATING_CLASS_T {
 	UINT_8 ucCur;
 	UINT_8 ucSup[255];
 } __KAL_ATTRIB_PACKED__ IE_SUP_OPERATING_CLASS_T, *P_IE_SUP_OPERATING_CLASS_T;
+
+/* 8.4.2.39 Neighbor Report Element */
+typedef struct _IE_NEIGHBOR_REPORT_T {
+	UINT_8 ucId;		/* Element ID */
+	UINT_8 ucLength;	/* Length */
+	UINT_8 aucBSSID[MAC_ADDR_LEN];	/* OUI */
+	UINT_32 u4BSSIDInfo;		/* Type */
+	UINT_8 ucOperClass; /* Hotspot Configuration */
+	UINT_8 ucChnlNumber;
+	UINT_8 ucPhyType;
+	UINT_8 aucSubElem[0];
+} __KAL_ATTRIB_PACKED__ IE_NEIGHBOR_REPORT_T, *P_IE_NEIGHBOR_REPORT_T;
+
+/* 8.5.7.6/8.5.7.7 Neighbor Report Request/Response frame format */
+typedef struct _ACTION_NEIGHBOR_REPORT_FRAME_T {
+	/* Neighbor Report Request/Response MAC header */
+	UINT_16 u2FrameCtrl;	/* Frame Control */
+	UINT_16 u2Duration;	/* Duration */
+	UINT_8 aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	UINT_8 aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	UINT_8 aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	UINT_16 u2SeqCtrl;	/* Sequence Control */
+	/* Neighbor Report Request/Response frame body */
+	UINT_8 ucCategory;	/* Category */
+	UINT_8 ucAction;	/* Action Value */
+	UINT_8 ucDialogToken;	/* Dialog Token */
+	UINT_8 aucInfoElem[1];	/* subelements */
+} __KAL_ATTRIB_PACKED__ ACTION_NEIGHBOR_REPORT_FRAME_T, *P_ACTION_NEIGHBOR_REPORT_FRAME_T;
+
+typedef struct _ACTION_BTM_QUERY_FRAME_T {
+	/* MAC header */
+	UINT_16 u2FrameCtrl;	/* Frame Control */
+	UINT_16 u2Duration; /* Duration */
+	UINT_8 aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	UINT_8 aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	UINT_8 aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	UINT_16 u2SeqCtrl;	/* Sequence Control */
+	/* BSS Coexistence Management frame body */
+	UINT_8 ucCategory;	/* Category */
+	UINT_8 ucAction;	/* Action Value */
+
+	UINT_8 ucDialogToken;
+	UINT_8 ucQueryReason;
+	UINT_8 *pucNeighborBss;
+} __KAL_ATTRIB_PACKED__ ACTION_BTM_QUERY_FRAME_T, *P_ACTION_BTM_QUERY_FRAME_T;
+
+typedef struct _ACTION_BTM_REQ_FRAME_T {
+	/* MAC header */
+	UINT_16 u2FrameCtrl;	/* Frame Control */
+	UINT_16 u2Duration; /* Duration */
+	UINT_8 aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	UINT_8 aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	UINT_8 aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	UINT_16 u2SeqCtrl;	/* Sequence Control */
+	/* BSS Coexistence Management frame body */
+	UINT_8 ucCategory;	/* Category */
+	UINT_8 ucAction;	/* Action Value */
+
+	UINT_8 ucDialogToken;
+	UINT_8 ucRequestMode;
+	UINT_16 u2DisassocTimer;
+	UINT_8 ucValidityInterval;
+	UINT_8 aucOptInfo[0];
+	/* Optional: Bss Termination Duration(0~12 bytes),
+	** Session Information URL, Bss Transition Candidate List
+	*/
+} __KAL_ATTRIB_PACKED__ ACTION_BTM_REQ_FRAME_T, *P_ACTION_BTM_REQ_FRAME_T;
+
+typedef struct _ACTION_BTM_RSP_FRAME_T {
+	/* MAC header */
+	UINT_16 u2FrameCtrl;	/* Frame Control */
+	UINT_16 u2Duration; /* Duration */
+	UINT_8 aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	UINT_8 aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	UINT_8 aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	UINT_16 u2SeqCtrl;	/* Sequence Control */
+	/* BSS Coexistence Management frame body */
+	UINT_8 ucCategory;	/* Category */
+	UINT_8 ucAction;	/* Action Value */
+
+	UINT_8 ucDialogToken;
+	UINT_8 ucStatusCode;
+	UINT_8 ucBssTermDelay;
+	UINT_8 aucOptInfo[0];
+	/* Optional Target BSSID and Transition Candidate Entry list */
+} __KAL_ATTRIB_PACKED__ ACTION_BTM_RSP_FRAME_T, *P_ACTION_BTM_RSP_FRAME_T;
+
+struct SUB_ELEMENT {
+	UINT_8 ucSubID;
+	UINT_8 ucLength;
+	UINT_8 aucOptInfo[1];
+};
 
 typedef struct _SM_BASIC_REQ_T {
 	UINT_8 ucChannel;
@@ -2594,6 +2714,13 @@ typedef struct _IE_MTK_OUI_T {
 	UINT_8 aucCapability[4];
 	UINT_8 aucInfoElem[1];
 } __KAL_ATTRIB_PACKED__ IE_MTK_OUI_T, *P_IE_MTK_OUI_T;
+
+typedef struct _SUB_IE_BSS_TERM_DURATION_T {
+	UINT_8 ucSubId;
+	UINT_8 ucLength;
+	UINT_8 aucTermTsf[8];
+	UINT_16 u2Duration;
+} __KAL_ATTRIB_PACKED__ SUB_IE_BSS_TERM_DURATION_T, *P_SUB_IE_BSS_TERM_DURATION_T;
 
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)
 #pragma pack()

@@ -735,12 +735,25 @@
 *  to trigger roaming scan
 *  after skip roaming in one ESSID AP case
 */
+
+#define CFG_SUPPORT_802_11K					1
+#define CFG_SUPPORT_802_11V					1
+#define CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT	1
+
 #define CFG_SUPPORT_ROAMING_SKIP_ONE_AP		1
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 #define CFG_MAX_NUM_ROAM_BSS_LIST		64
 #endif
 #else
 #define CFG_SUPPORT_ROAMING_SKIP_ONE_AP		0
+
+#define CFG_SUPPORT_802_11K					0
+
+#ifndef CFG_SUPPORT_802_11V
+#define CFG_SUPPORT_802_11V					0
+#endif
+
+#define CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT	0
 
 #endif /* CFG_SUPPORT_ROAMING */
 
@@ -754,7 +767,6 @@
 
 #define CFG_SHOW_MACADDR_SOURCE     1
 
-#define CFG_SUPPORT_802_11V                    0	/* Support 802.11v Wireless Network Management */
 #define CFG_SUPPORT_802_11V_TIMING_MEASUREMENT 0
 #if (CFG_SUPPORT_802_11V_TIMING_MEASUREMENT == 1) && (CFG_SUPPORT_802_11V == 0)
 #error "CFG_SUPPORT_802_11V should be 1 once CFG_SUPPORT_802_11V_TIMING_MEASUREMENT equals to 1"
@@ -1080,6 +1092,13 @@
 #define CFG_SUPPORT_H2E 1
 #endif
 
+/*------------------------------------------------------------------------------
+ * Support DHCP renew offload
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_STR_DHCP_RENEW_OFFLOAD
+#define CFG_STR_DHCP_RENEW_OFFLOAD 0
+#endif
 
 /*------------------------------------------------------------------------------
  * Support Single RX chain setting

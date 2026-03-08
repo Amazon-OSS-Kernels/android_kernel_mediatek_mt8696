@@ -100,6 +100,12 @@ typedef struct _LINK_T {
 	UINT_32 u4NumElem;
 } LINK_T, *P_LINK_T;
 
+/* Support AP Selection */
+typedef struct _LINK_MGMT_T {
+	LINK_T rUsingLink;
+	LINK_T rFreeLink;
+} LINK_MGMT_T, *P_LINK_MGMT_T;
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -139,6 +145,49 @@ typedef struct _LINK_T {
 		((P_LINK_ENTRY_T)(prEntry))->prNext = (P_LINK_ENTRY_T)INVALID_LINK_POISON1; \
 		((P_LINK_ENTRY_T)(prEntry))->prPrev = (P_LINK_ENTRY_T)INVALID_LINK_POISON2; \
 	} while (0)
+
+/* Support AP Selection */
+#define LINK_MGMT_INIT(prLinkMgmt) \
+	do { \
+		LINK_INITIALIZE(&((P_LINK_MGMT_T)prLinkMgmt)-> \
+		rUsingLink); \
+		LINK_INITIALIZE(&((P_LINK_MGMT_T)prLinkMgmt)-> \
+		rFreeLink); \
+	} while (0)
+
+#define LINK_MGMT_GET_ENTRY(prLinkMgmt, prEntry, EntryType, memType) \
+	do { \
+		LINK_REMOVE_HEAD(&((P_LINK_MGMT_T)prLinkMgmt)-> \
+			rFreeLink, prEntry, EntryType*); \
+		if (!prEntry) \
+			prEntry = kalMemAlloc(sizeof(EntryType), memType); \
+		if (prEntry) {\
+			kalMemZero(prEntry, sizeof(EntryType));\
+			LINK_INSERT_TAIL(									   \
+				&((P_LINK_MGMT_T)prLinkMgmt)->rUsingLink, \
+				&prEntry->rLinkEntry);						   \
+		} \
+	} while (0)
+
+#define LINK_MGMT_UNINIT(prLinkMgmt, EntryType, memType) \
+	do { \
+		EntryType *prEntry = NULL; \
+		P_LINK_T prFreeList = &((P_LINK_MGMT_T)prLinkMgmt) \
+			->rFreeLink; \
+		P_LINK_T prUsingList = &((P_LINK_MGMT_T)prLinkMgmt) \
+			->rUsingLink; \
+		LINK_REMOVE_HEAD(prFreeList, prEntry, EntryType *); \
+		while (prEntry) { \
+			kalMemFree(prEntry, memType, sizeof(EntryType)); \
+			LINK_REMOVE_HEAD(prFreeList, prEntry, EntryType *); \
+		} \
+		LINK_REMOVE_HEAD(prUsingList, prEntry, EntryType *); \
+		while (prEntry) { \
+			kalMemFree(prEntry, memType, sizeof(EntryType)); \
+			LINK_REMOVE_HEAD(prUsingList, prEntry, EntryType *); \
+		} \
+	} while (0)
+/* end Support AP Selection */
 
 #define LINK_IS_EMPTY(prLink)           (((P_LINK_T)(prLink))->prNext == (P_LINK_ENTRY_T)(prLink))
 
@@ -206,6 +255,28 @@ typedef struct _LINK_T {
 	    ASSERT(prEntry); \
 	    linkDel((P_LINK_ENTRY_T)prEntry); \
 	    ((prLink)->u4NumElem)--; \
+	}
+
+/* Merge prSrcLink to prDstLink and put prSrcLink ahead of prDstLink */
+#define LINK_MERGE_TO_HEAD(prDstLink, prSrcLink)                               \
+	{                                                                      \
+		if (!LINK_IS_EMPTY(prSrcLink)) {                               \
+			linkMergeToHead((P_LINK_T)prDstLink,              \
+					(P_LINK_T)prSrcLink);             \
+			(prDstLink)->u4NumElem += (prSrcLink)->u4NumElem;      \
+			LINK_INITIALIZE(prSrcLink);                            \
+		}                                                              \
+	}
+
+/* Merge prSrcLink to prDstLink and put prSrcLink at tail */
+#define LINK_MERGE_TO_TAIL(prDstLink, prSrcLink)                               \
+	{                                                                      \
+		if (!LINK_IS_EMPTY(prSrcLink)) {                               \
+			linkMergeToTail((P_LINK_T)prDstLink,              \
+					(P_LINK_T)prSrcLink);             \
+			(prDstLink)->u4NumElem += (prSrcLink)->u4NumElem;      \
+			LINK_INITIALIZE(prSrcLink);                            \
+		}                                                              \
 	}
 
 /* Iterate over a link list */
@@ -370,5 +441,44 @@ static __KAL_INLINE__ VOID linkMoveTail(IN P_LINK_ENTRY_T prEntry, IN P_LINK_T p
 	__linkDel(prEntry->prPrev, prEntry->prNext);
 	linkAddTail(prEntry, prLink);
 }				/* end of linkMoveTail() */
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This function will merge source link to the tail of destination link.
+*
+* \param[in] prDst    destination link
+* \param[in] prSrc    source link
+*
+* \return (none)
+*/
+/*----------------------------------------------------------------------------*/
+static __KAL_INLINE__ void linkMergeToTail(P_LINK_T prDst,
+					   P_LINK_T prSrc)
+{
+	prSrc->prNext->prPrev = prDst->prPrev;
+	prSrc->prPrev->prNext = (P_LINK_ENTRY_T)prDst;
+	prDst->prPrev->prNext = prSrc->prNext;
+	prDst->prPrev = prSrc->prPrev;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This function will merge source link to the head of destination link.
+*
+* \param[in] prDst    destination link
+* \param[in] prSrc    source link
+
+*
+* \return (none)
+*/
+/*----------------------------------------------------------------------------*/
+static __KAL_INLINE__ void linkMergeToHead(P_LINK_T prDst,
+					   P_LINK_T prSrc)
+{
+	prSrc->prNext->prPrev = (P_LINK_ENTRY_T)prDst;
+	prSrc->prPrev->prNext = prDst->prNext;
+	prDst->prNext->prPrev = prSrc->prPrev;
+	prDst->prNext = prSrc->prNext;
+}
 
 #endif /* _LINK_H */

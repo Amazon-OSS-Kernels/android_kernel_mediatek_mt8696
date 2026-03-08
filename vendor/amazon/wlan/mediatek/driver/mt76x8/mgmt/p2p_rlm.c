@@ -331,7 +331,7 @@ VOID rlmProcessPublicAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
 	if (!(prSwRfb->prStaRec)) {
-		DBGLOG(P2P, ERROR, "prSwRfb->prStaRec is null.\n");
+		DBGLOG(P2P, INFO, "prSwRfb->prStaRec is null.\n");
 		return;
 	}
 

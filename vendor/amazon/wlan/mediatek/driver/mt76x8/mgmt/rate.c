@@ -189,6 +189,7 @@ rateGetRateSetFromIEs(IN P_IE_SUPPORTED_RATE_T prIeSupportedRate,
 	UINT_16 u2BSSBasicRateSet = 0;
 	BOOLEAN fgIsUnknownBSSBasicRate = FALSE;
 	UINT_8 ucRate;
+	UINT_8 ucTempLength;
 	UINT_32 i, j;
 
 	ASSERT(pu2OperationalRateSet);
@@ -201,9 +202,11 @@ rateGetRateSetFromIEs(IN P_IE_SUPPORTED_RATE_T prIeSupportedRate,
 		 * 12(B), 18(B), 24(B), 36(B), 48(B), 54(B)"
 		 */
 		/* ASSERT(prIeSupportedRate->ucLength <= ELEM_MAX_LEN_SUP_RATES); */
-		ASSERT(prIeSupportedRate->ucLength <= RATE_NUM_SW);
+		ucTempLength =
+			(prIeSupportedRate->ucLength > ELEM_MAX_LEN_SUP_RATES) ?
+			ELEM_MAX_LEN_SUP_RATES : prIeSupportedRate->ucLength;
 
-		for (i = 0; i < prIeSupportedRate->ucLength; i++) {
+		for (i = 0; i < ucTempLength; i++) {
 			ucRate = prIeSupportedRate->aucSupportedRates[i] & RATE_MASK;
 
 			/* Search all valid data rates */
@@ -227,8 +230,12 @@ rateGetRateSetFromIEs(IN P_IE_SUPPORTED_RATE_T prIeSupportedRate,
 
 	if (prIeExtSupportedRate) {
 		/* ASSERT(prIeExtSupportedRate->ucLength <= ELEM_MAX_LEN_EXTENDED_SUP_RATES); */
+		ucTempLength = (prIeExtSupportedRate->ucLength >
+				ELEM_MAX_LEN_EXTENDED_SUP_RATES) ?
+				ELEM_MAX_LEN_EXTENDED_SUP_RATES :
+				prIeExtSupportedRate->ucLength;
 
-		for (i = 0; i < prIeExtSupportedRate->ucLength; i++) {
+		for (i = 0; i < ucTempLength; i++) {
 			ucRate = prIeExtSupportedRate->aucExtSupportedRates[i] & RATE_MASK;
 
 			/* Search all valid data rates */

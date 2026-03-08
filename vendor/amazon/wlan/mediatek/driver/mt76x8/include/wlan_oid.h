@@ -2876,6 +2876,15 @@ WLAN_STATUS wlanoidSetMonitor(IN P_ADAPTER_T prAdapter,
 			      IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
 #endif
 
+#if CFG_STR_DHCP_RENEW_OFFLOAD
+WLAN_STATUS
+wlanoidSetDhcpOffladInfo(
+		IN P_ADAPTER_T prAdapter,
+		IN PVOID pvSetBuffer,
+		IN UINT_32 u4SetBufferLen,
+		OUT PUINT_32 pu4SetInfoLen);
+#endif
+
 WLAN_STATUS
 wlanoidNotifyFwSuspend(IN P_ADAPTER_T prAdapter,
 				IN PVOID pvSetBuffer,
@@ -2961,6 +2970,23 @@ wlanoidGetTemperature(P_ADAPTER_T prAdapter,
 uint32_t wlanGetSupportedFeatureSet(IN P_GLUE_INFO_T prGlueInfo);
 
 WLAN_STATUS wlanSuspendLinkDown(IN P_GLUE_INFO_T prGlueInfo);
+
+#if CFG_SUPPORT_802_11K
+WLAN_STATUS
+wlanoidSendNeighborRequest(IN P_ADAPTER_T prAdapter,
+				    IN PVOID pvSetBuffer, UINT_32 u4SetBufferLen,
+				    PUINT_32 pu4SetInfoLen);
+#endif
+
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+WLAN_STATUS
+wlanoidSendBTMQuery(IN P_ADAPTER_T  prAdapter, IN PVOID pvSetBuffer,
+			     UINT_32 u4SetBufferLen, PUINT_32 pu4SetInfoLen);
+
+WLAN_STATUS
+wlanoidPktProcessIT(IN P_ADAPTER_T prAdapter, IN PVOID pvBuffer,
+			     UINT_32 u4BufferLen, PUINT_32 pu4InfoLen);
+#endif
 
 /*******************************************************************************
 *                              F U N C T I O N S

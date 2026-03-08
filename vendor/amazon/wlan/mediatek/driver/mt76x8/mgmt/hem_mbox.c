@@ -166,8 +166,10 @@ static PUINT_8 apucDebugMsg[] = {
 	(PUINT_8) DISP_STRING("MID_SAA_AIS_FSM_ABORT"),
 	(PUINT_8) DISP_STRING("MID_MNY_AIS_REMAIN_ON_CHANNEL"),
 	(PUINT_8) DISP_STRING("MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL"),
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+	(PUINT_8) DISP_STRING("MID_WNM_AIS_BSS_TRANSITION"),
+#endif
 	(PUINT_8) DISP_STRING("MID_MNY_AIS_MGMT_TX")
-
 };
 
 /*lint -restore */
@@ -281,8 +283,11 @@ static MSG_HNDL_ENTRY_T arMsgMapTable[] = {
 	{MID_SAA_AIS_FSM_ABORT, aisFsmRunEventAbort},
 	{MID_MNY_AIS_REMAIN_ON_CHANNEL, aisFsmRunEventRemainOnChannel},
 	{MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL, aisFsmRunEventCancelRemainOnChannel},
-	{MID_MNY_AIS_MGMT_TX, aisFsmRunEventMgmtFrameTx}
 
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+	{MID_WNM_AIS_BSS_TRANSITION, aisFsmRunEventBssTransition},
+#endif
+	{MID_MNY_AIS_MGMT_TX, aisFsmRunEventMgmtFrameTx}
 };
 
 /*******************************************************************************

@@ -567,6 +567,9 @@ struct _STA_RECORD_T {
 	/* AP PMF */
 	struct STA_PMF_CFG rPmfCfg;
 #endif
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+	UINT_8 fgSupportBTM; /* Indicates whether to support BTM */
+#endif
 };
 
 #if 0

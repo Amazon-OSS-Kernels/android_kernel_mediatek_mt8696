@@ -502,6 +502,10 @@ typedef enum _ENUM_CMD_ID_T {
 	CMD_ID_SET_PF_CAPABILITY = 0x59,	/* 0x59 (Set) */
 #endif
 
+#if CFG_STR_DHCP_RENEW_OFFLOAD
+	CMD_ID_SET_DHCP_RENEW_OFFLOAD = 0x5A,	/* 0x5A (Set) */
+#endif
+
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 	CMD_ID_SET_ROAMING_SKIP = 0x6D,	/* 0x6D (Set) used to setting roaming skip*/
 #endif
@@ -3292,6 +3296,17 @@ typedef struct _EXT_EVENT_GET_TX_POWER_T {
 	UINT_8  ucDbdcIdx;
 
 } EVENT_GET_TX_POWER_T, *P_EVENT_GET_TX_POWER_T;
+
+#if CFG_STR_DHCP_RENEW_OFFLOAD
+typedef struct _CMD_DHCP_OFFLOAD_SETTING_T {
+	UINT_32 u4RenewIntv;	/* DHCP renew offload interval configured by upper-layer */
+	UINT_8 aucDhcpServerIpAddr[4];
+	UINT_8 ucBssIndex;
+	UINT_8 ucEnableOffload;
+	UINT_8 ucSuspend;
+	UINT_8 ucReserved[1];
+} CMD_DHCP_OFFLOAD_SETTING_T, *P_CMD_DHCP_OFFLOAD_SETTING_T;
+#endif
 
 typedef struct _CMD_SUSPEND_MODE_SETTING_T {
 	UINT_8 ucBssIndex;

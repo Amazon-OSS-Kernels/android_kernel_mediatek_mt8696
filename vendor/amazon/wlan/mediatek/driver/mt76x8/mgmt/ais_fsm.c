@@ -342,6 +342,7 @@ VOID aisFsmInit(IN P_ADAPTER_T prAdapter)
 	prAisBssInfo->ucWmmQueSet =
 			(prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
 #endif
+
 	/* 4 <4> Allocate MSDU_INFO_T for Beacon */
 	prAisBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter,
 						OFFSET_OF(WLAN_BEACON_FRAME_T, aucInfoElem[0]) + MAX_IE_LENGTH);
@@ -377,6 +378,11 @@ VOID aisFsmInit(IN P_ADAPTER_T prAdapter)
 	/* request list initialization */
 	LINK_INITIALIZE(&prAisFsmInfo->rPendingReqList);
 
+	LINK_MGMT_INIT(&prAisSpecificBssInfo->rNeighborApList);
+#if CFG_SUPPORT_802_11V
+	kalMemZero(&prAisSpecificBssInfo->rBTMParam,
+		sizeof(prAisSpecificBssInfo->rBTMParam));
+#endif
 	/* DBGPRINTF("[2] ucBmpDeliveryAC:0x%x, ucBmpTriggerAC:0x%x, ucUapsdSp:0x%x", */
 	/* prAisBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC, */
 	/* prAisBssInfo->rPmProfSetupInfo.ucBmpTriggerAC, */
@@ -400,12 +406,14 @@ VOID aisFsmUninit(IN P_ADAPTER_T prAdapter)
 {
 	P_AIS_FSM_INFO_T prAisFsmInfo;
 	P_BSS_INFO_T prAisBssInfo;
+	P_AIS_SPECIFIC_BSS_INFO_T prAisSpecificBssInfo;
 
 	DEBUGFUNC("aisFsmUninit()");
 	DBGLOG(SW1, INFO, "->aisFsmUninit()\n");
 
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 	prAisBssInfo = prAdapter->prAisBssInfo;
+	prAisSpecificBssInfo = &(prAdapter->rWifiVar.rAisSpecificBssInfo);
 
 	/* 4 <1> Stop all timers */
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rBGScanTimer);
@@ -435,6 +443,9 @@ VOID aisFsmUninit(IN P_ADAPTER_T prAdapter)
 #if CFG_SUPPORT_802_11W
 	rsnStopSaQuery(prAdapter);
 #endif
+	/* end Support AP Selection */
+	LINK_MGMT_UNINIT(&prAisSpecificBssInfo->rNeighborApList,
+			 NEIGHBOR_AP_T, VIR_MEM_TYPE);
 }				/* end of aisFsmUninit() */
 
 /*----------------------------------------------------------------------------*/
@@ -1983,6 +1994,8 @@ VOID aisFsmStateAbort(IN P_ADAPTER_T prAdapter, UINT_8 ucReasonOfDisconnect, BOO
 #if !CFG_SUPPORT_CFG80211_AUTH
 		    prAisBssInfo->ucReasonOfDisconnect == DISCONNECT_REASON_CODE_NEW_CONNECTION &&
 #endif
+		    prAisBssInfo->ucReasonOfDisconnect !=
+				DISCONNECT_REASON_CODE_DEAUTHENTICATED &&
 		    prAisBssInfo->prStaRecOfAP && prAisBssInfo->prStaRecOfAP->fgIsInUse) {
 			aisFsmSteps(prAdapter, AIS_STATE_DISCONNECTING);
 
@@ -2160,6 +2173,14 @@ enum _ENUM_AIS_STATE_T aisFsmJoinCompleteAction(IN struct _ADAPTER_T *prAdapter,
 				roamingFsmRunEventStart(prAdapter);
 #endif /* CFG_SUPPORT_ROAMING */
 
+#if CFG_SUPPORT_802_11K || CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+			aisResetNeighborApList(prAdapter);
+#endif
+#if CFG_SUPPORT_802_11K
+			if (prAisFsmInfo->prTargetBssDesc->aucRrmCap[0] &
+				BIT(RRM_CAP_INFO_NEIGHBOR_REPORT_BIT))
+				aisSendNeighborRequest(prAdapter);
+#endif
 #if CFG_SUPPORT_DBDC_TC6
 			if (timerPendingTimer(&prAdapter->rWifiVar.rDBDCReconnectCountDown)) {
 				DBGLOG(CNM, INFO, "DBDC reconnect timer protection end due to join complete\n");
@@ -3219,6 +3240,15 @@ VOID aisFsmDisconnect(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgDelayIndication)
 	/* 4 <4> Change Media State immediately. */
 	if (prAisBssInfo->ucReasonOfDisconnect != DISCONNECT_REASON_CODE_REASSOCIATION) {
 		aisChangeMediaState(prAdapter, PARAM_MEDIA_STATE_DISCONNECTED);
+
+#if CFG_STR_DHCP_RENEW_OFFLOAD
+		if (prAisBssInfo->fgIsDhcpAcked) {
+			prAisBssInfo->fgIsDhcpAcked = FALSE;
+			prAisBssInfo->u4DhcpRenewIntv = 0;
+			kalMemZero(prAisBssInfo->aucDhcpServerIpAddr,
+					sizeof(prAisBssInfo->aucDhcpServerIpAddr));
+		}
+#endif
 
 		/* 4 <4.1> sync. with firmware */
 		nicUpdateBss(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);
@@ -4626,3 +4656,272 @@ VOID aisFuncValidateRxActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 	return;
 
 }				/* aisFuncValidateRxActionFrame */
+
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+VOID aisFsmRunEventBssTransition(IN P_ADAPTER_T prAdapter,
+				 IN P_MSG_HDR_T prMsgHdr)
+{
+	P_MSG_AIS_BSS_TRANSITION_T prMsg = (P_MSG_AIS_BSS_TRANSITION_T)prMsgHdr;
+	P_AIS_SPECIFIC_BSS_INFO_T prAisSpecificBssInfo =
+		&prAdapter->rWifiVar.rAisSpecificBssInfo;
+	P_BSS_TRANSITION_MGT_PARAM_T prBtmParam =
+		&prAisSpecificBssInfo->rBTMParam;
+	enum WNM_AIS_BSS_TRANSITION eTransType = BSS_TRANSITION_MAX_NUM;
+	P_BSS_DESC_T prBssDesc = prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
+	BOOLEAN fgNeedBtmResponse = FALSE;
+	UINT_8 ucStatus = BSS_TRANSITION_MGT_STATUS_UNSPECIFIED;
+	UINT_8 ucRcvToken = 0;
+	static UINT_8 aucChnlList[MAXIMUM_OPERATION_CHANNEL_LIST];
+
+	if (!prMsg) {
+		DBGLOG(AIS, WARN, "Msg Header is NULL\n");
+		return;
+	}
+	eTransType = prMsg->eTransitionType;
+	fgNeedBtmResponse = prMsg->fgNeedResponse;
+	ucRcvToken = prMsg->ucToken;
+
+	DBGLOG(AIS, INFO, "Transition Type: %d\n", eTransType);
+	aisCollectNeighborAP(prAdapter, prMsg->pucCandList,
+			     prMsg->u2CandListLen, prMsg->ucValidityInterval);
+	cnmMemFree(prAdapter, prMsgHdr);
+	/* Solicited BTM request: the case we're waiting btm request
+	** after send btm query before roaming scan
+	*/
+	if (prBtmParam->ucDialogToken == ucRcvToken) {
+		prBtmParam->fgPendingResponse = fgNeedBtmResponse;
+		prBtmParam->fgUnsolicitedReq = FALSE;
+
+		switch (prAdapter->rWifiVar.rRoamingInfo.eCurrentState) {
+		case ROAMING_STATE_REQ_CAND_LIST:
+			roamingFsmSteps(prAdapter, ROAMING_STATE_DISCOVERY);
+			return;
+		case ROAMING_STATE_DISCOVERY:
+		/* this case need to fall through */
+		case ROAMING_STATE_ROAM:
+			ucStatus = BSS_TRANSITION_MGT_STATUS_UNSPECIFIED;
+			goto send_response;
+		default:
+			/* not solicited btm request, but dialog token matches
+			** occasionally.
+			*/
+			break;
+		}
+	}
+	prBtmParam->fgUnsolicitedReq = TRUE;
+	/* Unsolicited BTM request */
+	switch (eTransType) {
+	case BSS_TRANSITION_DISASSOC:
+		ucStatus = BSS_TRANSITION_MGT_STATUS_ACCEPT;
+		break;
+	case BSS_TRANSITION_REQ_ROAMING: {
+		P_NEIGHBOR_AP_T prNeiAP = NULL;
+		P_LINK_T prUsingLink =
+			&prAisSpecificBssInfo->rNeighborApList.rUsingLink;
+		UINT_8 i = 0;
+		UINT_8 ucChannel = 0;
+		UINT_8 ucChnlCnt = 0;
+		UINT_16 u2LeftTime = 0;
+
+		if (!prBssDesc) {
+			DBGLOG(AIS, ERROR, "Target Bss Desc is NULL\n");
+			break;
+		}
+		prBtmParam->fgPendingResponse = fgNeedBtmResponse;
+		kalMemZero(aucChnlList, sizeof(aucChnlList));
+		LINK_FOR_EACH_ENTRY(prNeiAP, prUsingLink, rLinkEntry, NEIGHBOR_AP_T)
+		{
+			ucChannel = prNeiAP->ucChannel;
+			for (i = 0;
+			     i < ucChnlCnt && ucChannel != aucChnlList[i]; i++)
+				;
+			if (i == ucChnlCnt)
+				ucChnlCnt++;
+		}
+		/* reserve 1 second for association */
+		u2LeftTime = prBtmParam->u2DisassocTimer *
+				     prBssDesc->u2BeaconInterval - 1000;
+		/* check if left time is enough to do partial scan, if not
+		** enought, reject directly
+		*/
+		if (u2LeftTime < ucChnlCnt * prBssDesc->u2BeaconInterval) {
+			ucStatus = BSS_TRANSITION_MGT_STATUS_UNSPECIFIED;
+			goto send_response;
+		}
+		roamingFsmSteps(prAdapter, ROAMING_STATE_DISCOVERY);
+		return;
+	}
+	default:
+		ucStatus = BSS_TRANSITION_MGT_STATUS_ACCEPT;
+		break;
+	}
+send_response:
+	if (fgNeedBtmResponse && prAdapter->prAisBssInfo &&
+	    prAdapter->prAisBssInfo->prStaRecOfAP) {
+		prBtmParam->ucStatusCode = ucStatus;
+		prBtmParam->ucTermDelay = 0;
+		kalMemZero(prBtmParam->aucTargetBssid, MAC_ADDR_LEN);
+		prBtmParam->u2OurNeighborBssLen = 0;
+		prBtmParam->fgPendingResponse = FALSE;
+		wnmSendBTMResponseFrame(prAdapter,
+					prAdapter->prAisBssInfo->prStaRecOfAP);
+	}
+}
+#endif
+
+#if CFG_SUPPORT_802_11K
+VOID aisSendNeighborRequest(IN P_ADAPTER_T prAdapter)
+{
+	struct SUB_ELEMENT_LIST *prSSIDIE;
+	UINT_8 aucBuffer[sizeof(*prSSIDIE) + 31];
+	P_BSS_INFO_T prBssInfo = prAdapter->prAisBssInfo;
+
+	kalMemZero(aucBuffer, sizeof(aucBuffer));
+	prSSIDIE = (struct SUB_ELEMENT_LIST *)&aucBuffer[0];
+	prSSIDIE->rSubIE.ucSubID = ELEM_ID_SSID;
+	COPY_SSID(&prSSIDIE->rSubIE.aucOptInfo[0], prSSIDIE->rSubIE.ucLength,
+		  prBssInfo->aucSSID, prBssInfo->ucSSIDLen);
+	rlmTxNeighborReportRequest(prAdapter, prBssInfo->prStaRecOfAP,
+				   prSSIDIE);
+}
+#endif
+
+#if CFG_SUPPORT_802_11K || CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+static UINT_8 aisCandPrefIEIsExist(UINT_8 *pucSubIe, UINT_8 ucLength)
+{
+	UINT_16 u2Offset = 0;
+
+	IE_FOR_EACH(pucSubIe, ucLength, u2Offset)
+	{
+		if (IE_ID(pucSubIe) == ELEM_ID_NR_BSS_TRANSITION_CAND_PREF)
+			return TRUE;
+	}
+	return FALSE;
+}
+
+static UINT_8 aisGetNeighborApPreference(UINT_8 *pucSubIe, UINT_8 ucLength)
+{
+	UINT_16 u2Offset = 0;
+
+	IE_FOR_EACH(pucSubIe, ucLength, u2Offset)
+	{
+		if (IE_ID(pucSubIe) == ELEM_ID_NR_BSS_TRANSITION_CAND_PREF)
+			return pucSubIe[2];
+	}
+	/* If no preference element is presence, give default value(lowest) 0,
+	 */
+	/* but it will not be used as a reference. */
+	return 0;
+}
+
+static UINT_64 aisGetBssTermTsf(UINT_8 *pucSubIe, UINT_8 ucLength)
+{
+	UINT_16 u2Offset = 0;
+
+	IE_FOR_EACH(pucSubIe, ucLength, u2Offset)
+	{
+		if (IE_ID(pucSubIe) == ELEM_ID_NR_BSS_TERMINATION_DURATION)
+			return *(UINT_64 *)&pucSubIe[2];
+	}
+	/* If no preference element is presence, give default value(lowest) 0 */
+	return 0;
+}
+
+VOID aisCollectNeighborAP(IN P_ADAPTER_T prAdapter, UINT_8 *pucApBuf,
+			  UINT_16 u2ApBufLen, UINT_8 ucValidInterval)
+{
+	P_NEIGHBOR_AP_T prNeighborAP = NULL;
+	P_AIS_SPECIFIC_BSS_INFO_T prAisSpecBssInfo =
+		&prAdapter->rWifiVar.rAisSpecificBssInfo;
+	P_LINK_MGMT_T prAPlist = &prAisSpecBssInfo->rNeighborApList;
+	P_IE_NEIGHBOR_REPORT_T prIe = (P_IE_NEIGHBOR_REPORT_T)pucApBuf;
+	UINT_16 u2BufLen;
+	UINT_16 u2PrefIsZeroCount = 0;
+
+	if (!prIe || !u2ApBufLen || u2ApBufLen < prIe->ucLength)
+		return;
+
+	LINK_MERGE_TO_TAIL(&prAPlist->rFreeLink, &prAPlist->rUsingLink);
+	for (u2BufLen = u2ApBufLen; u2BufLen > 0; u2BufLen -= IE_SIZE(prIe),
+	    prIe = (P_IE_NEIGHBOR_REPORT_T)((UINT_8 *)prIe +
+						 IE_SIZE(prIe))) {
+		/* BIT0-1: AP reachable, BIT2: same security with current
+		** setting,
+		** BIT3: same authenticator with current AP
+		*/
+		if (prIe->ucId != ELEM_ID_NEIGHBOR_REPORT ||
+		    (prIe->u4BSSIDInfo & 0x7) != 0x7)
+			continue;
+
+		LINK_MGMT_GET_ENTRY(prAPlist, prNeighborAP,
+				    NEIGHBOR_AP_T, VIR_MEM_TYPE);
+		if (!prNeighborAP)
+			break;
+		prNeighborAP->fgHT = !!(prIe->u4BSSIDInfo & BIT(11));
+		prNeighborAP->fgFromBtm = !!ucValidInterval;
+		prNeighborAP->fgRmEnabled = !!(prIe->u4BSSIDInfo & BIT(7));
+		prNeighborAP->fgQoS = !!(prIe->u4BSSIDInfo & BIT(5));
+		prNeighborAP->fgSameMD = !!(prIe->u4BSSIDInfo & BIT(10));
+		prNeighborAP->ucChannel = prIe->ucChnlNumber;
+		prNeighborAP->fgPrefPresence = aisCandPrefIEIsExist(
+			prIe->aucSubElem,
+			IE_SIZE(prIe) - OFFSET_OF(IE_NEIGHBOR_REPORT_T,
+						  aucSubElem));
+		prNeighborAP->ucPreference = aisGetNeighborApPreference(
+			prIe->aucSubElem,
+			IE_SIZE(prIe) - OFFSET_OF(IE_NEIGHBOR_REPORT_T,
+						  aucSubElem));
+		prNeighborAP->u8TermTsf = aisGetBssTermTsf(
+			prIe->aucSubElem,
+			IE_SIZE(prIe) - OFFSET_OF(IE_NEIGHBOR_REPORT_T,
+						  aucSubElem));
+		COPY_MAC_ADDR(prNeighborAP->aucBssid, prIe->aucBSSID);
+		DBGLOG(AIS, INFO,
+		       "Bssid" MACSTR
+		       ", PrefPresence %d, Pref %d, Chnl %d, BssidInfo 0x%08x\n",
+		       MAC2STR(prNeighborAP->aucBssid),
+		       prNeighborAP->fgPrefPresence, prNeighborAP->ucPreference,
+		       prIe->ucChnlNumber, prIe->u4BSSIDInfo);
+		/* No need to save neighbor ap list with decendant preference
+		** for (prTemp = LINK_ENTRY(prAPlist->rUsingLink.prNext, struct
+		** NEIGHBOR_AP_T, rLinkEntry);
+		**	prTemp != prNeighborAP;
+		**	prTemp = LINK_ENTRY(prTemp->rLinkEntry.prNext, struct
+		** NEIGHBOR_AP_T, rLinkEntry)) {
+		**	if (prTemp->ucPreference < prNeighborAP->ucPreference) {
+		**		__linkDel(prNeighborAP->rLinkEntry.prPrev,
+		** prNeighborAP->rLinkEntry.prNext);
+		**		__linkAdd(&prNeighborAP->rLinkEntry,
+		** prTemp->rLinkEntry.prPrev, &prTemp->rLinkEntry);
+		**		break;
+		**	}
+		** }
+		*/
+		if (prNeighborAP->fgPrefPresence &&
+		    prNeighborAP->ucPreference == 0)
+			u2PrefIsZeroCount++;
+	}
+	prAisSpecBssInfo->rNeiApRcvTime = kalGetTimeTick();
+	prAisSpecBssInfo->u4NeiApValidInterval =
+		!ucValidInterval
+			? 0xffffffff
+			: TU_TO_MSEC(ucValidInterval *
+				     prAdapter->prAisBssInfo->u2BeaconInterval);
+
+	if (prAPlist->rUsingLink.u4NumElem > 0 &&
+	    prAPlist->rUsingLink.u4NumElem == u2PrefIsZeroCount)
+		DBGLOG(AIS, INFO,
+		       "The number of valid neighbors is equal to the number of perf value is 0.\n");
+}
+#endif
+
+#if CFG_SUPPORT_802_11K || CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+VOID aisResetNeighborApList(IN P_ADAPTER_T prAdapter)
+{
+	P_AIS_SPECIFIC_BSS_INFO_T prAisSpecBssInfo =
+		&prAdapter->rWifiVar.rAisSpecificBssInfo;
+	P_LINK_MGMT_T prAPlist = &prAisSpecBssInfo->rNeighborApList;
+
+	LINK_MERGE_TO_TAIL(&prAPlist->rFreeLink, &prAPlist->rUsingLink);
+}
+#endif

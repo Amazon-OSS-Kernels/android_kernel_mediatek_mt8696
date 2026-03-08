@@ -1285,6 +1285,11 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
+	if (prAdapter == NULL)
+	{
+		DBGLOG(TX, ERROR, "%s prAdapter NULL\n", __func__);
+		return WLAN_STATUS_FAILURE;
+	}
 
 	prTempCmdQue = &rTempCmdQue;
 	QUEUE_INITIALIZE(prTempCmdQue);
@@ -9301,6 +9306,65 @@ wlanGetStaAddrByWlanIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucIndex)
 	return NULL;
 }
 
+#if CFG_STR_DHCP_RENEW_OFFLOAD
+VOID
+wlanSetDhcpOffloadInfo(P_GLUE_INFO_T prGlueInfo, struct net_device *prDev, BOOLEAN fgSuspend)
+{
+	WLAN_STATUS rStatus;
+	UINT_32 u4SetInfoLen;
+	UINT_8 ucBssIdx;
+	BOOLEAN fgOffload = FALSE;
+	P_BSS_INFO_T prBssInfo;
+	P_NETDEV_PRIVATE_GLUE_INFO prNetDevPrivate = (P_NETDEV_PRIVATE_GLUE_INFO) NULL;
+	CMD_DHCP_OFFLOAD_SETTING_T rDhcpSetCmd;
+
+	kalMemZero(&rDhcpSetCmd, sizeof(CMD_DHCP_OFFLOAD_SETTING_T));
+
+	prNetDevPrivate = (P_NETDEV_PRIVATE_GLUE_INFO) netdev_priv(prDev);
+
+	if (prNetDevPrivate->prGlueInfo != prGlueInfo)
+		DBGLOG(REQ, WARN, "%s: unexpected prGlueInfo(0x%p)!\n", __func__, prNetDevPrivate->prGlueInfo);
+
+	ucBssIdx = prNetDevPrivate->ucBssIdx;
+	prBssInfo = prGlueInfo->prAdapter->aprBssInfo[ucBssIdx];
+
+	/* TODO: Only support AIS for now */
+	if (prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex == ucBssIdx) {
+		if (prBssInfo->fgIsDhcpAcked == TRUE &&
+				prBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
+			if (fgSuspend)
+				fgOffload = TRUE;
+		}
+	} else {
+		DBGLOG(REQ, ERROR, "%s: BssIdx not matched(%d:%d)!\n", __func__,
+				ucBssIdx, prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex);
+		return;
+	}
+
+	rDhcpSetCmd.ucEnableOffload = fgOffload;
+	rDhcpSetCmd.ucSuspend = fgSuspend;
+	rDhcpSetCmd.ucBssIndex = ucBssIdx;
+	rDhcpSetCmd.u4RenewIntv = prBssInfo->u4DhcpRenewIntv;
+	kalMemCopy(rDhcpSetCmd.aucDhcpServerIpAddr,
+		prBssInfo->aucDhcpServerIpAddr,
+		sizeof(rDhcpSetCmd.aucDhcpServerIpAddr));
+
+    /* When FW receive command, it check connection state to decide apply setting or not */
+	rStatus = kalIoctl(prGlueInfo,
+				wlanoidSetDhcpOffladInfo,
+				(PVOID)&rDhcpSetCmd,
+				sizeof(rDhcpSetCmd),
+				FALSE,
+				FALSE,
+				TRUE,
+				&u4SetInfoLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, WARN, "wlanoidSetDhcpOffladInfo failed\n");
+
+}
+#endif
+
 VOID
 wlanNotifyFwSuspend(P_GLUE_INFO_T prGlueInfo, struct net_device *prDev, BOOLEAN fgSuspend)
 {
@@ -10316,8 +10380,11 @@ VOID wlanSuspendPmHandle(P_GLUE_INFO_T prGlueInfo)
 	P_STA_RECORD_T prStaRec;
 	P_RX_BA_ENTRY_T prRxBaEntry;
 
-	if (prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap)
+	if (prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap) {
+		prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap |=
+			BLOCK_KEEP_FULL_PWR;
 		wlanKeepFullPwr(prGlueInfo->prAdapter, FALSE);
+	}
 
 	/* if wifi.cfg EAPOL offload is 0, we set rekey offload when enter wow */
 	if (!prGlueInfo->prAdapter->rWifiVar.ucEapolOffload) {
@@ -10553,8 +10620,11 @@ VOID wlanResumePmHandle(P_GLUE_INFO_T prGlueInfo)
 					  ePwrMode, FALSE);
 	}
 
-	if (prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap)
+	if (prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap) {
+		prGlueInfo->prAdapter->u4IsKeepFullPwrBitmap &=
+			~BLOCK_KEEP_FULL_PWR;
 		wlanKeepFullPwr(prGlueInfo->prAdapter, TRUE);
+	}
 }
 
 void disconnect_sta(P_ADAPTER_T prAdapter, P_STA_RECORD_T sta_rec)

@@ -1332,6 +1332,10 @@ INT_32 kalPmResumeState(VOID);
 INT_32 kalPmResumeHandler(struct notifier_block *notifier, unsigned long pm_event, void *unused);
 #endif
 
+void kal_sched_set(struct task_struct *p, int policy,
+		const struct sched_param *param,
+		int nice);
+
 WLAN_STATUS kalUpdateBssChannel(IN P_GLUE_INFO_T prGlueInfo,
 						IN UINT_8 aucSSID[],
 						IN UINT_8 ucSsidLength,

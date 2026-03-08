@@ -2000,7 +2000,17 @@ VOID halGetMailbox(IN P_ADAPTER_T prAdapter, IN UINT_32 u4MailboxNum, OUT PUINT_
 	}
 }
 
-VOID halDeAggRxPktProc(P_ADAPTER_T prAdapter, P_SDIO_RX_COALESCING_BUF_T prRxBuf)
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief process one prRxBuf. If there is not enough free SW_RFB, queue prRxBuf
+* back to rRxDeAggQue and schedule work again.
+*
+* @param prAdapter pointer to the Adapter handler, prRxBuf received buffer
+*
+* @return True if reschedule otherwise False
+*/
+/*----------------------------------------------------------------------------*/
+BOOLEAN halDeAggRxPktProc(P_ADAPTER_T prAdapter, P_SDIO_RX_COALESCING_BUF_T prRxBuf)
 {
 	P_GL_HIF_INFO_T prHifInfo;
 	P_RX_CTRL_T prRxCtrl;
@@ -2046,7 +2056,7 @@ VOID halDeAggRxPktProc(P_ADAPTER_T prAdapter, P_SDIO_RX_COALESCING_BUF_T prRxBuf
 		if ((prAdapter->prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 0)
 			schedule_delayed_work(&prAdapter->prGlueInfo->rRxPktDeAggWork, 0);
 
-		return;
+		return fgReschedule;
 	}
 
 
@@ -2098,6 +2108,8 @@ VOID halDeAggRxPktProc(P_ADAPTER_T prAdapter, P_SDIO_RX_COALESCING_BUF_T prRxBuf
 	mutex_lock(&prHifInfo->rRxFreeBufQueMutex);
 	QUEUE_INSERT_TAIL(&prHifInfo->rRxFreeBufQueue, (P_QUE_ENTRY_T)prRxBuf);
 	mutex_unlock(&prHifInfo->rRxFreeBufQueMutex);
+
+	return fgReschedule;
 }
 
 VOID halDeAggRxPktWorker(struct work_struct *work)
@@ -2107,6 +2119,7 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 	P_ADAPTER_T prAdapter;
 	P_SDIO_RX_COALESCING_BUF_T prRxBuf;
 	P_RX_CTRL_T prRxCtrl;
+	BOOLEAN bRescheduled = FALSE;
 
 	if (g_u4HaltFlag)
 		return;
@@ -2126,7 +2139,12 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 	mutex_unlock(&prHifInfo->rRxDeAggQueMutex);
 
 	while (prRxBuf) {
-		halDeAggRxPktProc(prAdapter, prRxBuf);
+		bRescheduled = halDeAggRxPktProc(prAdapter, prRxBuf);
+
+		if (bRescheduled) {
+			DBGLOG(RX, WARN, "halDeAggRxPktProc return rescheduled\n");
+			return;
+		}
 
 		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
 			return;

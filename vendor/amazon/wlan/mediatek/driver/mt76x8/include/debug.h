@@ -145,6 +145,7 @@ typedef enum _ENUM_DBG_MODULE_T {
 #if (HIF_TX_RSRC_WMM_ENHANCE == 1)
 	DBG_HIF_WMM_ENHANCE_IDX,
 #endif
+	DBG_WNM_IDX,		/* 0x20 *//* WNM */
 	DBG_MODULE_NUM		/* Notice the XLOG check */
 } ENUM_DBG_MODULE_T;
 typedef enum _ENUM_DBG_ASSERT_CTRL_LEVEL_T {
