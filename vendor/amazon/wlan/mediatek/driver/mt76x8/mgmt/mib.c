@@ -54,7 +54,7 @@
 */
 
 /*! \file   "mib.c"
-*    \brief  This file includes the mib default vale and functions.
+*    \brief  This file includes the mib default abc123 and functions.
 */
 
 
