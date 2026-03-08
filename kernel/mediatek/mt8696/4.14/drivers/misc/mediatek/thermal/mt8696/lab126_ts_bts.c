@@ -42,12 +42,12 @@
 #include "board_id.h"
 #endif
 
-#ifdef CONFIG_AMAZON_METRICS_LOG
+#ifdef CONFIG_AMAZON_MINERVA_METRICS_LOG
 #include <linux/metricslog.h>
 #include <linux/vmalloc.h>
 #define METRICSCOUNT 900
 #ifndef THERMO_METRICS_STR_LEN
-#define THERMO_METRICS_STR_LEN 128
+#define THERMO_METRICS_STR_LEN 512
 #endif
 static int metrics_cnt;
 #endif
@@ -341,9 +341,8 @@ static DEFINE_MUTEX(BTS_lock);
 int mtkts_bts_get_hw_temp(int index, int *temp)
 {
 	int t_ret=0, ret=0;
-#ifdef CONFIG_AMAZON_METRICS_LOG
+#ifdef CONFIG_AMAZON_MINERVA_METRICS_LOG
 	char buf[THERMO_METRICS_STR_LEN + 1];
-	char *thermal_metric_prefix = "tmon:def";
 #endif
 
 
@@ -370,13 +369,15 @@ int mtkts_bts_get_hw_temp(int index, int *temp)
 	}
 
 
-#ifdef CONFIG_AMAZON_METRICS_LOG
+#ifdef CONFIG_AMAZON_MINERVA_METRICS_LOG
 	if (!index)
 		metrics_cnt++;
 	if ((METRICSCOUNT <= metrics_cnt) && (metrics_cnt < METRICSCOUNT+AUX_CHANNEL_NUM)){
 		snprintf(buf, THERMO_METRICS_STR_LEN,
-				"%s:thermistor%d=%d;CT;1:NR",
-				thermal_metric_prefix, index, t_ret);
+				"%s:%s:100:%s,program=ThermalEvent;SY,operation=tmon;SY,"
+				"key=thermistor%d;SY,value=%d;FL:us-east-1",
+				METRICS_THERMAL_GROUP_ID, METRICS_THERMISTOR_SCHEMA_ID,
+				MINERVA_PREDEFINED_REQUIRED_FIELDS, index, t_ret);
 		log_to_metrics(ANDROID_LOG_INFO, "ThermalEvent", buf);
 		metrics_cnt++;
 	}
@@ -589,7 +590,7 @@ static int ntc_bts_probe(struct platform_device *pdev)
 		pr_err("%s Failed to create params attr\n", __func__);
 
 	serial++;
-#ifdef CONFIG_AMAZON_METRICS_LOG
+#ifdef CONFIG_AMAZON_MINERVA_METRICS_LOG
 	metrics_cnt = 0;
 #endif
 
