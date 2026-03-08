@@ -1,0 +1,5 @@
+config MTK_STC
+	bool "Enable MediaTek STC counter"
+	help
+	  MTK STC counter is working for audio and video syncing.
+	  Set Y to enable stc counter.

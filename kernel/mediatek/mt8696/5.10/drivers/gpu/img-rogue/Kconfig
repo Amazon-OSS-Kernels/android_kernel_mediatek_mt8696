@@ -1,0 +1,20 @@
+config ROGUE_GE9215
+	tristate "Imagination GPU GE9215"
+	depends on DRM
+	select DMA_SHARED_BUFFER
+	select PM_DEVFREQ
+	select PM_OPP
+	select DEVFREQ_GOV_SIMPLE_ONDEMAND
+	help
+	  Enable Imagination GE9215
+
+config ROGUE_GE8200
+	tristate "Imagination GPU GE8200"
+	depends on DRM
+	select DMA_SHARED_BUFFER
+	select PM_DEVFREQ
+	select PM_OPP
+	select DEVFREQ_GOV_SIMPLE_ONDEMAND
+	help
+	  Enable Imagination GE8200
+

@@ -1,0 +1,12 @@
+config MTK_MDP
+	bool "use imgresz rotate for scale & rotate"
+	help
+	  This option enable imgresz hardware.
+	  imgresz HW is used for scale down picture & rotate.
+	  MDP software provide ioctl API for
+	  userspace HWC & GPU use imgresz.
+
+config MTK_CLI_DEBUG_SUPPORT
+	bool "enable cli feature for debug"
+	help
+		This config enable cli command for debug mdp / vdp.

@@ -1,0 +1,34 @@
+/* SPDX-License-Identifier: GPL-2.0 */
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ * Author: Runyang Chen <runyang.chen@mediatek.com>
+ */
+
+#ifndef _DT_BINDINGS_RESET_CONTROLLER_MT8696
+#define _DT_BINDINGS_RESET_CONTROLLER_MT8696
+
+#define MT8696_TOPRGU_APMIXEDSYS_SW_RST     0
+#define MT8696_TOPRGU_MMSYS_SW_RST        1
+#define MT8696_TOPRGU_MFGSYS_SW_RST       3
+#define MT8696_TOPRGU_DISP_SW_RST         5
+#define MT8696_TOPRGU_INFRA_DDR_SW_RST    6
+#define MT8696_TOPRGU_INFRA_AO_SW_RST     7
+#define MT8696_TOPRGU_ETHER_SW_RST        8
+#define MT8696_TOPRGU_USB_SW_RST          9
+#define MT8696_TOPRGU_PCIE_SW_RST         10
+#define MT8696_TOPRGU_HDMITX_SW_RST       11
+#define MT8696_TOPRGU_HDMIRX_SW_RST       12
+#define MT8696_TOPRGU_SPI_SW_RST          13
+#define MT8696_TOPRGU_AUDSYS_SW_RST       14
+#define MT8696_TOPRGU_AUDSYS_ASRC_SW_RST  16
+#define MT8696_TOPRGU_NNA_SW_RST          17
+#define MT8696_TOPRGU_AUD2_SW_RST         18
+#define MT8696_TOPRGU_VDEC_CORE_SW_RST    19
+#define MT8696_TOPRGU_VDEC_SOC_SW_RST     20
+#define MT8696_TOPRGU_U2PHY_SW_RST        21
+#define MT8696_TOPRGU_U3PHY_SW_RST        22
+#define MT8696_TOPRGU_VENC_SW_RST         23
+
+#define MT8696_TOPRGU_SW_RST_NUM          24
+
+#endif  /* _DT_BINDINGS_RESET_CONTROLLER_MT8696 */

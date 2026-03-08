@@ -1,0 +1,61 @@
+config DRM_MEDIATEK_V2
+	bool "Version 2 of DRM Support for Mediatek SoCs"
+	help
+	  Choose this option if you have a phone Mediatek
+	  SoCs. The module will be called mediatek-drm v2
+	  This driver provides kernel mode setting and
+	  buffer management to userspace.
+
+config DRM_MTK_DISABLE_AEE_LAYER
+	bool "Disable AEE Layer for the customer who don't want to produce AEE"
+	help
+	  Disable AEE Layer if you do not want to produce AEE.
+	  Default Mediatek SoCs will produce AEE when exception occurred.
+	  If this value is y, will not produce AEE.
+	  If this value is n, will produce AEE.
+	  If you do not produce AEE, please set it to Y in xxx_defconfig.
+
+config MTK_AAL_SUPPORT
+	bool "Support MTK ambient-light adaptive luma (AAL)"
+	help
+	  Decide whether to support ambient-light adaptive luma and
+	  display visual enhancement.
+	  This feature requires the cowork of AAL user-space algorithm process.
+
+config MTK_DRE30_SUPPORT
+	bool "Support DRE 30"
+	help
+	  Decide whether to support ambient-light adaptive luma and
+	  display visual enhancement ver.3.
+	  This feature requires the cowork of AAL user-space algorithm process.
+
+config MTK_DRM_BRINGUP_STAGE
+	bool "enable simple display path during bringup/early porting"
+	help
+	  Choose this option if you want to run simple display path when
+	  you are in early porting or bringup stage. Show homescreen
+	  as quickly as we can for bringup target.
+	  For some special panel, may need this config at bringup stage.
+
+config MTK_SUB_AS_MAIN
+	bool "enable remove dsi, use sub as main"
+	help
+	  Decide whether to support remove dsi,
+	  hwc will chose to use hdmi to show primary
+	  Choose this option if you do not use pannel as default path.
+	  DSI need be removed when create crtc0.
+
+config LK_FASTLOGO
+	bool "enable lk Support for Mediatek SoCs"
+	help
+	  enable lk fast logo Support for Mediatek SoCs.
+	  This feature only support on external path.
+
+config DPTX_HDCP_ENABLE
+	bool "support dptx hdcp"
+	depends on MTK_DPTX_SUPPORT
+	help
+	  DRM/KMS DPTx HDCP driver for Mediatek SoCs.
+	  Choose this option if you want to enable
+	  HDCP driver, and this config depends on
+	  MTK_DPTX_SUPPORT.

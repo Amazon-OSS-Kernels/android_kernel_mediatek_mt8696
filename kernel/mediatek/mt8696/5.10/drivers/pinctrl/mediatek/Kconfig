@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: GPL-2.0-only
+menu "MediaTek pinctrl drivers"
+	depends on ARCH_MEDIATEK || COMPILE_TEST
+
+config EINT_MTK
+	tristate "MediaTek External Interrupt Support"
+	depends on PINCTRL_MTK || PINCTRL_MTK_MOORE || PINCTRL_MTK_PARIS || COMPILE_TEST
+	select GPIOLIB
+	select IRQ_DOMAIN
+	default y if PINCTRL_MTK || PINCTRL_MTK_MOORE
+	default PINCTRL_MTK_PARIS
+
+config PINCTRL_MTK
+	bool
+	depends on OF
+	select PINMUX
+	select GENERIC_PINCONF
+	select GPIOLIB
+	select EINT_MTK
+	select OF_GPIO
+
+config PINCTRL_MTK_V2
+	tristate
+
+config PINCTRL_MTK_MOORE
+	bool
+	depends on OF
+	select GENERIC_PINCONF
+	select GENERIC_PINCTRL_GROUPS
+	select GENERIC_PINMUX_FUNCTIONS
+	select GPIOLIB
+	select OF_GPIO
+	select PINCTRL_MTK_V2
+
+config PINCTRL_MTK_PARIS
+	tristate
+	depends on OF
+	select PINMUX
+	select GENERIC_PINCONF
+	select GPIOLIB
+	select EINT_MTK
+	select OF_GPIO
+	select PINCTRL_MTK_V2
+
+# For ARMv7 SoCs
+config PINCTRL_MT8696
+	tristate "Mediatek MT8696 pin control"
+	depends on OF
+	depends on (ARM64 || ARM) || COMPILE_TEST
+	default (ARM64 || ARM) && ARCH_MEDIATEK
+	select PINCTRL_MTK_PARIS
+
+# For PMIC
+config PINCTRL_MT6397
+	bool "Mediatek MT6397 pin control"
+	depends on MFD_MT6397 || COMPILE_TEST
+	depends on OF
+	default MFD_MT6397
+	select PINCTRL_MTK
+
+endmenu

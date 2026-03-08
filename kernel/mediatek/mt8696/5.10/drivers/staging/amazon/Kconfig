@@ -1,0 +1,37 @@
+menu "Amazon"
+
+config AMAZON
+	bool "Amazon Drivers"
+	default N
+	help
+	  Enable support for various drivers needed on the Amazon Fire OS platform
+
+if AMAZON
+
+config USER_BUILD
+	bool "USER_BUILD"
+	default n
+	help
+	  Indicate if user build
+
+config AMAZON_SIGN_OF_LIFE
+	tristate "AMAZON sign of life support"
+	depends on AMAZON
+	help
+	  Select Y here to enable AMAZON sign of life support
+
+config AMAZON_MINERVA_METRICS_LOG
+	tristate "Amazon Minerva Metrics logger driver"
+	select RING_BUFFER
+	default n
+	help
+	   Enable Amazon Minerva Metrics/Vitals logger driver
+
+config USB_CH_TYPE_SYSFS
+	bool "usb charge type sysfs"
+	help
+	  Create usb charge type sysfs to pass info to userspace
+
+endif #if AMAZON
+
+endmenu

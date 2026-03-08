@@ -1,0 +1,1953 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (c) 2020 MediaTek Inc.
+ */
+
+#include <linux/mm.h>
+#include <linux/init.h>
+#include <linux/fb.h>
+#include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/platform_device.h>
+#include <linux/fs.h>
+#include <linux/file.h>
+#include <linux/cdev.h>
+#include <linux/slab.h>
+#include <linux/module.h>
+#include <linux/list.h>
+#include <linux/string.h>
+//#include <linux/switch.h>
+#include <linux/irq.h>
+#include <linux/of_platform.h>
+#include <linux/of_irq.h>
+#include <linux/of_address.h>
+#include <hdmitx.h>
+#include <hdmi_ctrl.h>
+#include "internal_hdmi_drv.h"
+#include "disp_hw_mgr.h"
+#include <linux/time.h>
+#include "hdmihdcp.h"
+#include "hdmictrl.h"
+#include "hdmi_ioctl.h"
+#if (defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE))
+#include "hdmi_ca.h"
+#endif
+
+#define HDMI_DEVNAME "hdmitx"
+DEFINE_SEMAPHORE(hdmi_update_mutex);
+
+struct extcon_dev *hdmi_extcon;
+static const unsigned int hdmi_cable[] = {
+	EXTCON_DISP_HDMI,
+	EXTCON_NONE,
+};
+
+static struct HDMI_DRIVER *hdmi_drv;
+static dev_t hdmi_devno;
+static struct cdev *hdmi_cdev;
+static struct class *hdmi_class;
+static long hdmi_ioctl(struct file *file,
+	unsigned int cmd, unsigned long arg);
+static int hdmi_open(struct inode *inode, struct file *file);
+static int hdmi_release(struct inode *inode, struct file *file);
+static int hdmi_probe(struct platform_device *pdev);
+static int hdmi_remove(struct platform_device *pdev);
+static void hdmi_shutdown(struct platform_device *pdev);
+bool send_fake_hpd;
+
+void hdmi_log_enable(int enable)
+{
+	hdmi_drv->log_enable(enable);
+}
+
+#if IS_ENABLED(CONFIG_COMPAT)
+static long hdmi_ioctl_compat(struct file *file,
+unsigned int cmd, unsigned long arg);
+#endif
+
+static const struct file_operations hdmi_fops = {
+	.owner = THIS_MODULE,
+	.unlocked_ioctl = hdmi_ioctl,
+#if IS_ENABLED(CONFIG_COMPAT)
+	.compat_ioctl = hdmi_ioctl_compat,
+#endif
+	.open = hdmi_open,
+	.release = hdmi_release,
+};
+
+static const struct of_device_id hdmi_of_ids[] = {
+	{.compatible = "mediatek,mt8696-hdmitx21",},
+	{},
+};
+
+struct notify_dev hdmi_switch_data;
+struct notify_dev hdmires_switch_data;
+struct notify_dev hdmi_cec_switch_data;
+struct notify_dev hdmi_audio_switch_data;
+struct notify_dev hdmi_hdcp_switch_data;
+
+
+
+struct class *switch_class;
+static atomic_t device_count;
+
+
+
+static ssize_t state_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	int ret;
+	struct notify_dev *sdev = (struct notify_dev *)
+		dev_get_drvdata(dev);
+
+	if (sdev->print_state) {
+		ret = sdev->print_state(sdev, buf);
+		if (ret >= 0)
+			return ret;
+	}
+	return sprintf(buf, "%d\n", sdev->state);
+}
+static DEVICE_ATTR_RO(state);
+
+static ssize_t name_show(struct device *dev, struct device_attribute *attr,
+		char *buf)
+{
+	int ret;
+	struct notify_dev *sdev = (struct notify_dev *)
+		dev_get_drvdata(dev);
+
+	if (sdev->print_name) {
+		ret = sdev->print_name(sdev, buf);
+		if (ret >= 0)
+			return ret;
+	}
+	return sprintf(buf, "%s\n", sdev->name);
+}
+static DEVICE_ATTR_RO(name);
+
+static ssize_t value_show(struct device *dev, struct device_attribute *attr,
+	char *buf)
+{
+	struct notify_dev *sdev = (struct notify_dev *)
+		dev_get_drvdata(dev);
+
+	return sprintf(buf, "%d\n", sdev->value);
+}
+static DEVICE_ATTR_RO(value);
+
+static int create_switch_class(void)
+{
+	if (!switch_class) {
+		switch_class = class_create(THIS_MODULE, "switch");
+		if (IS_ERR(switch_class))
+			return PTR_ERR(switch_class);
+		atomic_set(&device_count, 0);
+	}
+	return 0;
+}
+
+int hdmitx_uevent_dev_register(struct notify_dev *sdev)
+{
+	int ret = -1;
+
+	if (!sdev) {
+		HDMI_DRV_LOG("notify_dev null\n");
+		return ret;
+	}
+
+	if (!switch_class) {
+		ret = create_switch_class();
+
+		if (ret == 0)
+			HDMI_DRV_LOG("create_switch_class susesess\n");
+		else {
+			HDMI_DRV_LOG("create_switch_class fail\n");
+			return ret;
+		}
+	}
+
+	sdev->index = atomic_inc_return(&device_count);
+	sdev->dev = device_create(switch_class, NULL,
+			MKDEV(0, sdev->index), NULL, sdev->name);
+
+	if (sdev->dev) {
+		HDMI_DRV_LOG("device create ok,index:0x%x\n", sdev->index);
+		ret = 0;
+	} else {
+		HDMI_DRV_LOG("device create fail,index:0x%x\n", sdev->index);
+		return -EINVAL;
+	}
+
+	ret = device_create_file(sdev->dev, &dev_attr_state);
+	if (ret < 0)
+		goto err0;
+
+	ret = device_create_file(sdev->dev, &dev_attr_name);
+	if (ret < 0)
+		goto err1;
+
+	ret = device_create_file(sdev->dev, &dev_attr_value);
+	if (ret < 0)
+		goto err2;
+
+	if (sdev->dev)
+		dev_set_drvdata(sdev->dev, sdev);
+
+	sdev->state = 0;
+	sdev->value = 0;
+
+	return ret;
+
+err2:
+	device_remove_file(sdev->dev, &dev_attr_name);
+err1:
+	device_remove_file(sdev->dev, &dev_attr_state);
+err0:
+	device_destroy(switch_class, MKDEV(0, sdev->index));
+	pr_info("switch: Failed to register driver %s\n", sdev->name);
+
+	return ret;
+}
+EXPORT_SYMBOL(hdmitx_uevent_dev_register);
+
+void hdmitx_uevent_dev_unregister(struct notify_dev *sdev)
+{
+	device_remove_file(sdev->dev, &dev_attr_name);
+	device_remove_file(sdev->dev, &dev_attr_state);
+	device_remove_file(sdev->dev, &dev_attr_value);
+	device_destroy(switch_class, MKDEV(0, sdev->index));
+	dev_set_drvdata(sdev->dev, NULL);
+}
+EXPORT_SYMBOL(hdmitx_uevent_dev_unregister);
+
+int notify_uevent_user(struct notify_dev *sdev, int state)
+{
+	char *cec_name = "cec_hdmi";
+	char *envp[3];
+	char name_buf[120];
+	char state_buf[120];
+	int len = 0;
+
+	if (sdev == NULL)
+		return -1;
+
+	if (sdev->state != state)
+		sdev->state = state;
+
+	len = snprintf(name_buf, sizeof(name_buf), "SWITCH_NAME=%s", sdev->name);
+	if (len <= 0)
+		TX_DEF_LOG("%d %s sprintf len err, %d\n",
+		__LINE__, __func__, len);
+
+	envp[0] = name_buf;
+	len = snprintf(state_buf, sizeof(state_buf), "SWITCH_STATE=%d", sdev->state);
+	if (len <= 0)
+		TX_DEF_LOG("%d %s sprintf len err, %d\n",
+		__LINE__, __func__, len);
+
+	envp[1] = state_buf;
+	envp[2] = NULL;
+	/* ignore cec log for it is spam */
+	if (strcmp(sdev->name, cec_name))
+		HDMI_DRV_LOG("uevent name:%s ,state:%s\n", envp[0], envp[1]);
+
+	kobject_uevent_env(&sdev->dev->kobj, KOBJ_CHANGE, envp);
+
+	return 0;
+}
+EXPORT_SYMBOL(notify_uevent_user);
+
+static void hdmi_shutdown(struct platform_device *pdev)
+{
+	HDMI_DRV_FUNC();
+
+	hdmi_internal_deinit();
+	hdmi_internal_power_off();
+
+	TX_DEF_LOG("leave %s\n", __func__);
+}
+
+static const struct dev_pm_ops hdmi_pm_ops = {
+	.suspend = hdmi_suspend,
+};
+
+static struct platform_driver hdmi_driver = {
+	.probe = hdmi_probe,
+	.remove = hdmi_remove,
+	.shutdown = hdmi_shutdown,
+	.driver = {
+		   .name = HDMI_DEVNAME,
+		   .owner = THIS_MODULE,
+		   .pm = &hdmi_pm_ops,
+		   .of_match_table = hdmi_of_ids,
+		   },
+};
+
+int hdmi_video_config(enum HDMI_VIDEO_RESOLUTION vformat)
+{
+	bool hdmi_video_config = true;
+	unsigned char hdmimode = 0;
+
+	if (!vIsDviMode())
+		hdmimode = 1;
+
+	if (vformat >= HDMI_VIDEO_RESOLUTION_NUM) {
+		TX_DEF_LOG("Resolution out of range.\n");
+		hdmi_video_config = FALSE;
+		return FALSE;
+	}
+	_stAvdAVInfo.e_resolution = vformat;
+	TX_DEF_LOG(
+	"%s:e_resolution = %d; hdmi_boot_res = %d\n",
+		__func__,
+		_stAvdAVInfo.e_resolution, hdmi_boot_res);
+	TX_DEF_LOG(
+"%s:e_video_color_space = %d; hdmi_boot_colorspace = %d\n",
+		__func__,
+		_stAvdAVInfo.e_video_color_space,
+		hdmi_boot_colorspace);
+	TX_DEF_LOG(
+"%s:e_deep_color_bit = %d; hdmi_boot_colordepth = %d\n",
+		__func__,
+		_stAvdAVInfo.e_deep_color_bit,
+		hdmi_boot_colordepth);
+
+	if ((_stAvdAVInfo.e_resolution == hdmi_boot_res) &&
+		(_stAvdAVInfo.e_video_color_space == hdmi_boot_colorspace)
+		&& (_stAvdAVInfo.e_deep_color_bit == hdmi_boot_colordepth)
+		&& (hdmimode == _HdmiSinkAvCap.b_sink_support_hdmi_mode)) {
+		TX_DEF_LOG(
+	"LK and Kernel is the same resolution/colorspace/deepcolor .\n");
+		hdmi_video_config = false;
+	}
+
+	hdmi_boot_res = 0xff;
+	hdmi_boot_colordepth = 0xff;
+	hdmi_boot_colorspace = 0xff;
+
+	if (hdmi_video_config) {
+		if (dovi_off_delay_needed) {
+			dovi_off_delay_needed = FALSE;
+			TX_DEF_LOG("delay 200ms for dolby off case\n");
+			usleep_range(200000, 200050);
+		}
+		TX_DEF_LOG("av mute\n");
+		/* av mute packet */
+		vSend_AVMUTE();
+		usleep_range(50000, 50050);
+		/* av mute */
+		vHDMIAVMute();
+		/* disable encrypt */
+		vDisable_HDCP_Encrypt();
+		usleep_range(50000, 50050);
+
+		vTmdsOnOffAndResetHdcp(0);
+	}
+	if (hdmi_hotplugstate != HDMI_STATE_HOT_PLUGIN_AND_POWER_ON) {
+#if IS_ENABLED(CONFIG_MTK_FB)
+		disp_hw_mgr_send_event(DISP_EVENT_PLUG_OUT, NULL);
+#endif
+		notify_uevent_user(&hdmires_switch_data, 0);
+		TX_DEF_LOG("[port]not plugin, ignore %s\n",
+		__func__);
+		return 0;
+	}
+
+	hdmi_hotplugout_count = 0;
+#if IS_ENABLED(CONFIG_MTK_FB)
+	disp_hw_mgr_send_event(DISP_EVENT_CHANGE_RES, (void *)&vformat);
+#endif
+	notify_uevent_user(&hdmires_switch_data, (vformat + 1));
+	if (hdmi_hotplugout_count != 0) {
+#if IS_ENABLED(CONFIG_MTK_FB)
+		disp_hw_mgr_send_event(DISP_EVENT_PLUG_OUT, NULL);
+#endif
+		notify_uevent_user(&hdmires_switch_data, 0);
+		TX_DEF_LOG(
+		"[port]have plugout, ignore %s\n",
+		__func__);
+		return 0;
+	}
+	TX_DEF_LOG("[port]hdmires_switch_data(%d)\n", (vformat + 1));
+
+	if (hdmi_video_config)
+		hdmi_drv->video_config(vformat);
+
+	TX_DEF_LOG("%s end\n", __func__);
+	hdmistate_debug = 0;
+	if (send_fake_hpd) {
+		notify_uevent_user(&hdmi_switch_data, HDMI_STATE_NO_DEVICE);
+		notify_uevent_user(&hdmires_switch_data, 0);
+		usleep_range(50000, 50050);
+		notify_uevent_user(&hdmi_switch_data, HDMI_STATE_ACTIVE);
+		send_fake_hpd = false;
+		TX_DEF_LOG("%s: fake hpd sent\n", __func__);
+	}
+	TX_DEF_LOG("%s end\n", __func__);
+	return 0;
+}
+
+void hdmi_game_mode_enable(unsigned int en)
+{
+		low_latency_disp_en = en;
+
+		TX_DEF_LOG("%s: low_latency_io_mode: %d, low_latency_disp_en: %d\n",
+			__func__, low_latency_io_mode, low_latency_disp_en);
+
+		if ((low_latency_io_mode == HDMI_LOW_LATENCY_MODE_EN) ||
+			(low_latency_io_mode == HDMI_LOW_LATENCY_MODE_DIS))
+			return;
+		vHdmiGameModeEn(low_latency_disp_en);
+}
+
+void hdmi_game_io_mode(unsigned int mode)
+{
+	low_latency_io_mode = mode;
+
+	TX_DEF_LOG("%s: low_latency_io_mode: %d, low_latency_disp_en: %d\n",
+		__func__, low_latency_io_mode, low_latency_disp_en);
+#if IS_ENABLED(CONFIG_MTK_FB)
+	disp_hw_mgr_send_event(DISP_EVENT_ALLM, (void *)&mode);
+#endif
+
+	if (low_latency_io_mode == HDMI_LOW_LATENCY_MODE_EN)
+		vHdmiGameModeEn(TRUE);
+	else if (low_latency_io_mode == HDMI_LOW_LATENCY_MODE_DIS)
+		vHdmiGameModeEn(FALSE);
+	else
+		vHdmiGameModeEn(low_latency_disp_en);
+}
+
+int hdmi_force_hdren(enum HDMI_FORCE_HDR_ENABLE enhdr)
+{
+	if (enhdr == HDMI_FORCE_SDR) {
+		if ((current_hdr_mode != enhdr) || (hdmi_force_sdr == FALSE)) {
+			hdmi_force_sdr = true;
+			send_fake_hpd = true;
+		}
+	} else {
+		if ((current_hdr_mode == HDMI_FORCE_SDR) ||
+			(hdmi_force_sdr == TRUE)) {
+			hdmi_force_sdr = false;
+			send_fake_hpd = true;
+		}
+	}
+	TX_DEF_LOG("%s: newhdr:%d, curhdr:%d, fakehpd:%d\n",
+		__func__, enhdr, current_hdr_mode, send_fake_hpd);
+	current_hdr_mode = enhdr;
+#if IS_ENABLED(CONFIG_MTK_FB)
+	disp_hw_mgr_send_event(DISP_EVENT_FORCE_HDR, (void *)&enhdr);
+#endif
+	return 0;
+}
+
+void suspend_display_callback(void)
+{
+#if IS_ENABLED(CONFIG_MTK_FB)
+	disp_hw_mgr_send_event(DISP_EVENT_PLUG_OUT, NULL);
+#endif
+	TX_DEF_LOG("[hdmi]deep sleep suspend display.\n");
+}
+
+void hdmi_state_callback(enum HDMI_STATE state)
+{
+	char i = 0;
+
+	switch (state) {
+	case HDMI_STATE_NO_DEVICE:
+		{
+			mtk_hdmi_audio_extcon_state(false);
+			notify_uevent_user(&hdmi_switch_data, HDMI_STATE_NO_DEVICE);
+			notify_uevent_user(&hdmi_audio_switch_data, 0);
+			hdmi_audio_event = 0xff;
+			notify_uevent_user(&hdmires_switch_data, 0);
+#if IS_ENABLED(CONFIG_MTK_FB)
+			disp_hw_mgr_send_event(DISP_EVENT_PLUG_OUT, NULL);
+#endif
+			break;
+		}
+
+	case HDMI_STATE_ACTIVE:
+		{
+			notify_uevent_user(&hdmi_switch_data, HDMI_STATE_ACTIVE);
+			notify_uevent_user(&hdmi_audio_switch_data, 1);
+			hdmi_audio_event = 0xff;
+#if IS_ENABLED(CONFIG_MTK_FB)
+			disp_hw_mgr_send_event(DISP_EVENT_PLUG_IN, NULL);
+#endif
+			break;
+		}
+
+	case HDMI_STATE_PLUGIN_ONLY:
+		{
+			mtk_hdmi_audio_extcon_state(false);
+			notify_uevent_user(&hdmi_switch_data, HDMI_STATE_NO_DEVICE);
+			notify_uevent_user(&hdmi_audio_switch_data, 0);
+			hdmi_audio_event = 0xff;
+#if IS_ENABLED(CONFIG_MTK_FB)
+			disp_hw_mgr_send_event(DISP_EVENT_PLUG_OUT, NULL);
+#endif
+			break;
+		}
+
+	case HDMI_STATE_NO_DEVICE_IN_BOOT:
+		{
+			mtk_hdmi_audio_extcon_state(false);
+			notify_uevent_user(&hdmi_audio_switch_data, 0);
+			hdmi_audio_event = 0xff;
+			break;
+		}
+
+	case HDMI_STATE_ACTIVE_IN_BOOT:
+		{
+			mtk_hdmi_audio_extcon_state(true);
+			notify_uevent_user(&hdmi_audio_switch_data, 1);
+			hdmi_audio_event = 0xff;
+			break;
+		}
+
+	case HDMI_STATE_CHANGE_AUDIO_OFF:
+		{
+			HDMI_PLUG_LOG("[hdmi] HDMI_STATE_CHANGE_AUDIO_OFF\n");
+			mtk_hdmi_audio_extcon_state(false);
+			notify_uevent_user(&hdmi_audio_switch_data, 0);
+			notify_uevent_user(&hdmi_hdcp_switch_data, 0);
+			break;
+		}
+
+	case HDMI_STATE_CHANGE_AUDIO_ON:
+		{
+			HDMI_PLUG_LOG("[hdmi] HDMI_STATE_CHANGE_AUDIO_ON\n");
+			mtk_hdmi_audio_extcon_state(true);
+			notify_uevent_user(&hdmi_audio_switch_data, 1);
+			notify_uevent_user(&hdmi_hdcp_switch_data, 1);
+			break;
+		}
+
+	case HDMI_STATE_VRR_ON:
+		{
+			HDMI_PLUG_LOG("[hdmi] HDMI_STATE_GAME_MODE_ON\n");
+			i = 1;
+#if IS_ENABLED(CONFIG_MTK_FB)
+			//disp_hw_mgr_send_event(DISP_EVENT_VRR, &i);
+#endif
+			break;
+		}
+
+	case HDMI_STATE_VRR_OFF:
+		{
+			HDMI_PLUG_LOG("[hdmi] HDMI_STATE_GAME_MODE_OFF\n");
+			i = 0;
+#if IS_ENABLED(CONFIG_MTK_FB)
+			//disp_hw_mgr_send_event(DISP_EVENT_VRR, &i);
+#endif
+			break;
+		}
+
+	default:
+		{
+			break;
+		}
+	}
+
+}
+
+void hdmi_cec_state_callback(enum HDMI_CEC_STATE state)
+{
+	notify_uevent_user(&hdmi_cec_switch_data, 0xff);
+	switch (state) {
+	case HDMI_CEC_STATE_PLUG_OUT:
+notify_uevent_user(&hdmi_cec_switch_data, HDMI_CEC_STATE_PLUG_OUT);
+		break;
+	case HDMI_CEC_STATE_GET_PA:
+notify_uevent_user(&hdmi_cec_switch_data, HDMI_CEC_STATE_GET_PA);
+		break;
+	case HDMI_CEC_STATE_TX_STS:
+notify_uevent_user(&hdmi_cec_switch_data, HDMI_CEC_STATE_TX_STS);
+		break;
+	case HDMI_CEC_STATE_GET_CMD:
+notify_uevent_user(&hdmi_cec_switch_data, HDMI_CEC_STATE_GET_CMD);
+		break;
+	default:
+		break;
+	}
+}
+
+void hdmi_power_on(void)
+{
+	hdmi_drv->power_on();
+#if ((defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE)) && \
+	defined(CONFIG_MTK_HDMI_HDCP_SUPPORT))
+	hdmi_drv->enablehdcp(0xa5);
+#endif
+}
+
+void hdmi_power_off(void)
+{
+	notify_uevent_user(&hdmires_switch_data, 0);
+	hdmi_drv->power_off();
+}
+
+static int hdmi_release(struct inode *inode,
+	struct file *file)
+{
+	return 0;
+}
+
+static int hdmi_open(struct inode *inode, struct file *file)
+{
+	return 0;
+}
+
+bool hdmi_show_ioctl(unsigned int cmd, unsigned long arg)
+{
+	bool ret = true;
+
+	switch (cmd) {
+	case MTK_HDMI_AUDIO_VIDEO_ENABLE:
+		TX_DEF_LOG(
+			"[ioctl]MTK_HDMI_AUDIO_VIDEO_ENABLE, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_AUDIO_ENABLE:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_AUDIO_ENABLE, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_VIDEO_ENABLE:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_VIDEO_ENABLE, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_VIDEO_CONFIG:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_VIDEO_CONFIG, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_POWER_ENABLE:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_POWER_ENABLE, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_AUDIO_SETTING:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_AUDIO_SETTING, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_FACTORY_MODE_ENABLE:
+		TX_DEF_LOG(
+			"[ioctl]MTK_HDMI_FACTORY_MODE_ENABLE, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_FACTORY_GET_STATUS:
+		TX_DEF_LOG(
+			"[ioctl]MTK_HDMI_FACTORY_GET_STATUS, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_CHECK_EDID:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_CHECK_EDID, arg = %ld\n", arg);
+		break;
+	case MTK_HDMI_INFOFRAME_SETTING:
+		TX_DEF_LOG(
+			"[ioctl]MTK_HDMI_INFOFRAME_SETTING, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_COLOR_DEEP:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_COLOR_DEEP, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_ENABLE_HDCP:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_ENABLE_HDCP, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_HDCP_KEY:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_HDCP_KEY, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_GET_EDID:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_GET_EDID\n");
+		break;
+	case MTK_HDMI_VIDEO_MUTE:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_VIDEO_MUTE, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_HDR_ENABLE:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_HDR_ENABLE, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_GET_CAPABILITY:
+		TX_DEF_LOG("[ioctl]MTK_HDMI_GET_CAPABILITY, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_SETLA:
+		HDMI_CEC_LOG("[ioctl]MTK_HDMI_SETLA, arg = %ld\n", arg);
+		break;
+	case MTK_HDMI_GET_CECCMD:
+		HDMI_CEC_LOG("[ioctl]MTK_HDMI_GET_CECCMD, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_SET_CECCMD:
+		HDMI_CEC_LOG("[ioctl]MTK_HDMI_SET_CECCMD, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_CEC_ENABLE:
+		HDMI_CEC_LOG("[ioctl]MTK_HDMI_CEC_ENABLE, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_GET_CECADDR:
+		HDMI_CEC_LOG("[ioctl]MTK_HDMI_GET_CECADDR, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_GET_CECSTS:
+		HDMI_CEC_LOG("[ioctl]MTK_HDMI_GET_CECSTS, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_CEC_USR_CMD:
+		HDMI_CEC_LOG("[ioctl]MTK_HDMI_CEC_USR_CMD, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_CEC_OPTION_SYSTEM_CONTROL:
+		HDMI_CEC_LOG(
+		"[ioctl]MTK_HDMI_CEC_OPTION_SYSTEM_CONTROL, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_HDCP_AUTH_STATUS:
+		HDMI_CEC_LOG(
+			"[ioctl]MTK_HDMI_HDCP_AUTH_STATUS, arg = %ld\n",
+			arg);
+		break;
+	case MTK_HDMI_HPD_ONOFF:
+		HDMI_CEC_LOG("[ioctl]MTK_HDMI_HPD_ONOFF, arg = %ld\n",
+			arg);
+		break;
+	default:
+		ret = false;
+		break;
+	}
+	return ret;
+}
+
+static long hdmi_ioctl(struct file *file,
+	unsigned int cmd, unsigned long arg)
+{
+	struct HDMITX_AUDIO_PARA audio_para;
+	struct HDMI_EDID_T pv_get_info;
+	struct hdmi_para_setting data_info;
+	struct CEC_DRV_ADDR_CFG cecsetAddr;
+	struct CEC_SEND_MSG cecsendframe;
+	struct CEC_FRAME_DESCRIPTION_IO cec_frame;
+	struct CEC_USR_CMD_T cec_usr_cmd;
+	struct APK_CEC_ACK_INFO cec_tx_status;
+	struct CEC_ADDRESS_IO cecaddr;
+	struct HDCP_INFO hdcp_information;
+	int r = 0;
+
+#if ((defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE)) && \
+defined(CONFIG_MTK_HDMI_HDCP_SUPPORT)\
+		&& defined(CONFIG_MTK_DRM_KEY_MNG_SUPPORT))
+	struct hdmi_hdcp_drmkey key;
+#else
+	struct hdmi_hdcp_key key;
+#endif
+
+	memset(&hdcp_information, 0, sizeof(struct HDCP_INFO));
+	memset(&cec_usr_cmd, 0, sizeof(struct CEC_USR_CMD_T));
+
+	if (!hdmi_show_ioctl(cmd, arg))
+		HDMI_DRV_LOG(">> %s: %d\n", __func__,
+		cmd);
+
+	switch (cmd) {
+	case MTK_HDMI_AUDIO_VIDEO_ENABLE:
+		{
+			HDMI_DRV_LOG(
+				">> MTK_HDMI_AUDIO_VIDEO_ENABLE arg = %ld\n",
+				arg);
+			if (arg)
+				hdmi_power_on();
+			/*else*/
+				/*hdmi_power_off();*/
+			break;
+		}
+	case MTK_HDMI_AUDIO_SETTING:
+		{
+			if (copy_from_user(&audio_para, (void __user *)arg,
+				sizeof(audio_para)))
+				r = -EFAULT;
+			else
+				hdmi_drv->audiosetting(&audio_para);
+
+			/*hdmi_audio_setting( struct HDMITX_AUDIO_PARA arg);*/
+			break;
+		}
+	case MTK_HDMI_WRITE_DEV:
+		{
+			break;
+		}
+
+	case MTK_HDMI_HDCP_INFO:
+		{
+			if (copy_from_user(&hdcp_information,
+				(void __user *)arg,
+				sizeof(hdcp_information))) {
+				TX_DEF_LOG("copy_from_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			} else {
+				hdmi_drv->hdcp_info(&hdcp_information);
+			}
+			if (copy_to_user((void __user *)arg,
+				&hdcp_information,
+				sizeof(hdcp_information))) {
+				TX_DEF_LOG("copy_to_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			}
+			break;
+		}
+
+
+	case MTK_HDMI_INFOFRAME_SETTING:
+		{
+			break;
+		}
+
+	case MTK_HDMI_HDCP_KEY:
+		{
+			TX_DEF_LOG("[HDCP] MTK_HDMI_HDCP_KEY! line:%d\n",
+				__LINE__);
+			if (copy_from_user(&key, (void __user *)arg,
+				sizeof(key))) {
+				TX_DEF_LOG("copy_from_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			} else {
+				hdmi_drv->hdcpkey((unsigned char *) &key);
+			}
+			break;
+		}
+
+	case MTK_HDMI_SETLA:
+		{
+			if (copy_from_user(&cecsetAddr, (void __user *)arg,
+				sizeof(cecsetAddr))) {
+				TX_DEF_LOG("copy_from_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			} else {
+				hdmi_drv->setcecla(&cecsetAddr);
+			}
+			break;
+		}
+
+	case MTK_HDMI_SENDSLTDATA:
+		{
+			break;
+		}
+
+	case MTK_HDMI_SET_CECCMD:
+		{
+			if (copy_from_user(&cecsendframe, (void __user *)arg,
+				sizeof(cecsendframe))) {
+				TX_DEF_LOG("copy_from_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			} else {
+				hdmi_drv->setceccmd(&cecsendframe);
+				if (copy_to_user((void __user *)arg,
+					&cecsendframe,
+					sizeof(cecsendframe))) {
+					TX_DEF_LOG(
+						"copy_to_user failed! line:%d\n",
+						__LINE__);
+					r = -EFAULT;
+				}
+			}
+			break;
+		}
+
+	case MTK_HDMI_CEC_ENABLE:
+		{
+			hdmi_drv->cecenable(arg & 0xFF);
+			break;
+		}
+
+	case MTK_HDMI_ARC_ENABLE:
+		{
+			hdmi_drv->arcenable(arg & 0xFF);
+			break;
+		}
+
+	case MTK_HDMI_LOW_LATENCY_MODE:
+		{
+			hdmi_game_io_mode(arg & 0xFF);
+			break;
+		}
+
+	case MTK_HDMI_GET_CECCMD:
+		{
+			hdmi_drv->getceccmd(&cec_frame);
+			if (copy_to_user((void __user *)arg, &cec_frame,
+				sizeof(cec_frame))) {
+				TX_DEF_LOG("copy_to_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			}
+			break;
+		}
+
+	case MTK_HDMI_GET_CECSTS:
+		{
+			hdmi_drv->getcectxstatus(&cec_tx_status);
+			if (copy_to_user((void __user *)arg,
+				&cec_tx_status,
+				sizeof(struct APK_CEC_ACK_INFO))) {
+				TX_DEF_LOG("copy_to_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			}
+			break;
+		}
+
+	case MTK_HDMI_CEC_USR_CMD:
+		{
+			if (copy_from_user(&cec_usr_cmd,
+				(void __user *)arg,
+				sizeof(struct CEC_USR_CMD_T)))
+				r = -EFAULT;
+			else
+				hdmi_drv->cecusrcmd(cec_usr_cmd.cmd,
+				&(cec_usr_cmd.result));
+
+			if (copy_to_user((void __user *)arg, &cec_usr_cmd,
+				sizeof(struct CEC_USR_CMD_T))) {
+				TX_DEF_LOG("copy_to_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			}
+			break;
+		}
+
+	case MTK_HDMI_GET_SLTDATA:
+		{
+			break;
+		}
+
+	case MTK_HDMI_GET_CECADDR:
+		{
+			hdmi_drv->getcecaddr(&cecaddr);
+			if (copy_to_user((void __user *)arg, &cecaddr,
+				sizeof(cecaddr))) {
+				TX_DEF_LOG("copy_to_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			}
+			break;
+		}
+
+	case MTK_HDMI_COLOR_DEEP:
+		{
+			if (copy_from_user(&data_info, (void __user *)arg,
+				sizeof(data_info))) {
+				TX_DEF_LOG("copy_from_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			} else {
+
+				TX_DEF_LOG("MTK_HDMI_COLOR_DEEP: %d %d\n",
+					data_info.u4Data1,
+					   data_info.u4Data2);
+
+				hdmi_drv->colordeep(data_info.u4Data1 &
+					0xFF,
+						    data_info.u4Data2 & 0xFF);
+			}
+			break;
+		}
+
+	case MTK_HDMI_READ_DEV:
+		{
+			break;
+		}
+
+	case MTK_HDMI_ENABLE_LOG:
+		{
+			break;
+		}
+
+	case MTK_HDMI_ENABLE_HDCP:
+		{
+			break;
+		}
+
+	case MTK_HDMI_CECRX_MODE:
+		{
+			break;
+		}
+
+	case MTK_HDMI_STATUS:
+		{
+			break;
+		}
+
+	case MTK_HDMI_CHECK_EDID:
+		{
+			break;
+		}
+
+	case MTK_HDMI_POWER_ENABLE:
+		{
+			break;
+		}
+
+	case MTK_HDMI_VIDEO_CONFIG:
+		{
+			r = hdmi_video_config(arg);
+			break;
+		}
+
+	case MTK_HDMI_HDR_ENABLE:
+		{
+			r = hdmi_force_hdren(arg);
+			break;
+		}
+
+	case MTK_HDMI_FACTORY_GET_STATUS:
+		{
+			int hdmi_status;
+
+			/* check_res:
+			 * 0:HDMI Plug in;
+			 * 1 HDMI Plug in,EDID OK;
+			 * -1: No HDMI Plug in;
+			 * -2: DPI Clock OFF;
+			 * -3: HDMI Plug in, EDID Error ;
+			 * -4: cec error;
+			 */
+			if (hdmi_drv->get_state() ==
+				HDMI_STATE_NO_DEVICE) {
+				TX_DEF_LOG("[hdmi]TV disconnected\n");
+				hdmi_status = -1;
+			} else if (hdmi_drv->get_state() ==
+			HDMI_STATE_PLUGIN_ONLY) {
+				TX_DEF_LOG("[hdmi]TV plug in only\n");
+				hdmi_status = 0;
+			} else if (hdmi_drv->checkedidheader() == FALSE) {
+				TX_DEF_LOG("[hdmi]edid error\n");
+				hdmi_status = -3;
+			} else if (!hdmi_cec_factory_test()) {
+				TX_DEF_LOG("[hdmi]cec error\n");
+				hdmi_status = -4;
+			} else
+				hdmi_status = 1;
+
+			TX_DEF_LOG("MTK_HDMI_FACTORY_GET_STATUS is %d\n",
+				hdmi_status);
+			if (copy_to_user((void __user *)arg, &hdmi_status,
+				sizeof(hdmi_status))) {
+				TX_DEF_LOG("copy_to_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			}
+			break;
+		}
+
+	case MTK_HDMI_GET_EDID:
+		{
+			memset(&pv_get_info, 0, sizeof(pv_get_info));
+			if (hdmi_drv->getedid)
+				hdmi_drv->getedid(&pv_get_info);
+
+			if (copy_to_user((void __user *)arg, &pv_get_info,
+				sizeof(pv_get_info)))
+				r = -EFAULT;
+			/*app_get_edid( struct HDMI_EDID_T arg); */
+			break;
+		}
+
+	case MTK_HDMI_HDCP_AUTH_STATUS:
+		{
+			int hdcp_auth_status = -1;
+			/* convert _bHdcpStatue return value to
+			 *hwcec value (1:auth ok, 0:auth fail)
+			 */
+			/*  #define SV_OK	     (unsigned char)(0) */
+			/*	#define SV_FAIL      (unsigned char)(-1) */
+			if (!_bHdcpStatus)
+				hdcp_auth_status = 1;
+			else if (_bHdcpStatus == 0xFF)
+				hdcp_auth_status = 0;
+			else {
+				HDMI_DRV_LOG(
+					"MTK_HDMI_HDCP_AUTH_STATUS unknown state");
+				hdcp_auth_status = -1;
+			}
+			HDMI_DRV_LOG("_bHdcpStatus:%d hdcp_auth_status:%d\n",
+				_bHdcpStatus, hdcp_auth_status);
+			if (copy_to_user((void __user *)arg,
+				&hdcp_auth_status,
+				sizeof(hdcp_auth_status))) {
+				HDMI_DRV_LOG("copy_to_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			}
+			break;
+		}
+
+	case MTK_HDMI_HPD_ONOFF:
+		{
+			int hdmi_hpd_onoff = -1;
+
+			switch (hdmi_hotplugstate) {
+			case HDMI_STATE_HOT_PLUG_OUT:
+				hdmi_hpd_onoff = 0;
+				break;
+			case HDMI_STATE_HOT_PLUG_IN_ONLY:
+				hdmi_hpd_onoff = 0;
+				break;
+			case HDMI_STATE_HOT_PLUGIN_AND_POWER_ON:
+				hdmi_hpd_onoff = 1;
+				break;
+			default:
+				HDMI_DRV_LOG(
+					"MTK_HDMI_HPD_ONOFF unknown state");
+				break;
+			}
+
+			if (copy_to_user((void __user *)arg, &hdmi_hpd_onoff,
+				sizeof(hdmi_hpd_onoff))) {
+				HDMI_DRV_LOG("copy_to_user failed! line:%d\n",
+					__LINE__);
+				r = -EFAULT;
+			}
+			break;
+		}
+	case MTK_HDMI_GET_CAPABILITY:
+		{
+			int ret = 0;
+			int query_type = 0;
+
+			HDMI_DRV_LOG(">> MTK_HDMI_GET_CAPABILITY arg = %ld\n",
+				arg);
+			query_type |= (HDMI_FACTORY_MODE_NEW |
+				HDMI_FACTORY_TEST_BOX |
+				HDMI_FACTORY_TEST_HDCP);
+
+			if (copy_to_user((void __user *)arg,
+				&query_type, sizeof(query_type)))
+				ret = -EFAULT;
+			break;
+		}
+	case MTK_HDMI_FACTORY_MODE_ENABLE:
+		{
+			HDMI_DRV_LOG(
+				">> MTK_HDMI_FACTORY_MODE_ENABLE arg = %ld\n",
+				arg);
+			break;
+		}
+	case MTK_HDMI_FACTORY_CHIP_INIT:
+		{
+			HDMI_DRV_LOG(
+				">> MTK_HDMI_FACTORY_CHIP_INIT arg = %ld\n",
+				arg);
+			break;
+		}
+	case MTK_HDMI_AUDIO_ENABLE:
+		{
+			HDMI_DRV_LOG(">> MTK_HDMI_AUDIO_ENABLE arg = %ld\n",
+				arg);
+			break;
+		}
+	case MTK_HDMI_CEC_OPTION_SYSTEM_CONTROL:
+		{
+			if (arg & 0xFF)
+				hdmi_drv->setcecrxmode(CEC_NORMAL_MODE);
+			else
+				hdmi_drv->setcecrxmode(CEC_KER_HANDLE_MODE);
+			break;
+		}
+	case MTK_HDMI_VRR_ENABLE:
+		{
+			HDMI_DRV_LOG(">> MTK_HDMI_VRR_ENABLE arg = %ld\n",
+				arg);
+			vQMSCB(arg);
+			break;
+		}
+	case MTK_HDMI_EARLY_SUSPEND_MODE:
+		{
+			unsigned char ui1mode = (arg & 0xFF);
+
+			hdmi_drv->setearlysuspendmode(ui1mode);
+			break;
+		}
+	default:
+		{
+			r = -EFAULT;
+			TX_DEF_LOG("Unknown HDMI ioctl cmd: 0x%x\n",
+				cmd);
+			break;
+		}
+	}
+
+	return r;
+}
+
+#if IS_ENABLED(CONFIG_COMPAT)
+static long hdmi_ioctl_compat(struct file *file,
+	unsigned int cmd, unsigned long arg)
+{
+	int ret = 0;
+
+	HDMI_DRV_LOG(">> %s: 0x%x\n", __func__,
+		cmd);
+
+	if (!file->f_op || !file->f_op->unlocked_ioctl)
+		return -ENOTTY;
+
+	switch (cmd) {
+	case COMPAT_MTK_HDMI_AUDIO_SETTING:
+		{
+			/* userspace passed argument */
+			struct COMPAT_HDMITX_AUDIO_PARA __user *data32;
+			/* kernel used */
+			struct HDMITX_AUDIO_PARA __user *data;
+
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_AUDIO_SETTING\n");
+			data32 = compat_ptr(arg);
+			data = compat_alloc_user_space(sizeof(*data));
+
+			if (data == NULL)
+				return -EFAULT;
+
+			/*For hdmi_audio_setting,
+			 *unsigned char type dont need to be convert
+			 */
+			ret =
+			    file->f_op->unlocked_ioctl(file,
+			    MTK_HDMI_AUDIO_SETTING,
+						       (unsigned long)data32);
+			return ret;
+		}
+	case COMPAT_MTK_HDMI_GET_EDID:
+		{
+			struct COMPAT_HDMI_EDID_T __user *data32;
+			//struct HDMI_EDID_T __user *data;
+
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_GET_EDID\n");
+			/* userspace passed argument */
+			data32 = compat_ptr(arg);
+			//data = compat_alloc_user_space(sizeof(*data));
+
+			//if (data == NULL)
+			//	return -EFAULT;
+
+			ret =
+			    file->f_op->unlocked_ioctl(file,
+							MTK_HDMI_GET_EDID,
+						       (unsigned long)data32);
+
+			return ret;
+		}
+	case COMPAT_MTK_HDMI_AUDIO_VIDEO_ENABLE:
+		{
+			int __user *data32;	/* userspace passed argument */
+
+			HDMI_DRV_LOG(
+				">> COMPAT_MTK_HDMI_AUDIO_VIDEO_ENABLE %ld\n",
+				arg);
+			data32 = compat_ptr(arg);
+
+			ret =
+			    file->f_op->unlocked_ioctl(
+			    file, MTK_HDMI_AUDIO_VIDEO_ENABLE,
+						       (unsigned long)data32);
+			break;
+		}
+	case COMPAT_MTK_HDMI_WRITE_DEV:
+		{
+			HDMI_DRV_LOG(
+				">> COMPAT_MTK_HDMI_WRITE_DEV\n");
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_INFOFRAME_SETTING:
+		{
+			HDMI_DRV_LOG(
+				">> COMPAT_MTK_HDMI_INFOFRAME_SETTING\n");
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_HDCP_KEY:
+		{
+#if ((defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE)) && \
+			defined(CONFIG_MTK_HDMI_HDCP_SUPPORT)\
+			&& defined(CONFIG_MTK_DRM_KEY_MNG_SUPPORT))
+			struct compat_hdmi_hdcp_drmkey __user *data32;
+#else
+			struct compat_hdmi_hdcp_key __user *data32;
+#endif
+			data32 = compat_ptr(arg);
+
+			ret = file->f_op->unlocked_ioctl(file,
+				MTK_HDMI_HDCP_KEY,
+				(unsigned long)data32);
+
+			TX_DEF_LOG("COMPAT_MTK_HDMI_HDCP_KEY! arg:%ld\n",
+				arg);
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_SETLA:
+		{
+			struct CEC_DRV_ADDR_CFG __user *data32;
+
+			data32 = compat_ptr(arg);
+			ret = file->f_op->unlocked_ioctl(file,
+				MTK_HDMI_SETLA,
+				(unsigned long)data32);
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_SENDSLTDATA:
+		{
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_SENDSLTDATA\n");
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_SET_CECCMD:
+		{
+			struct COMPAT_CEC_SEND_MSG __user *arg_u2k =
+				compat_ptr(arg);
+			struct COMPAT_CEC_SEND_MSG __user *param_u2k =
+				compat_alloc_user_space(sizeof(*param_u2k));
+			struct CEC_SEND_MSG __user *cecsendframe =
+				compat_alloc_user_space(sizeof(*cecsendframe));
+
+			if ((arg_u2k == NULL) || (param_u2k == NULL) || (cecsendframe == NULL))
+				return -EFAULT;
+
+			if (copy_from_user(param_u2k, arg_u2k,
+				sizeof(*param_u2k))) {
+				TX_DEF_LOG("copy_from_user failed! line:%d\n",
+					__LINE__);
+				ret = -EFAULT;
+			} else {
+				memcpy(&cecsendframe->t_frame_info,
+					&param_u2k->t_frame_info,
+					sizeof(param_u2k->t_frame_info));
+				cecsendframe->b_enqueue_ok =
+					param_u2k->b_enqueue_ok;
+				ret = file->f_op->unlocked_ioctl(file,
+					MTK_HDMI_SET_CECCMD,
+					(unsigned long)cecsendframe);
+			}
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_CEC_ENABLE:
+		{
+			unsigned int __user *arg_u2k = compat_ptr(arg);
+
+			ret = file->f_op->unlocked_ioctl(file,
+				MTK_HDMI_CEC_ENABLE, (unsigned long)arg_u2k);
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_GET_CECCMD:
+		{
+			struct COMPAT_CEC_FRAME_DESCRIPTION_IO __user *arg_u2k;
+			struct CEC_FRAME_DESCRIPTION_IO __user *param_u2k;
+			struct CEC_FRAME_BLOCK_IO block;
+			compat_uint_t u;
+			//compat_uptr_t p;
+			char c;
+			//void *ptr;
+			int err = 0;
+
+			memset(&block, 0, sizeof(struct CEC_FRAME_BLOCK_IO));
+
+			arg_u2k = compat_ptr(arg);
+			param_u2k = compat_alloc_user_space(sizeof(*param_u2k));
+			err |= get_user(c, &(arg_u2k->size));
+			err |= put_user(c, &(param_u2k->size));
+			err |= get_user(c, &(arg_u2k->sendidx));
+			err |= put_user(c, &(param_u2k->sendidx));
+			err |= get_user(c, &(arg_u2k->reTXcnt));
+			err |= put_user(c, &(param_u2k->reTXcnt));
+			if (copy_from_user(&block, &(arg_u2k->blocks),
+				sizeof(struct CEC_FRAME_BLOCK_IO))) {
+				TX_DEF_LOG("copy_from_user failed! line:%d\n",
+					__LINE__);
+				ret = -EFAULT;
+			}
+			if (copy_to_user((void __user *)(&(param_u2k->blocks)),
+				&block, sizeof(struct CEC_FRAME_BLOCK_IO))) {
+				TX_DEF_LOG(
+					"copy_to_user failed! line:%d\n",
+					__LINE__);
+				ret = -EFAULT;
+			}
+			ret = file->f_op->unlocked_ioctl(file,
+				MTK_HDMI_GET_CECCMD, (unsigned long)param_u2k);
+			err |= get_user(u, &(param_u2k->size));
+			err |= put_user(u, &(arg_u2k->size));
+			err |= get_user(u, &(param_u2k->sendidx));
+			err |= put_user(u, &(arg_u2k->sendidx));
+			err |= get_user(u, &(param_u2k->reTXcnt));
+			err |= put_user(u, &(arg_u2k->reTXcnt));
+			if (copy_in_user(&(arg_u2k->blocks),
+				&(param_u2k->blocks),
+				sizeof(struct CEC_FRAME_BLOCK_IO))) {
+				TX_DEF_LOG("copy_in_user failed! line:%d\n",
+					__LINE__);
+				ret = -EFAULT;
+			}
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_GET_CECSTS:
+		{
+			struct COMPAT_APK_CEC_ACK_INFO __user *arg_u2k;
+			struct APK_CEC_ACK_INFO __user *param_u2k;
+			compat_uint_t u;
+			//compat_uptr_t p;
+			//void *ptr;
+			int err = 0;
+
+			arg_u2k = compat_ptr(arg);
+			param_u2k = compat_alloc_user_space(
+				sizeof(struct APK_CEC_ACK_INFO));
+			err |= get_user(u, &(arg_u2k->e_ack_cond));
+			err |= put_user(u, &(param_u2k->e_ack_cond));
+			ret = file->f_op->unlocked_ioctl(file,
+				MTK_HDMI_GET_CECSTS, (unsigned long)param_u2k);
+			err |= get_user(u, &(param_u2k->e_ack_cond));
+			err |= put_user(u, &(arg_u2k->e_ack_cond));
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_CEC_USR_CMD:
+		{
+			struct CEC_USR_CMD_T __user *data32;
+
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_CEC_USR_CMD %ld\n",
+				arg);
+			data32 = compat_ptr(arg);
+			ret = file->f_op->unlocked_ioctl(file,
+				MTK_HDMI_CEC_USR_CMD, (unsigned long)data32);
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_GET_SLTDATA:
+		{
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_GET_SLTDATA\n");
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_GET_CECADDR:
+		{
+			struct CEC_ADDRESS_IO __user *data32;
+			struct CEC_ADDRESS_IO __user *data;
+
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_GET_CECADDR %ld\n",
+						arg);
+			data32 = compat_ptr(arg);
+			data = compat_alloc_user_space(sizeof(*data));
+			ret = file->f_op->unlocked_ioctl(file,
+				MTK_HDMI_GET_CECADDR, (unsigned long)data);
+			if (copy_in_user((void __user *)data32,
+				data, sizeof(*data))) {
+				TX_DEF_LOG(
+					"copy_to_user failed! line:%d\n",
+					__LINE__);
+				ret = -EFAULT;
+			}
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_COLOR_DEEP:
+		{
+			struct compat_hdmi_para_setting __user *data32;
+
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_COLOR_DEEP\n");
+			/* userspace passed argument */
+			data32 = compat_ptr(arg);
+
+			ret =
+			    file->f_op->unlocked_ioctl(
+			    file, MTK_HDMI_COLOR_DEEP,
+						       (unsigned long)data32);
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_HDR_ENABLE:
+		{
+			enum compat_hdmi_force_hdr_enable __user *data32;
+
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_HDR_ENABLE\n");
+			/* userspace passed argument */
+			data32 = compat_ptr(arg);
+
+			ret =
+			    file->f_op->unlocked_ioctl(
+			    file, MTK_HDMI_HDR_ENABLE,
+						       (unsigned long)data32);
+			break;
+		}
+
+
+	case COMPAT_MTK_HDMI_READ_DEV:
+		{
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_READ_DEV\n");
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_ENABLE_LOG:
+		{
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_ENABLE_LOG\n");
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_ENABLE_HDCP:
+		{
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_ENABLE_HDCP\n");
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_CECRX_MODE:
+		{
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_CECRX_MODE\n");
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_STATUS:
+		{
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_STATUS\n");
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_CHECK_EDID:
+		{
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_CHECK_EDID\n");
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_POWER_ENABLE:
+		{
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_POWER_ENABLE\n");
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_VIDEO_CONFIG:
+		{
+			int __user *data32;
+
+			HDMI_DRV_LOG(
+				">> COMPAT_MTK_HDMI_VIDEO_CONFIG arg = %ld\n",
+				arg);
+		 /* userspace passed argument */
+			data32 = compat_ptr(arg);
+
+			ret =
+			    file->f_op->unlocked_ioctl(file,
+			    MTK_HDMI_VIDEO_CONFIG,
+						       (unsigned long)data32);
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_VRR_ENABLE:
+		{
+			unsigned int __user *data32;
+
+			HDMI_DRV_LOG(
+				">> COMPAT_MTK_HDMI_VRR_ENABLE arg = %ld\n",
+				arg);
+		 /* userspace passed argument */
+			data32 = compat_ptr(arg);
+
+			ret = file->f_op->unlocked_ioctl(file,
+				MTK_HDMI_VRR_ENABLE,
+					(unsigned long)data32);
+			break;
+
+		}
+
+	case COMPAT_MTK_HDMI_LOW_LATENCY_MODE:
+		{
+			unsigned int __user *data32;
+
+			HDMI_DRV_LOG(
+				">> COMPAT_MTK_HDMI_LOW_LATENCY_MODE arg = %ld\n",
+				arg);
+			data32 = compat_ptr(arg);
+
+			ret = file->f_op->unlocked_ioctl(file,
+				MTK_HDMI_LOW_LATENCY_MODE,
+					(unsigned long)data32);
+			break;
+		}
+
+	case COMPAT_MTK_HDMI_FACTORY_GET_STATUS:
+		{
+			HDMI_DRV_LOG(">> COMPAT_MTK_HDMI_FACTORY_GET_STATUS\n");
+			break;
+
+		}
+
+	default:
+		HDMI_DRV_LOG(">> calling default cmd=0x%x\n", cmd);
+		hdmi_ioctl(file, cmd, arg);
+		break;
+
+	}
+	return ret;
+}
+#endif
+
+bool hdmi_suspend_en = 1;
+static ssize_t hdmi_suspend_enable_show(struct device *dev,
+	struct device_attribute *devattr, char *buf)
+{
+	return sprintf(buf, "%d\n", hdmi_suspend_en);
+}
+static ssize_t hdmi_suspend_enable_store(struct device *dev,
+	struct device_attribute *devattr,
+	const char *buf,
+	size_t count)
+{
+	if (!strncmp(buf, "1", 1)) {
+		hdmi_suspend_en = 1;
+		pr_info("enable hdmi suspend\n");
+	} else if (!strncmp(buf, "0", 1)) {
+		hdmi_suspend_en = 0;
+		pr_info("disable hdmi suspend\n");
+	}
+	return count;
+}
+static DEVICE_ATTR_RW(hdmi_suspend_enable);
+
+char hdmi_debug_normal_buffer[256];
+
+static ssize_t hdmi_debug_normal_show(struct device *dev,
+	struct device_attribute *devattr, char *buf)
+{
+	TX_DEF_LOG("%s buffer:\n%s\n", __func__, hdmi_debug_normal_buffer);
+	return snprintf(buf, sizeof(hdmi_debug_normal_buffer),
+		"%s\n", hdmi_debug_normal_buffer);
+}
+
+static ssize_t hdmi_debug_normal_store(struct device *dev,
+	struct device_attribute *devattr,
+	const char *buf,
+	size_t count)
+{
+	int ret, arg, len;
+
+	HDMI_DRV_FUNC();
+	ret = count;
+	if (strncmp(buf, "dbglevel:", 9) == 0) {
+		memset(hdmi_debug_normal_buffer, 0,
+			sizeof(hdmi_debug_normal_buffer));
+		ret = sscanf(buf, "dbglevel:0x%x", &arg);
+		if (ret == 1) {
+			len = sprintf(hdmi_debug_normal_buffer,
+				"log old=0x%x\n", hdmidrv_log_on);
+			if (len <= 0)
+				TX_DEF_LOG("%d %s sprintf len err, %d\n",
+				__LINE__, __func__, len);
+
+			hdmi_drvlog_enable(arg);
+			len = sprintf(hdmi_debug_normal_buffer +
+				strlen(hdmi_debug_normal_buffer),
+				"log new=0x%x\n", hdmidrv_log_on);
+			if (len <= 0)
+				TX_DEF_LOG("%d %s sprintf len err, %d\n",
+				__LINE__, __func__, len);
+
+		} else {
+			len = snprintf(hdmi_debug_normal_buffer,
+				sizeof(hdmi_debug_normal_buffer),
+				"error,buf=%s\n", buf);
+			if (len <= 0)
+				TX_DEF_LOG("%d %s sprintf len err, %d\n",
+				__LINE__, __func__, len);
+
+			TX_DEF_LOG("%s,%d,%s\n",
+				__func__, __LINE__,
+				hdmi_debug_normal_buffer);
+			ret = -EINVAL;
+		}
+	} else {
+		TX_DEF_LOG("%s,%d,not handle str:%s\n",
+			__func__, __LINE__, buf);
+		ret = -EINVAL;
+	}
+
+	if (ret != -EINVAL)
+		return count;
+
+	return ret;
+}
+static DEVICE_ATTR_RW(hdmi_debug_normal);
+
+char hdmi_hdr_status_buffer[256];
+
+static ssize_t hdmi_hdr_status_show(struct device *dev,
+	struct device_attribute *devattr, char *buf)
+{
+	int ret, len;
+	unsigned char res[3] = {0};
+	/*get Hdr10p vsif info from trustzone*/
+	fgCaHDMIGetHdr10pVSIFInfo(res);
+	hdr10p_vsif_application_version = res[0];
+	hdr10p_vsif_wr_en = res[1];
+	hdr10p_vsif_repeat_en = res[2];
+	if ((hdr10p_vsif_wr_en == 1) && (hdr10p_vsif_repeat_en == 1))
+		_bHdrType = VID_PLA_DR_TYPE_HDR10_PLUS_VSIF;
+	/*get Hdr10p vsif info from trustzone*/
+
+	memset(hdmi_hdr_status_buffer, 0,
+	sizeof(hdmi_hdr_status_buffer));
+	ret = hdr_status(hdmi_hdr_status_buffer);
+	len = sprintf(hdmi_hdr_status_buffer +
+		strlen(hdmi_hdr_status_buffer), "\nret=%d\n", ret);
+	if (len <= 0)
+		TX_DEF_LOG("%d %s sprintf len err, %d\n",
+		__LINE__, __func__, len);
+
+	TX_DEF_LOG("%s,%d,\n%s\n",
+		__func__, __LINE__, hdmi_hdr_status_buffer);
+
+	return snprintf(buf, sizeof(hdmi_hdr_status_buffer),
+		"%s\n", hdmi_hdr_status_buffer);
+}
+
+static ssize_t hdmi_hdr_status_store(struct device *dev,
+	struct device_attribute *devattr,
+	const char *buf,
+	size_t count)
+{
+	return count;
+}
+static DEVICE_ATTR_RW(hdmi_hdr_status);
+
+char hdmi_common_status_buffer[256];
+
+static ssize_t hdmi_common_status_show(struct device *dev,
+	struct device_attribute *devattr, char *buf)
+{
+	memset(hdmi_common_status_buffer,
+		0, sizeof(hdmi_common_status_buffer));
+	vcommon_status(hdmi_common_status_buffer);
+	TX_DEF_LOG("%s,%d,\n%s\n",
+		__func__, __LINE__, hdmi_common_status_buffer);
+
+	return snprintf(buf, sizeof(hdmi_common_status_buffer),
+		"%s\n", hdmi_common_status_buffer);
+}
+
+static ssize_t hdmi_common_status_store(struct device *dev,
+	struct device_attribute *devattr,
+	const char *buf,
+	size_t count)
+{
+	return count;
+}
+static DEVICE_ATTR_RW(hdmi_common_status);
+
+static int hdmi_remove(struct platform_device *pdev)
+{
+	HDMI_DRV_LOG("%s\n", __func__);
+	return 0;
+}
+
+static void hdmi_udelay(unsigned int us)
+{
+	udelay(us);
+}
+
+static void hdmi_mdelay(unsigned int ms)
+{
+	msleep(ms);
+}
+
+static bool hdmi_drv_init_context(void)
+{
+	static const struct HDMI_UTIL_FUNCS hdmi_utils = {
+		.udelay = hdmi_udelay,
+		.mdelay = hdmi_mdelay,
+		.state_callback = hdmi_state_callback,
+		.cec_state_callback = hdmi_cec_state_callback,
+	};
+
+	if (hdmi_drv != NULL)
+		return TRUE;
+
+	hdmi_drv = (struct HDMI_DRIVER *) HDMI_GetDriver();
+
+	if (hdmi_drv == NULL)
+		return FALSE;
+
+	hdmi_drv->set_util_funcs(&hdmi_utils);
+
+	return TRUE;
+}
+
+static void __exit hdmi_exit(void)
+{
+	device_destroy(hdmi_class, hdmi_devno);
+	class_destroy(hdmi_class);
+	cdev_del(hdmi_cdev);
+	unregister_chrdev_region(hdmi_devno, 1);
+}
+
+static int hdmi_probe(struct platform_device *pdev)
+{
+	int ret = 0;
+	struct class_device *class_dev = NULL;
+	struct mtk_hdmi *hdmi;
+
+	/* Allocate device number for hdmi driver */
+	ret = alloc_chrdev_region(&hdmi_devno, 0, 1, HDMI_DEVNAME);
+
+	if (ret) {
+		TX_DEF_LOG("alloc_chrdev_region fail\n");
+		return -1;
+	}
+
+	/* For character driver register to system,
+	 *device number binded to file operations
+	 */
+	hdmi_cdev = cdev_alloc();
+	hdmi_cdev->owner = THIS_MODULE;
+	hdmi_cdev->ops = &hdmi_fops;
+	ret = cdev_add(hdmi_cdev, hdmi_devno, 1);
+
+	/* For device number binded to device name(hdmitx),
+	 *one class is corresponeded to one node
+	 */
+	hdmi_class = class_create(THIS_MODULE, HDMI_DEVNAME);
+	/* mknod /dev/hdmitx */
+	class_dev =
+	    (struct class_device *)device_create(hdmi_class,
+	    NULL, hdmi_devno, NULL, HDMI_DEVNAME);
+
+	if (!hdmi_drv_init_context()) {
+		TX_DEF_LOG("%s, hdmi_drv_init_context fail\n", __func__);
+		return 0;
+	}
+	ret = device_create_file((struct device *)class_dev,
+		&dev_attr_hdmi_suspend_enable);
+	ret = device_create_file((struct device *)class_dev,
+		&dev_attr_hdmi_debug_normal);
+	ret = device_create_file((struct device *)class_dev,
+		&dev_attr_hdmi_hdr_status);
+	ret = device_create_file((struct device *)class_dev,
+		&dev_attr_hdmi_common_status);
+
+	hdmi = devm_kzalloc(&(pdev->dev), sizeof(*hdmi), GFP_KERNEL);
+	if (!hdmi)
+		return -ENOMEM;
+	hdmi->dev = &(pdev->dev);
+	hdmi->cdev = hdmi_cdev;
+	platform_set_drvdata(pdev, hdmi);
+
+	/* register audio extcon for WiredAccessoryManager start */
+	hdmi_extcon = devm_extcon_dev_allocate(&pdev->dev, hdmi_cable);
+	if (IS_ERR(hdmi_extcon)) {
+		pr_info("Couldn't allocate HDMI extcon device\n");
+		return PTR_ERR(hdmi_extcon);
+	}
+
+	hdmi_extcon->dev.init_name = "HDMI_audio_extcon";
+
+	ret = devm_extcon_dev_register(&pdev->dev, hdmi_extcon);
+	if (ret) {
+		pr_info("failed to register HDMI extcon: %d\n", ret);
+		return ret;
+	}
+	/* register audio extcon for WiredAccessoryManager end */
+
+	hdmi_parse_videolfb(hdmi->dev);
+	ret = hdmi_drv->hdmidrv_probe(pdev, hdmi_boot_res);
+	if (ret)
+		return 0;
+
+	return 0;
+}
+
+static int __init hdmi_init(void)
+{
+
+	int ret = 0;
+
+	if (!hdmi_drv_init_context()) {
+		TX_DEF_LOG("%s, hdmi_drv_init_context fail\n", __func__);
+		return 0;
+	}
+
+	hdmi_drv->init();
+
+	hdmi_switch_data.name = "hdmi";
+	hdmi_switch_data.index = 0;
+	hdmi_switch_data.state = 0;
+	ret = hdmitx_uevent_dev_register(&hdmi_switch_data);
+
+	hdmires_switch_data.name = "res_hdmi";
+	hdmires_switch_data.index = 0;
+	hdmires_switch_data.state = 0;
+	ret = hdmitx_uevent_dev_register(&hdmires_switch_data);
+
+	hdmi_cec_switch_data.name = "cec_hdmi";
+	hdmi_cec_switch_data.index = 0;
+	hdmi_cec_switch_data.state = 0;
+	ret = hdmitx_uevent_dev_register(&hdmi_cec_switch_data);
+
+	hdmi_audio_switch_data.name = "hdmi_audio";
+	hdmi_audio_switch_data.index = 0;
+	hdmi_audio_switch_data.state = 0;
+	ret = hdmitx_uevent_dev_register(&hdmi_audio_switch_data);
+
+	hdmi_hdcp_switch_data.name = "hdcp";
+	hdmi_hdcp_switch_data.index = 0;
+	hdmi_hdcp_switch_data.state = 0;
+	ret = hdmitx_uevent_dev_register(&hdmi_hdcp_switch_data);
+
+	if (ret) {
+		TX_DEF_LOG("switch_dev_register returned:%d!\n", ret);
+		return 1;
+	}
+
+	if (platform_driver_register(&hdmi_driver)) {
+		TX_DEF_LOG("failed to register mtkfb driver\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+static int __init hdmi_ca_init(void)
+{
+
+#if (defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE))
+	unsigned char efuse = 0;
+	unsigned char ret = 0;
+
+	fgCaHDMICreate();
+	ret = fgCaHDMIGetEfuse(&efuse);
+	if (ret)
+		_bHdcpOff = efuse;
+	#if (!defined(CONFIG_MTK_HDMI_POLARITY_SWAP))
+	_bHdcpOff = 0;
+	#endif
+
+	if (hdmi_boot_forcehdr == LK_HDR_TYPE_DOVI_STD) {
+		TX_DEF_LOG("dolby vision boot mode\n");
+		vCaHDMIWriteHdcpCtrl(0x88880000, 0xaaaa5552);
+	}
+#endif
+
+	return 0;
+}
+
+module_init(hdmi_init);
+late_initcall(hdmi_ca_init);
+module_exit(hdmi_exit);
+MODULE_AUTHOR("www.mediatek.com>");
+MODULE_DESCRIPTION("HDMI Driver");
+MODULE_LICENSE("GPL");
