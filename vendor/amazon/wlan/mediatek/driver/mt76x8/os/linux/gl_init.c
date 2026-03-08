@@ -94,6 +94,10 @@
 struct semaphore g_halt_sem;
 int g_u4HaltFlag;
 
+#ifdef CFG_SUPPORT_PRIVACY_INFO
+uint8_t empty_mac[6] = {0};
+#endif
+
 struct wireless_dev *gprWdev;
 
 #ifdef CFG_SKIP_RESET_DURING_SUSPEND

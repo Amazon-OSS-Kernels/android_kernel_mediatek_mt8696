@@ -477,16 +477,20 @@ VOID cnmMemFree(IN P_ADAPTER_T prAdapter, IN PVOID pvMemory)
 #endif
 
 	/* Convert number of block into bit cluster */
-	ASSERT(prBufInfo->aucAllocatedBlockNum[u4BlockIndex] > 0);
+	if(prBufInfo->aucAllocatedBlockNum[u4BlockIndex] > 0) {
 
-	rAllocatedBlocksBitmap = BITS(0, prBufInfo->aucAllocatedBlockNum[u4BlockIndex] - 1);
-	rAllocatedBlocksBitmap <<= u4BlockIndex;
+		rAllocatedBlocksBitmap = BITS(0, prBufInfo->aucAllocatedBlockNum[u4BlockIndex] - 1);
+		rAllocatedBlocksBitmap <<= u4BlockIndex;
 
-	/* Clear saved block count for this memory segment */
-	prBufInfo->aucAllocatedBlockNum[u4BlockIndex] = 0;
+		/* Clear saved block count for this memory segment */
+		prBufInfo->aucAllocatedBlockNum[u4BlockIndex] = 0;
 
-	/* Set corresponding bit of released memory block */
-	prBufInfo->rFreeBlocksBitmap |= rAllocatedBlocksBitmap;
+		/* Set corresponding bit of released memory block */
+		prBufInfo->rFreeBlocksBitmap |= rAllocatedBlocksBitmap;
+	} else {
+		dump_stack();
+		DBGLOG(MEM, ERROR, "aucAllocatedBlockNum[%d] = 0\n", u4BlockIndex);
+	}
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, eRamType == RAM_TYPE_MSG ? SPIN_LOCK_MSG_BUF : SPIN_LOCK_MGT_BUF);
 

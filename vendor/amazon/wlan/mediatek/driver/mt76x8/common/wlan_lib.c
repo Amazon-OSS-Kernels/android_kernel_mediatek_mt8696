@@ -1333,9 +1333,14 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 		else {
 			P_WIFI_CMD_T prWifiCmd =
 			(P_WIFI_CMD_T) prCmdInfo->pucInfoBuffer;
-			DBGLOG(INIT, ERROR,
-				"RETRY[%d] TX CMD: ID[0x%02X] SEQ[%u] CMD cannot send\n",
-			tx_retry_cnt, prWifiCmd->ucCID, prWifiCmd->ucSeqNum);
+
+			if (prWifiCmd == NULL) {
+				DBGLOG(INIT, ERROR, "CMD cannot send, pucInfoBuffer is NULL\n");
+                        } else {
+				DBGLOG(INIT, ERROR,
+					"RETRY[%d] TX CMD: ID[0x%02X] SEQ[%u] CMD cannot send\n",
+					tx_retry_cnt, prWifiCmd->ucCID, prWifiCmd->ucSeqNum);
+                        }
 			tx_retry_cnt = 0;
 		}
 #else
@@ -1361,8 +1366,13 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 		if(tx_retry_cnt) {
 			P_WIFI_CMD_T prWifiCmd =
 			(P_WIFI_CMD_T) prCmdInfo->pucInfoBuffer;
-			DBGLOG(INIT, STATE, "RETRY[%d] TX CMD: ID[0x%02X] SEQ[%u]\n",
-				tx_retry_cnt, prWifiCmd->ucCID, prWifiCmd->ucSeqNum);
+
+			if (prWifiCmd == NULL) {
+				DBGLOG(INIT, ERROR, "RETRY done, pucInfoBuffer is NULL\n");
+                        } else {
+				DBGLOG(INIT, STATE, "RETRY[%d] TX CMD: ID[0x%02X] SEQ[%u]!\n",
+					tx_retry_cnt, prWifiCmd->ucCID, prWifiCmd->ucSeqNum);
+                        }
 		}
 		tx_retry_cnt = 0;
 #endif

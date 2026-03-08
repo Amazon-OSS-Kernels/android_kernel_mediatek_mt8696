@@ -863,6 +863,21 @@ int mtk_cfg80211_get_link_statistics(struct wiphy *wiphy, struct net_device *nde
 	return 0;
 }
 
+#ifdef CFG_SUPPORT_PRIVACY_INFO
+uint64_t inline ssid_hash_64 (char *pucSsid)
+{
+	uint64_t h = (uint64_t)525201411107845655ull;
+	uint32_t u4Idx = 0;
+
+	for (u4Idx = 0;(*pucSsid)&&(u4Idx < 32);++pucSsid, u4Idx++) {
+		h ^= *pucSsid;
+		h *= 0x5bd1e9955bd1e995;
+		h ^= h >> 47;
+	}
+	return h;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for requesting to do a scan
@@ -1184,10 +1199,15 @@ int mtk_cfg80211_auth(struct wiphy *wiphy, struct net_device *ndev,
 	}
 
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
-	DBGLOG(REQ, STATE, "SSID len %d, ssid %s, %d\n",
-				req->bss->ies->len, SSID_IE(req->bss->ies->data)->aucSSID,
+#ifdef CFG_SUPPORT_PRIVACY_INFO
+	DBGLOG(REQ, WARN, "req IE len %d, ssid %16llx, ssid_len %d\n",
+				req->bss->ies->len, ssid_hash_64(SSID_IE(req->bss->ies->data)->aucSSID),
 				SSID_IE(req->bss->ies->data)->ucLength);
-
+#else
+	DBGLOG(REQ, WARN, "req IE len %d, ssid %.*s, ssid_len %d\n",
+				req->bss->ies->len, SSID_IE(req->bss->ies->data)->ucLength,
+				SSID_IE(req->bss->ies->data)->aucSSID, SSID_IE(req->bss->ies->data)->ucLength);
+#endif
 	if (req->bss->ies->len != 0 &&
 			IE_ID(req->bss->ies->data) == ELEM_ID_SSID) {
 		rNewSsid.pucSsid = SSID_IE(req->bss->ies->data)->aucSSID;

@@ -351,5 +351,8 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy, struct cfg80211_wowlan *wow);
 *                              F U N C T I O N S
 ********************************************************************************
 */
+#ifdef CFG_SUPPORT_PRIVACY_INFO
+uint64_t inline ssid_hash_64 (char *pucSsid);
+#endif
 
 #endif /* _GL_CFG80211_H */

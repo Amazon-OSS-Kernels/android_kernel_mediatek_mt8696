@@ -3158,7 +3158,7 @@ BOOLEAN aisValidateProbeReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT
 	}
 
 	if (prAisFsmInfo->u4AisPacketFilter & PARAM_PACKET_FILTER_PROBE_REQ) {
-		DBGLOG(AIS, STATE, "[AIS] RX Probe Req Frame\n");
+		DBGLOG(AIS, INFO, "[AIS] RX Probe Req Frame\n");
 		kalIndicateRxMgmtFrame(prAdapter->prGlueInfo, prSwRfb);
 	}
 
