@@ -290,8 +290,7 @@ void dumpSTA(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec)
 	       prStaRec->u2HtCapInfo);
 
 	for (i = 0; i < NUM_OF_PER_STA_TX_QUEUES; i++)
-		if (prStaRec->aprTargetQueue[i])
-			DBGLOG(SW4, INFO, "TC %u Queue Len %u\n", i, prStaRec->aprTargetQueue[i]->u4NumElem);
+		DBGLOG(SW4, INFO, "TC %u Queue Len %u\n", i, prStaRec->aprTargetQueue[i]->u4NumElem);
 
 	DBGLOG(SW4, INFO, "BmpDeliveryAC %x\n", prStaRec->ucBmpDeliveryAC);
 	DBGLOG(SW4, INFO, "BmpTriggerAC  %x\n", prStaRec->ucBmpTriggerAC);
@@ -586,10 +585,11 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 				switch (ucOpt0) {
 				case 0:
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
-					if (ucOpt1 >= TC_NUM) {
-						DBGLOG(SW4, WARN, "%s-SWCTRL_QM_INFO(0): ucOpt1:%d out of bound\n", __func__, ucOpt1);
-						return;
-					}
+                    if (ucOpt1 >= TC_NUM)
+                    {
+                        DBGLOG(INIT, ERROR, "%s-SWCTRL_QM_INFO(0): ucOpt1:%d out of bound\n", __func__, ucOpt1);
+                        return;
+                    }
 					g_au4SwCr[1] = (QM_GET_TX_QUEUE_LEN(prAdapter, ucOpt1));
 					g_au4SwCr[2] = prQM->au4MinReservedTcResource[ucOpt1];
 					g_au4SwCr[3] = prQM->au4CurrentTcResource[ucOpt1];
@@ -605,7 +605,7 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 					if (ucOpt1 >= NUM_OF_PER_STA_TX_QUEUES)
 #endif
 					{
-						DBGLOG(SW4, WARN, "%s-SWCTRL_QM_INFO(1): ucOpt1:%d out of bound\n", __func__, ucOpt1);
+						DBGLOG(INIT, ERROR, "%s-SWCTRL_QM_INFO(1): ucOpt1:%d out of bound\n", __func__, ucOpt1);
 						return;
 					}
 					g_au4SwCr[1] = prQM->au4ResourceUsedCount[ucOpt1];
@@ -616,7 +616,7 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 				case 2:
 					if (ucOpt1 >= NUM_OF_PER_TYPE_TX_QUEUES)
 					{
-						DBGLOG(SW4, WARN, "%s-SWCTRL_QM_INFO(2): ucOpt1:%d out of bound\n", __func__, ucOpt1);
+						DBGLOG(INIT, ERROR, "%s-SWCTRL_QM_INFO(2): ucOpt1:%d out of bound\n", __func__, ucOpt1);
 						return;
 					}
 					g_au4SwCr[1] = prQM->arTxQueue[ucOpt1].u4NumElem;	/* only one */
@@ -634,7 +634,7 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 				case 0:
 					if (ucOpt1 >= TC_NUM)
 					{
-						DBGLOG(SW4, WARN, "%s-SWCTRL_TX_CTRL_INFO(0): ucOpt1:%d out of bound\n", __func__, ucOpt1);
+						DBGLOG(INIT, ERROR, "%s-SWCTRL_TX_CTRL_INFO(0): ucOpt1:%d out of bound\n", __func__, ucOpt1);
 						return;
 					}
 					g_au4SwCr[1] = prAdapter->rTxCtrl.rTc.au4FreeBufferCount[ucOpt1];
@@ -706,7 +706,7 @@ VOID swCtrlCmdCategory1(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 			{
 				if (ucOpt1 >= NUM_OF_PER_STA_TX_QUEUES)
 				{
-					DBGLOG(SW4, WARN, "%s-SWCTRL_STA_QUE_INFO: ucOpt1:%d out of bound\n", __func__, ucOpt1);
+					DBGLOG(INIT, ERROR, "%s-SWCTRL_STA_QUE_INFO: ucOpt1:%d out of bound\n", __func__, ucOpt1);
 					return;
 				}
 				g_au4SwCr[1] = prStaRec->arTxQueue[ucOpt1].u4NumElem;
@@ -797,11 +797,6 @@ VOID testPsSetupBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 
 	DEBUGFUNC("testPsSetupBss()");
 	DBGLOG(SW4, INFO, "index %d\n", ucBssIndex);
-
-	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
-		DBGLOG(RLM, ERROR, "Invalid bssidx:%d\n", ucBssIndex);
-		return;
-	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 

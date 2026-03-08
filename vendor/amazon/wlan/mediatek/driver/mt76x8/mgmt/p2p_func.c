@@ -3087,7 +3087,7 @@ p2pFuncMgmtFrameRegister(IN P_ADAPTER_T prAdapter,
 			}
 			break;
 		default:
-			DBGLOG(P2P, TRACE, "unsupported frame type:%x\n", u2FrameType);
+			DBGLOG(P2P, TRACE, "Ask frog to add code for mgmt:%x\n", u2FrameType);
 			break;
 		}
 

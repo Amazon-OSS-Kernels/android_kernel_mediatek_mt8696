@@ -676,7 +676,6 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 #if CFG_SUPPORT_LAST_SEC_MCS_INFO
 		prAdapter->fgIsMcsInfoValid = FALSE;
 #endif
-		prAdapter->r1xTxDoneStatus = TX_RESULT_UNINITIALIZED;
 
 	} while (FALSE);
 
@@ -5603,13 +5602,6 @@ WLAN_STATUS wlanEnqueueTxPacket(IN P_ADAPTER_T prAdapter, IN P_NATIVE_PACKET prN
 					cnmPktFree(prAdapter, prMsduInfo);
 					return WLAN_STATUS_PENDING;
 				}
-
-			prAdapter->r1xTxDoneStatus = TX_RESULT_1XTX_CLEAR;
-			if (prAdapter->fgIsTest1xTx == 1) {
-				DBGLOG(RSN, STATE, "%s: (fgIsTest1xTx == 1) test 1XTX frame skip\n", __func__);
-				cnmPktFree(prAdapter, prMsduInfo);
-				return WLAN_STATUS_SUCCESS;
-			}
 		}
 
 		/* Tx profiling */
@@ -8594,86 +8586,6 @@ exit:
 	return WLAN_STATUS_SUCCESS;
 }
 
-#if CFG_SUPPORT_SEND_ONLY_ONE_CFG
-WLAN_STATUS wlanFeatureToFwOnlyOneCfg(IN P_ADAPTER_T prAdapter,
-		     const PCHAR pucKey, PCHAR pucValue)
-{
-	CMD_HEADER_T rCmdV1Header;
-	CMD_FORMAT_V1_T rCmd_v1;
-	WLAN_STATUS rStatus;
-	UCHAR roffset = 0;
-
-	ASSERT(pucKey);
-
-	rCmdV1Header.cmdType = CMD_TYPE_SET;
-	rCmdV1Header.cmdVersion = CMD_VER_1;
-	rCmdV1Header.cmdBufferLen = 0;
-	rCmdV1Header.itemNum = 0;
-
-	kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
-	kalMemSet(&rCmd_v1, 0, sizeof(CMD_FORMAT_V1_T));
-
-	if (pucKey != NULL && pucValue != NULL) {
-
-		rCmd_v1.itemType = ITEM_TYPE_STR;
-
-
-		/*send string format to firmware */
-		rCmd_v1.itemStringLength = kalStrLen(pucKey);
-
-		if (rCmd_v1.itemStringLength > MAX_CMD_NAME_MAX_LENGTH)
-			return WLAN_STATUS_INVALID_LENGTH;
-
-		kalMemZero(rCmd_v1.itemString, MAX_CMD_NAME_MAX_LENGTH);
-		kalMemCopy(rCmd_v1.itemString, pucKey, rCmd_v1.itemStringLength);
-
-
-		rCmd_v1.itemValueLength = kalStrLen(pucValue);
-
-		if (rCmd_v1.itemValueLength > MAX_CMD_VALUE_MAX_LENGTH)
-			return WLAN_STATUS_INVALID_LENGTH;
-
-		kalMemZero(rCmd_v1.itemValue, MAX_CMD_VALUE_MAX_LENGTH);
-		kalMemCopy(rCmd_v1.itemValue, pucValue, rCmd_v1.itemValueLength);
-
-
-		DBGLOG(INIT, INFO, "Send key word (%s) WITH (%s) to firmware\n",
-			rCmd_v1.itemString, rCmd_v1.itemValue);
-
-		kalMemCopy(((P_CMD_FORMAT_V1_T)rCmdV1Header.buffer)+roffset,
-			&rCmd_v1,  sizeof(CMD_FORMAT_V1_T));
-
-		rCmdV1Header.cmdBufferLen = sizeof(CMD_FORMAT_V1_T);
-		rCmdV1Header.itemNum = 1;
-
-		/* Send to FW */
-
-		rStatus = wlanSendSetQueryCmd(
-			prAdapter,				/* prAdapter */
-			CMD_ID_GET_SET_CUSTOMER_CFG,	/* 0x70 */
-			TRUE,					/* fgSetQuery */
-			FALSE,					/* fgNeedResp */
-			FALSE,					/* fgIsOid */
-			NULL,					/* pfCmdDoneHandler*/
-			NULL,	/* pfCmdTimeoutHandler */
-			sizeof(CMD_HEADER_T),	/* u4SetQueryInfoLen */
-			(PUINT_8)&rCmdV1Header, /* pucInfoBuffer */
-			NULL,	/* pvSetQueryBuffer */
-			0	/* u4SetQueryBufferLen */
-		);
-
-		if (rStatus == WLAN_STATUS_FAILURE)
-			DBGLOG(INIT, INFO, "[Fail]kalIoctl wifiSefCFG fail 0x%x\n", rStatus);
-
-		kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
-		rCmdV1Header.cmdBufferLen = 0;
-	} else {
-		return WLAN_STATUS_INVALID_DATA;
-	}
-	return rStatus;
-}
-#endif
-
 #else
 WLAN_STATUS wlanCfgParse(IN P_ADAPTER_T prAdapter, PUINT_8 pucConfigBuf, UINT_32 u4ConfigBufLen)
 {
@@ -9215,8 +9127,6 @@ WLAN_STATUS wlan1xTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 {
 	DBGLOG(SW4, STATE, "1x PKT[0x%08x] WIDX:PID[%u:%u] Status[%u]\n",
 		prMsduInfo->u4TxDoneTag, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID, rTxDoneStatus);
-
-		prAdapter->r1xTxDoneStatus = rTxDoneStatus;
 
 	return WLAN_STATUS_SUCCESS;
 }

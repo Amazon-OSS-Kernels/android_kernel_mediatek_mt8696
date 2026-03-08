@@ -1281,14 +1281,6 @@ nicTxComposeDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	default:
 		break;
 	}
-		if (prMsduInfo->fgIs802_1x) {
-			if (prAdapter->fgIsTest1xTx == 2) {
-				DBGLOG(RSN, STATE, "%s: (fgIsTest1xTx == 2) test 1XTX frame stuck in queue\n", __func__);
-				HAL_MAC_TX_DESC_SET_FR_RATE(prTxDesc, 0xff);
-				HAL_MAC_TX_DESC_SET_FIXED_RATE_MODE_TO_DESC(prTxDesc);
-				HAL_MAC_TX_DESC_SET_FIXED_RATE_ENABLE(prTxDesc);
-			}
-		}
 
 }
 
@@ -2314,11 +2306,8 @@ BOOLEAN nicTxFillMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 			prMsduInfo->pfTxDoneHandler = wlanDhcpTxDone;
 		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) && prAdapter->rWifiVar.ucArpTxDone)
 			prMsduInfo->pfTxDoneHandler = wlanArpTxDone;
-		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_1X)) {
+		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_1X))
 			prMsduInfo->pfTxDoneHandler = wlan1xTxDone;
-			nicTxSetPktLifeTime(prMsduInfo, 1500);
-			nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
-		}
 
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DHCP) ||
 			GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) ||

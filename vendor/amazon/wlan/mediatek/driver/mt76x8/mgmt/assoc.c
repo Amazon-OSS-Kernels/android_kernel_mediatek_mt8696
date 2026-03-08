@@ -1392,15 +1392,7 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 				prIeSupportedRate = SUP_RATES_IE(pucIE);
 
 			break;
-		case ELEM_ID_PWR_CAP:
-			if (IE_LEN(pucIE) != ELEM_MAX_LEN_POWER_CAP)
-				return WLAN_STATUS_FAILURE;
-			break;
-		case ELEM_ID_SUP_CHS:
-			if ((IE_LEN(pucIE) > ELEM_MAX_LEN_SUPPORTED_CHANNELS)
-				|| (IE_LEN(pucIE) & 0x01))
-				return WLAN_STATUS_FAILURE;
-			break;
+
 		case ELEM_ID_EXTENDED_SUP_RATES:
 			if (!prIeExtSupportedRate)
 				prIeExtSupportedRate = EXT_SUP_RATES_IE(pucIE);
@@ -1417,10 +1409,6 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 			if (prAdapter->fgIsP2PRegistered && IS_STA_IN_P2P(prStaRec)) {
 				prIeRsn = RSN_IE(pucIE);
 				rsnParserCheckForRSNCCMPPSK(prAdapter, prIeRsn, prStaRec, &u2StatusCode);
-				if (u2StatusCode ==
-					STATUS_CODE_INVALID_INFO_ELEMENT) {
-					return WLAN_STATUS_FAILURE;
-				}
 				if (u2StatusCode != STATUS_CODE_SUCCESSFUL) {
 					*pu2StatusCode = u2StatusCode;
 					return WLAN_STATUS_SUCCESS;

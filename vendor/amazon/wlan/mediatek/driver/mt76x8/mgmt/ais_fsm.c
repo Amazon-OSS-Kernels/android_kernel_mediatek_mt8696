@@ -1084,9 +1084,7 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 									cnmTimerStopTimer(prAdapter,
 										&prAdapter->rWifiVar.rDBDCDisableCountdownTimer);
 
-								/* only stop pening Switch Guard Timer when DBDC is being disabled */
-								if (timerPendingTimer(&prAdapter->rWifiVar.rDBDCSwitchGuardTimer) &&
-									!prAdapter->rWifiVar.fgDbDcModeEn)
+								if (timerPendingTimer(&prAdapter->rWifiVar.rDBDCSwitchGuardTimer))
 									cnmTimerStopTimer(prAdapter,
 										&prAdapter->rWifiVar.rDBDCSwitchGuardTimer);
 

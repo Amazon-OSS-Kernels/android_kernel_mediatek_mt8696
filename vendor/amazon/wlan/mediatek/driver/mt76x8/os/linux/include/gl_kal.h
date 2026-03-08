@@ -235,6 +235,7 @@ typedef enum _ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_EHPI_BUS,	/* only for EHPI */
 	SPIN_LOCK_NET_DEV,
 	SPIN_LOCK_CHIP_RST,
+	SPIN_LOCK_PROC_FS,
 #ifdef CFG_SUPPORT_MULTICAST_ENHANCEMENT_LOOKBACK
 	SPIN_LOCK_TX_LB_QUE,
 	SPIN_LOCK_RX_LB_QUE,
@@ -625,14 +626,6 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 	pvAddr; \
 })
 #endif
-
-#define kalMemZAlloc(u4size, eMemType) ({    \
-	void *pvAddr; \
-	pvAddr = kalMemAlloc(u4size, eMemType);   \
-	if (pvAddr) \
-		kalMemSet(pvAddr, 0, u4size);   \
-	pvAddr; \
-})
 
 /*----------------------------------------------------------------------------*/
 /*!

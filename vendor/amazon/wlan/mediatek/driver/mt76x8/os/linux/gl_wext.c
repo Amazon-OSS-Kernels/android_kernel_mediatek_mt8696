@@ -3408,7 +3408,7 @@ int wext_support_ioctl(IN struct net_device *prDev, IN struct ifreq *prIfReq, IN
 
 			if (req->essid_len > MAX_SSID_LEN) {
 				ret = -EFAULT;
-			} else if (kalMemCopy
+			} else if (copy_from_user
 			    (prExtraBuf, req->essid, req->essid_len)) {
 				ret = -EFAULT;
 			} else {

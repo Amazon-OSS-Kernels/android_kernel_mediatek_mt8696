@@ -81,7 +81,6 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
-#define PROC_MAX_BUF_SIZE			3000
 #define PROC_MCR_ACCESS                         "mcr"
 #ifdef CFG_SUPPORT_DUAL_CARD_DUAL_DRIVER
 #if defined(_HIF_USB)
@@ -145,6 +144,8 @@ static UINT_8 aucDbModuleName[][PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN] = {
 	"SAA", "AAA", "P2P", "QM", "SEC", "BOW", "WAPI", "ROAMING", "TDLS", "PF",
 	"OID", "NIC"
 };
+/* This buffer could be overwrite by any proc commands */
+static UINT_8 g_aucProcBuf[3000];
 
 /* This u32 is only for DriverCmdRead/Write, should not be used by other function */
 static INT_32 g_i4NextDriverReadLen;
@@ -159,52 +160,53 @@ static INT_32 g_i4NextDriverReadLen;
 */
 static ssize_t procDbgLevelRead(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
-	uint8_t *pucProcBuf = kalMemZAlloc(PROC_MAX_BUF_SIZE, VIR_MEM_TYPE);
-	uint8_t *temp = pucProcBuf;
-	UINT_32 u4CopySize = 0;
-	UINT_16 i;
-	UINT_16 u2ModuleNum = 0;
-	INT_32 i4Pos = 0;
-	int32_t i4Ret = 0;
+		UINT_8 *temp = &g_aucProcBuf[0];
+		UINT_32 u4CopySize = 0;
+		UINT_16 i;
+		UINT_16 u2ModuleNum = 0;
+		UINT_32 u4BufMax = sizeof(g_aucProcBuf);
+		INT_32 i4Pos = 0;
+		P_GLUE_INFO_T prGlueInfo = g_prGlueInfo_proc;
 
-	/* if *f_ops>0, we should return 0 to make cat command exit */
-	if (*f_pos > 0 || buf == NULL || pucProcBuf == NULL) {
-		i4Ret = 0;
-		goto freeBuf;
-	}
+		GLUE_SPIN_LOCK_DECLARATION();
 
-	i4Pos = scnprintf(temp, (PROC_MAX_BUF_SIZE - i4Pos),
-			"\nERROR|WARN|STATE|EVENT|TRACE|INFO|LOUD|TEMP\n"
-			"bit0 |bit1|bit2 |bit3 |bit4 |bit5|bit6|bit7\n\n"
-			"Debug Module\tIndex\tLevel\tDebug Module\tIndex\tLevel\n\n");
+		/* if *f_ops>0, we should return 0 to make cat command exit */
+		if (*f_pos > 0)
+			return 0;
+		if (!prGlueInfo)
+			return -EFAULT;
 
-	u2ModuleNum = (sizeof(aucDbModuleName) / PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0xfe;
-	for (i = 0; i < u2ModuleNum; i += 2)
-		i4Pos += scnprintf((temp + i4Pos), (PROC_MAX_BUF_SIZE - i4Pos),
-			"DBG_%s_IDX\t(0x%02x):\t0x%02x\tDBG_%s_IDX\t(0x%02x):\t0x%02x\n",
-			&aucDbModuleName[i][0], i, aucDebugModule[i],
-				&aucDbModuleName[i+1][0], i+1, aucDebugModule[i+1]);
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
 
-	if ((sizeof(aucDbModuleName) / PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0x1)
-		i4Pos += scnprintf((temp + i4Pos), (PROC_MAX_BUF_SIZE - i4Pos),
-			"DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
-			&aucDbModuleName[u2ModuleNum][0], u2ModuleNum, aucDebugModule[u2ModuleNum]);
+		i4Pos = scnprintf(temp, (sizeof(g_aucProcBuf) - i4Pos),
+				"\nERROR|WARN|STATE|EVENT|TRACE|INFO|LOUD|TEMP\n"
+				"bit0 |bit1|bit2 |bit3 |bit4 |bit5|bit6|bit7\n\n"
+				"Debug Module\tIndex\tLevel\tDebug Module\tIndex\tLevel\n\n");
 
-	u4CopySize = i4Pos;
-	if (u4CopySize > count)
-		u4CopySize = count;
-	if (copy_to_user(buf, pucProcBuf, u4CopySize)) {
-		DBGLOG(INIT, ERROR, "copy to user failed\n");
-		i4Ret = -EFAULT;
-		goto freeBuf;
-	}
+		u2ModuleNum = (sizeof(aucDbModuleName) / PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0xfe;
+		for (i = 0; i < u2ModuleNum; i += 2)
+			i4Pos += scnprintf((temp + i4Pos), (u4BufMax - i4Pos),
+				"DBG_%s_IDX\t(0x%02x):\t0x%02x\tDBG_%s_IDX\t(0x%02x):\t0x%02x\n",
+				&aucDbModuleName[i][0], i, aucDebugModule[i],
+					&aucDbModuleName[i+1][0], i+1, aucDebugModule[i+1]);
 
-	*f_pos += u4CopySize;
-	i4Ret = u4CopySize;
-freeBuf:
-	if (pucProcBuf)
-		kalMemFree(pucProcBuf, VIR_MEM_TYPE, PROC_MAX_BUF_SIZE);
-	return i4Ret;
+		if ((sizeof(aucDbModuleName) / PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0x1)
+			i4Pos += scnprintf((temp + i4Pos), (u4BufMax - i4Pos),
+				"DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
+				&aucDbModuleName[u2ModuleNum][0], u2ModuleNum, aucDebugModule[u2ModuleNum]);
+
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
+
+		u4CopySize = i4Pos;
+		if (u4CopySize > count)
+			u4CopySize = count;
+		if (copy_to_user(buf, g_aucProcBuf, u4CopySize)) {
+			DBGLOG(INIT, ERROR, "copy to user failed\n");
+			return -EFAULT;
+		}
+
+		*f_pos += u4CopySize;
+		return (ssize_t)u4CopySize;
 }
 
 #if WLAN_INCLUDE_PROC
@@ -283,12 +285,11 @@ static int procEfuseDumpOpen(struct inode *inode, struct file *file)
 
 static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
-	uint8_t *pucProcBuf = kalMemZAlloc(PROC_MAX_BUF_SIZE, VIR_MEM_TYPE);
-	uint8_t *temp = pucProcBuf;
+	UINT_8 *temp = &g_aucProcBuf[0];
 	UINT_32 u4CopySize = 0;
 	UINT_16 i;
 	INT_32 i4Pos = 0;
-	int32_t i4Ret = 0;
+	UINT_32 u4BufMax = sizeof(g_aucProcBuf);
 
 #define BUFFER_RESERVE_BYTE 50
 
@@ -297,29 +298,25 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count, lo
 	P_WLAN_CFG_ENTRY_T prWlanCfgEntry;
 	P_ADAPTER_T prAdapter;
 
+	GLUE_SPIN_LOCK_DECLARATION();
+
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(gPrDev));
 
 	if (!prGlueInfo) {
-		DBGLOG(INIT, ERROR, "procCfgRead prGlueInfo is NULL\n");
-		i4Ret = 0;
-		goto freeBuf;
+		DBGLOG(INIT, ERROR, "procCfgRead prGlueInfo is  NULL?\n");
+		return -EFAULT;
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
 
-	if (!prAdapter) {
-		DBGLOG(INIT, ERROR, "procCfgRead prAdapter is NULL\n");
-		i4Ret = 0;
-		goto freeBuf;
-	}
-
 	/* if *f_ops>0, we should return 0 to make cat command exit */
-	if (*f_pos > 0 || buf == NULL || pucProcBuf == NULL) {
-		i4Ret = 0;
-		goto freeBuf;
-	}
+	if (*f_pos > 0)
+		return 0;
 
-	i4Pos = scnprintf(temp, (PROC_MAX_BUF_SIZE - i4Pos), "\nDUMP CONFIGURATION :\n"
+
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
+
+	i4Pos = scnprintf(temp, (sizeof(g_aucProcBuf) - i4Pos), "\nDUMP CONFIGURATION :\n"
 		"<KEY|VALUE> OR <D:KEY|VALUE>\n"
 		"'D': driver part current setting\n"
 		"===================================\n");
@@ -330,10 +327,10 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count, lo
 		if ((!prWlanCfgEntry) || (prWlanCfgEntry->aucKey[0] == '\0'))
 			break;
 
-		i4Pos += scnprintf((temp + i4Pos), (PROC_MAX_BUF_SIZE - i4Pos),
+		i4Pos += scnprintf((temp + i4Pos), (u4BufMax - i4Pos),
 					"%s|%s\n", prWlanCfgEntry->aucKey, prWlanCfgEntry->aucValue);
 
-		if (i4Pos > (PROC_MAX_BUF_SIZE - BUFFER_RESERVE_BYTE))
+		if (i4Pos > (sizeof(g_aucProcBuf)-BUFFER_RESERVE_BYTE))
 			break;
 	}
 
@@ -343,54 +340,54 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count, lo
 		if ((!prWlanCfgEntry) || (prWlanCfgEntry->aucKey[0] == '\0'))
 			break;
 
-		i4Pos += scnprintf((temp + i4Pos), (PROC_MAX_BUF_SIZE - i4Pos),
+		i4Pos += scnprintf((temp + i4Pos), (u4BufMax - i4Pos),
 					"D:%s|%s\n", prWlanCfgEntry->aucKey, prWlanCfgEntry->aucValue);
 
-		if (i4Pos > (PROC_MAX_BUF_SIZE - BUFFER_RESERVE_BYTE))
+		if (i4Pos > (sizeof(g_aucProcBuf)-BUFFER_RESERVE_BYTE))
 			break;
 	}
+
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
 
 	u4CopySize = i4Pos;
 	if (u4CopySize > count)
 		u4CopySize = count;
-	if (copy_to_user(buf, pucProcBuf, u4CopySize)) {
+	if (copy_to_user(buf, g_aucProcBuf, u4CopySize)) {
 		DBGLOG(INIT, ERROR, "copy to user failed\n");
-		i4Ret = -EFAULT;
-		goto freeBuf;
+		return -EFAULT;
 	}
 
 	*f_pos += u4CopySize;
-	i4Ret = u4CopySize;
-freeBuf:
-	if (pucProcBuf)
-		kalMemFree(pucProcBuf, VIR_MEM_TYPE, PROC_MAX_BUF_SIZE);
-	return i4Ret;
+	return (ssize_t)u4CopySize;
+
+
 }
 
 
 static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 		size_t count, loff_t *data)
 {
-	uint8_t *pucProcBuf = kalMemZAlloc(PROC_MAX_BUF_SIZE, VIR_MEM_TYPE);
-	INT_32 u4CopySize = PROC_MAX_BUF_SIZE;
-	P_GLUE_INFO_T prGlueInfo;
+	INT_32 u4CopySize = sizeof(g_aucProcBuf);
 	PUINT_8	pucTmp;
 	INT_32 i4Pos = 0;
-	int32_t i4Ret = 0;
+	P_GLUE_INFO_T prGlueInfo = g_prGlueInfo_proc;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	if (!prGlueInfo)
+		return -EFAULT;
 
 	if (count <= 0) {
-		DBGLOG(INIT, ERROR, "Wrong buffer size\n");
-		i4Ret = -EFAULT;
-		goto freeBuf;
+		DBGLOG(INIT, ERROR, "wrong copy size\n");
+		return -EFAULT;
 	}
 
-	if (buffer == NULL || pucProcBuf == NULL) {
-		i4Ret = 0;
-		goto freeBuf;
-	}
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
 
-	pucTmp = pucProcBuf;
-	i4Pos = scnprintf(pucTmp, PROC_MAX_BUF_SIZE, "%s ", "set_cfg");
+	kalMemSet(g_aucProcBuf, 0, u4CopySize);
+
+	pucTmp = g_aucProcBuf;
+	i4Pos = scnprintf(pucTmp, sizeof(g_aucProcBuf), "%s ", "set_cfg");
 	pucTmp += i4Pos;
 	u4CopySize -= i4Pos;
 
@@ -399,29 +396,52 @@ static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 	else
 		u4CopySize -= 1;
 
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
+
 	if ((u4CopySize < 0) || (copy_from_user(pucTmp, buffer, u4CopySize))) {
 		DBGLOG(INIT, ERROR, "error of copy from user\n");
-		i4Ret = -EFAULT;
-		goto freeBuf;
+		return -EFAULT;
 	}
-	pucProcBuf[u4CopySize + 8] = '\0';
 
-	prGlueInfo = g_prGlueInfo_proc;
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
+	g_aucProcBuf[u4CopySize + 8] = '\0';
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
+
+
 	/* if g_i4NextDriverReadLen >0,
-	 * the content for next DriverCmdRead will be in : pucProcBuf with length : g_i4NextDriverReadLen
+	 * the content for next DriverCmdRead will be in : g_aucProcBuf with length : g_i4NextDriverReadLen
 	 */
-	g_i4NextDriverReadLen = priv_driver_set_cfg(prGlueInfo->prDevHandler, pucProcBuf, kalStrLen(pucProcBuf));
+	g_i4NextDriverReadLen = priv_driver_set_cfg(prGlueInfo->prDevHandler, g_aucProcBuf, sizeof(g_aucProcBuf));
 
-	i4Ret = u4CopySize;
-freeBuf:
-	if (pucProcBuf)
-		kalMemFree(pucProcBuf, VIR_MEM_TYPE, PROC_MAX_BUF_SIZE);
-	return i4Ret;
+	return count;
+
 }
 
 static ssize_t procDriverCmdRead(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
-	return 0;
+	/* DriverCmd read should only be executed right after a DriverCmd write
+	 * because content buffer 'g_aucProcBuf' is a global buffer for all proc command,
+	 *  otherwise , the content could be overwrite by other proc command
+	 */
+	UINT_32 u4CopySize = 0;
+
+	/* if *f_ops>0, we should return 0 to make cat command exit */
+	if (*f_pos > 0)
+		return 0;
+
+	if (g_i4NextDriverReadLen > 0) /* Detect content to show */
+		u4CopySize = g_i4NextDriverReadLen;
+
+	if (u4CopySize > count)
+		u4CopySize = count;
+	if (copy_to_user(buf, g_aucProcBuf, u4CopySize)) {
+		DBGLOG(INIT, ERROR, "copy to user failed\n");
+		return -EFAULT;
+	}
+	g_i4NextDriverReadLen = 0;
+
+	*f_pos += u4CopySize;
+	return (ssize_t)u4CopySize;
 }
 
 
@@ -429,38 +449,42 @@ static ssize_t procDriverCmdRead(struct file *filp, char __user *buf, size_t cou
 static ssize_t procDriverCmdWrite(struct file *file, const char __user *buffer,
 										size_t count, loff_t *data)
 {
-	uint8_t *pucProcBuf = kalMemZAlloc(PROC_MAX_BUF_SIZE, VIR_MEM_TYPE);
-	uint32_t u4CopySize = PROC_MAX_BUF_SIZE;
+
+/*	UINT_32 u4DriverCmd, u4DriverValue;
+*	UINT_8 *temp = &g_aucProcBuf[0];
+*/
+	UINT_32 u4CopySize = sizeof(g_aucProcBuf);
+/*	PARAM_CUSTOM_P2P_SET_STRUCT_T rSetP2P; */
 	P_GLUE_INFO_T prGlueInfo = g_prGlueInfo_proc;
-	int32_t i4Ret = 0;
 
-	if (buffer == NULL || pucProcBuf == NULL || prGlueInfo == NULL) {
-		i4Ret = 0;
-		goto freeBuf;
-	}
+	GLUE_SPIN_LOCK_DECLARATION();
+	if (!prGlueInfo)
+		return -EFAULT;
 
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
+	kalMemSet(g_aucProcBuf, 0, u4CopySize);
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
 	if (u4CopySize >= (count+1))
 		u4CopySize = count;
 	else
 		u4CopySize -= 1;
 
-	if (copy_from_user(pucProcBuf, buffer, u4CopySize)) {
+	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
 		DBGLOG(INIT, ERROR, "error of copy from user\n");
-		i4Ret = -EFAULT;
-		goto freeBuf;
+		return -EFAULT;
 	}
-	pucProcBuf[u4CopySize] = '\0';
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
+	g_aucProcBuf[u4CopySize] = '\0';
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
 
-	if (kalStrLen(pucProcBuf) > 0) {
-		priv_driver_cmds(prGlueInfo->prDevHandler, pucProcBuf,
-		kalStrLen(pucProcBuf));
-	}
 
-	i4Ret = u4CopySize;
-freeBuf:
-	if (pucProcBuf)
-		kalMemFree(pucProcBuf, VIR_MEM_TYPE, PROC_MAX_BUF_SIZE);
-	return i4Ret;
+	//prGlueInfo = g_prGlueInfo_proc;
+	/* if g_i4NextDriverReadLen >0,
+	 * the content for next DriverCmdRead will be in : g_aucProcBuf with length : g_i4NextDriverReadLen
+	 */
+	g_i4NextDriverReadLen = priv_driver_cmds(prGlueInfo->prDevHandler, g_aucProcBuf, sizeof(g_aucProcBuf));
+
+	return count;
 }
 
 #endif
@@ -470,28 +494,29 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 										size_t count, loff_t *data)
 {
 	UINT_32 u4NewDbgModule, u4NewDbgLevel;
-	uint8_t *pucProcBuf = kalMemZAlloc(PROC_MAX_BUF_SIZE, VIR_MEM_TYPE);
-	uint8_t *temp = NULL;
-	UINT_32 u4CopySize = PROC_MAX_BUF_SIZE;
-	int32_t i4Ret = 0;
+	UINT_8 *temp = &g_aucProcBuf[0];
+	UINT_32 u4CopySize = sizeof(g_aucProcBuf);
+	P_GLUE_INFO_T prGlueInfo = g_prGlueInfo_proc;
 
-	if (buffer == NULL || pucProcBuf == NULL) {
-		i4Ret = 0;
-		goto freeBuf;
-	}
+	GLUE_SPIN_LOCK_DECLARATION();
 
-	temp = pucProcBuf;
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
+	kalMemSet(g_aucProcBuf, 0, u4CopySize);
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
 	if (u4CopySize >= count+1)
 		u4CopySize = count;
 	else
 		u4CopySize -= 1;
 
-	if (copy_from_user(pucProcBuf, buffer, u4CopySize)) {
+	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
 		DBGLOG(INIT, ERROR, "error of copy from user\n");
-		i4Ret = -EFAULT;
-		goto freeBuf;
+		return -EFAULT;
 	}
-	pucProcBuf[u4CopySize] = '\0';
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
+	g_aucProcBuf[u4CopySize] = '\0';
 
 	while (temp) {
 		if (sscanf(temp, "0x%x:0x%x", &u4NewDbgModule, &u4NewDbgLevel) != 2)  {
@@ -516,12 +541,8 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 			break;
 		temp++; /* skip ',' */
 	}
-
-	i4Ret = u4CopySize;
-freeBuf:
-	if (pucProcBuf)
-		kalMemFree(pucProcBuf, VIR_MEM_TYPE, PROC_MAX_BUF_SIZE);
-	return i4Ret;
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
+	return count;
 }
 
 #ifdef CFG_DUMP_TXPOWR_TABLE
@@ -907,48 +928,39 @@ static ssize_t proc_get_temperature(struct file *filp,
 static ssize_t procReset(struct file *filp, char __user *buf, size_t count,
 				loff_t *f_pos)
 {
-	uint8_t *pucProcBuf = kalMemZAlloc(PROC_MAX_BUF_SIZE, VIR_MEM_TYPE);
-	UINT_8 *temp = NULL;
-	UINT_32 u4CopySize = 0;
-	INT_32 i4Pos = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	int32_t i4Ret = 0;
+		UINT_8 *temp = &g_aucProcBuf[0];
+		UINT_32 u4CopySize = 0;
+		INT_32 i4Pos = 0;
+		P_GLUE_INFO_T prGlueInfo = NULL;
+		P_ADAPTER_T prAdapter = NULL;
 
-	prGlueInfo = g_prGlueInfo_proc;
-	temp = pucProcBuf;
+		GLUE_SPIN_LOCK_DECLARATION();
 
-	if (!prGlueInfo) {
-		i4Ret = 0;
-		goto freeBuf;
-	}
-	prAdapter = prGlueInfo->prAdapter;
+		prGlueInfo = g_prGlueInfo_proc;
+		if (!prGlueInfo)
+			return -EFAULT;
+		prAdapter = prGlueInfo->prAdapter;
 
-	/* if *f_ops>0, we should return 0 to make cat command exit */
-	if (*f_pos > 0 || buf == NULL || pucProcBuf == NULL) {
-		i4Ret = 0;
-		goto freeBuf;
-	}
+		/* if *f_ops>0, we should return 0 to make cat command exit */
+		if (*f_pos > 0)
+			return 0;
 
-	i4Pos = scnprintf(temp, (PROC_MAX_BUF_SIZE - i4Pos),
-			"Reset\n");
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
+		i4Pos = scnprintf(temp, (sizeof(g_aucProcBuf) - i4Pos),
+				"Reset\n");
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
 
-	GL_RESET_TRIGGER(prAdapter, RST_CMD_TRIGGER);
-	u4CopySize = i4Pos;
-	if (u4CopySize > count)
-		u4CopySize = count;
-	if (copy_to_user(buf, pucProcBuf, u4CopySize)) {
-		DBGLOG(INIT, ERROR, "copy to user failed\n");
-		i4Ret = -EFAULT;
-		goto freeBuf;
-	}
+		GL_RESET_TRIGGER(prAdapter, RST_CMD_TRIGGER);
+		u4CopySize = i4Pos;
+		if (u4CopySize > count)
+			u4CopySize = count;
+		if (copy_to_user(buf, g_aucProcBuf, u4CopySize)) {
+			DBGLOG(INIT, ERROR, "copy to user failed\n");
+			return -EFAULT;
+		}
 
-	*f_pos += u4CopySize;
-	i4Ret = u4CopySize;
-freeBuf:
-	if (pucProcBuf)
-		kalMemFree(pucProcBuf, VIR_MEM_TYPE, PROC_MAX_BUF_SIZE);
-	return i4Ret;
+		*f_pos += u4CopySize;
+		return (ssize_t)u4CopySize;
 }
 #endif
 
@@ -1075,52 +1087,51 @@ static const struct file_operations reset_ops = {
 /*----------------------------------------------------------------------------*/
 static ssize_t procMCRRead(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
-	uint8_t *pucProcBuf = kalMemZAlloc(PROC_MAX_BUF_SIZE, VIR_MEM_TYPE);
 	P_GLUE_INFO_T prGlueInfo;
 	PARAM_CUSTOM_MCR_RW_STRUCT_T rMcrInfo;
 	UINT_32 u4BufLen;
-	uint32_t u4CopySize = 0;
-	UINT_8 *temp = NULL;
+	UINT_8 *temp = &g_aucProcBuf[0];
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
-	int32_t i4Ret = 0;
+	INT_32 i4Count = 0;
 
-	/*if *f_ops>0, we should return 0 to make cat command exit*/
-	if (*f_pos > 0 || buf == NULL || pucProcBuf == NULL) {
-		i4Ret = 0;
-		goto freeBuf;
-	}
+	GLUE_SPIN_LOCK_DECLARATION();
 
-	temp = pucProcBuf;
+	/* Kevin: Apply PROC read method 1. */
+	if (*f_pos > 0)
+		return 0;	/* To indicate end of file. */
+
 	prGlueInfo = g_prGlueInfo_proc;
+	if (!prGlueInfo)
+		return -EFAULT;
 
 	rMcrInfo.u4McrOffset = u4McrOffset;
 
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidQueryMcrRead, (PVOID)&rMcrInfo, sizeof(rMcrInfo), TRUE, TRUE, TRUE, &u4BufLen);
-	if (rStatus != WLAN_STATUS_SUCCESS) {
+	if (rStatus != WLAN_STATUS_SUCCESS)
+	{
 		DBGLOG(INIT, ERROR, "[%s] kalIoctl failed\n", __func__);
-		i4Ret = -EFAULT;
-		goto freeBuf;
+		return -EFAULT;
 	}
 
-	u4CopySize = scnprintf(temp, PROC_MAX_BUF_SIZE - kalStrLen(pucProcBuf),
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
+	kalMemZero(g_aucProcBuf, sizeof(g_aucProcBuf));
+
+	i4Count = scnprintf(temp, sizeof(g_aucProcBuf),
 				 "MCR (0x%08xh): 0x%08x\n", rMcrInfo.u4McrOffset, rMcrInfo.u4McrData);
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
 
-	if (u4CopySize > count)
-		u4CopySize = count;
-
-	if (copy_to_user(buf, pucProcBuf, u4CopySize)) {
+	if (i4Count > count)
+		i4Count = count;
+	if (copy_to_user(buf, g_aucProcBuf, i4Count)) {
 		DBGLOG(INIT, ERROR, "copy to user failed\n");
-		i4Ret = -EFAULT;
-		goto freeBuf;
+		return -EFAULT;
 	}
 
-	*f_pos += u4CopySize;
-	i4Ret = u4CopySize;
-freeBuf:
-	if (pucProcBuf)
-		kalMemFree(pucProcBuf, VIR_MEM_TYPE, PROC_MAX_BUF_SIZE);
-	return i4Ret;
+	*f_pos += i4Count;
+
+	return i4Count;
+
 }				/* end of procMCRRead() */
 
 /*----------------------------------------------------------------------------*/
@@ -1141,7 +1152,7 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 {
 	P_GLUE_INFO_T prGlueInfo;
 	char acBuf[PROC_MCR_ACCESS_MAX_USER_INPUT_LEN + 1];	/* + 1 for "\0" */
-	uint32_t u4CopySize = 0;
+	int i4CopySize;
 	PARAM_CUSTOM_MCR_RW_STRUCT_T rMcrInfo;
 	UINT_32 u4BufLen;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
@@ -1149,10 +1160,10 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 
 	ASSERT(data);
 
-	u4CopySize = (count < sizeof(acBuf)) ? count : (sizeof(acBuf) - 1);
-	if (copy_from_user(acBuf, buffer, u4CopySize))
+	i4CopySize = (count < (sizeof(acBuf) - 1)) ? count : (sizeof(acBuf) - 1);
+	if (copy_from_user(acBuf, buffer, i4CopySize))
 		return 0;
-	acBuf[u4CopySize] = '\0';
+	acBuf[i4CopySize] = '\0';
 
 	num = sscanf(acBuf, "0x%x 0x%x", &rMcrInfo.u4McrOffset, &rMcrInfo.u4McrData);
 	switch (num) {
@@ -1185,7 +1196,7 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 		break;
 	}
 
-	return u4CopySize;
+	return count;
 
 }				/* end of procMCRWrite() */
 
@@ -1205,43 +1216,43 @@ static const struct file_operations mcr_ops = {
 #if CFG_SUPPORT_DEBUG_FS
 static ssize_t procCountryRead(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
-	uint8_t *pucProcBuf = kalMemZAlloc(PROC_MAX_BUF_SIZE, VIR_MEM_TYPE);
 	UINT_32 u4CopySize;
 	UINT_32 country = 0;
-	int32_t i4Ret = 0;
+	P_GLUE_INFO_T prGlueInfo = g_prGlueInfo_proc;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	if (!prGlueInfo)
+		return -EFAULT;
 
 	/* if *f_pos > 0, it means has read successed last time, don't try again */
-	if (*f_pos > 0 || buf == NULL || pucProcBuf == NULL) {
-		i4Ret = 0;
-		goto freeBuf;
-	}
+	if (*f_pos > 0)
+		return 0;
+
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
 	if (!regd_is_single_sku_en())
-		kalStrCpy(pucProcBuf, "Country Code is controlled by Local DB\n");
+		kalStrCpy(g_aucProcBuf, "Country Code is controlled by Local DB\n");
 
 	country = rlmDomainGetCountryCode();
 
 	if (country)
-		kalSprintf(pucProcBuf, "Current Country Code: %s\n",
+		kalSprintf(g_aucProcBuf, "Current Country Code: %s\n",
 			&country);
 	else
-		kalStrCpy(pucProcBuf, "Current Country Code: NULL\n");
+		kalStrCpy(g_aucProcBuf, "Current Country Code: NULL\n");
 
-	u4CopySize = kalStrLen(pucProcBuf);
+	u4CopySize = kalStrLen(g_aucProcBuf);
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_PROC_FS);
 
 	if (u4CopySize > count)
 		u4CopySize = count;
-
-	if (copy_to_user(buf, pucProcBuf, u4CopySize)) {
+	if (copy_to_user(buf, g_aucProcBuf, u4CopySize)) {
 		DBGLOG(INIT, ERROR, "copy to user failed\n");
-		i4Ret = -EFAULT;
-		goto freeBuf;
+		return -EFAULT;
 	}
 	*f_pos += u4CopySize;
-	i4Ret = u4CopySize;
-freeBuf:
-	if (pucProcBuf)
-		kalMemFree(pucProcBuf, VIR_MEM_TYPE, PROC_MAX_BUF_SIZE);
-	return i4Ret;
+
+	return (INT_32)u4CopySize;
 }
 
 #if KERNEL_VERSION(5, 6, 0) <= LINUX_VERSION_CODE

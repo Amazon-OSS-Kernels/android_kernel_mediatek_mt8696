@@ -1864,6 +1864,8 @@ int mtk_cfg80211_join_ibss(struct wiphy *wiphy, struct net_device *ndev, struct 
 	}
 
 	return 0;
+
+	return -EINVAL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2326,7 +2328,7 @@ void mtk_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
 			}
 			break;
 		default:
-			DBGLOG(INIT, TRACE, "unsupported frame type:%x\n", frame_type);
+			DBGLOG(INIT, TRACE, "Ask frog to add code for mgmt:%x\n", frame_type);
 			break;
 		}
 
@@ -2743,10 +2745,6 @@ int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy *wiphy, IN void *data, IN 
 	DBGLOG(INIT, INFO, "--> %s()\n", __func__);
 #endif
 
-	if (len < sizeof(struct NL80211_DRIVER_SET_KEY_EXTS)) {
-		DBGLOG(REQ, ERROR, "len [%d] is invalid!\n", len);
-		return -EINVAL;
-	}
 	if (data && len)
 		prParams = (P_NL80211_DRIVER_SET_KEY_EXTS) data;
 
@@ -2821,23 +2819,18 @@ mtk_cfg80211_testmode_get_sta_statistics(IN struct wiphy *wiphy, IN void *data, 
 	ASSERT(wiphy);
 	ASSERT(prGlueInfo);
 
-	if (len < sizeof(struct _NL80211_DRIVER_GET_STA_STATISTICS_PARAMS)) {
-		DBGLOG(QM, ERROR, "len [%d] is invalid!\n", len);
-		return -EINVAL;
-	}
-
 	if (data && len)
 		prParams = (P_NL80211_DRIVER_GET_STA_STATISTICS_PARAMS) data;
 
 	if (!prParams->aucMacAddr) {
-		DBGLOG(QM, ERROR, "%s MAC Address is NULL\n", __func__);
+		DBGLOG(QM, TRACE, "%s MAC Address is NULL\n", __func__);
 		return -EINVAL;
 	}
 
 	skb = cfg80211_testmode_alloc_reply_skb(wiphy, sizeof(PARAM_GET_STA_STA_STATISTICS) + 1);
 
 	if (!skb) {
-		DBGLOG(QM, ERROR, "%s allocate skb failed:%lx\n", __func__, rStatus);
+		DBGLOG(QM, TRACE, "%s allocate skb failed:%lx\n", __func__, rStatus);
 		return -ENOMEM;
 	}
 
@@ -3020,10 +3013,6 @@ int mtk_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy, IN void *data, IN int l
 	DBGLOG(INIT, INFO, "--> %s()\n", __func__);
 #endif
 
-	if (len < sizeof(struct _NL80211_DRIVER_SW_CMD_PARAMS)) {
-		DBGLOG(REQ, ERROR, "len [%d] is invalid!\n", len);
-		return -EINVAL;
-	}
 	if (data && len)
 		prParams = (P_NL80211_DRIVER_SW_CMD_PARAMS) data;
 
@@ -3050,10 +3039,6 @@ static int mtk_wlan_cfg_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 	ASSERT(wiphy);
 	DBGLOG(INIT, INFO, "-->%s()\n", __func__);
 
-	if (len < sizeof(struct _NL80211_DRIVER_TEST_MODE_PARAMS)) {
-		DBGLOG(REQ, ERROR, "len [%d] is invalid!\n", len);
-		return -EINVAL;
-	}
 	if (!data || !len) {
 		DBGLOG(REQ, ERROR, "mtk_cfg80211_testmode_cmd null data\n");
 		return -EINVAL;
@@ -3240,11 +3225,6 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg8
 	UINT_8 fgCarryRsnxe = FALSE;
 #endif
 	P_STA_RECORD_T prStaRec = NULL;
-#endif
-#if CFG_SUPPORT_CFG80211_AUTH
-#if CFG_SUPPORT_WPS2
-	UINT_8 fgCarryWPSIE = FALSE;
-#endif
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT
@@ -3523,19 +3503,6 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg8
 	if (req->ie && req->ie_len > 0) {
 #if CFG_SUPPORT_CFG80211_AUTH
 		pucIEStart = (PUINT_8)req->ie;
-#if CFG_SUPPORT_WPS2
-		if (wextSrchDesiredWPSIE(pucIEStart, req->ie_len, 0xDD, (uint8_t **) &prDesiredIE)) {
-			prGlueInfo->fgWpsActive = TRUE;
-			fgCarryWPSIE = TRUE;
-			rStatus = kalIoctl(prGlueInfo,
-					wlanoidSetWSCAssocInfo, prDesiredIE,
-					IE_SIZE(prDesiredIE),
-					FALSE, FALSE, FALSE, &u4BufLen);
-			if (rStatus != WLAN_STATUS_SUCCESS)
-				DBGLOG(SEC, WARN, "[WSC] set WSC assoc info error:%x\n", rStatus);
-		}
-
-#endif
 #endif
 
 #if CFG_SUPPORT_PASSPOINT
@@ -3632,17 +3599,6 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg8
 			kalMemSet(&prConnSettings->rRsnXE, 0, sizeof(struct RSNXE));
 		}
 #endif
-
-#if CFG_SUPPORT_CFG80211_AUTH
-#if CFG_SUPPORT_WPS2
-	/* clear WSC Assoc IE buffer in case WPS IE is not detected */
-	if (fgCarryWPSIE == FALSE) {
-		kalMemZero(&prGlueInfo->aucWSCAssocInfoIE, 200);
-		prGlueInfo->u2WSCAssocInfoIELen = 0;
-	}
-#endif
-#endif
-
 #endif
 	}
 	/* Fill WPA info - mfp setting */
@@ -4721,3 +4677,4 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy, struct cfg80211_wowlan *wow)
 	}
 	return 0;
 }
+

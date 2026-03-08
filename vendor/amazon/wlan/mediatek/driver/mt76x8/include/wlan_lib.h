@@ -890,8 +890,6 @@ typedef enum _ENUM_TX_RESULT_CODE_T {
 	TX_RESULT_DROPPED_IN_DRIVER = 32,
 	TX_RESULT_DROPPED_IN_FW,
 	TX_RESULT_QUEUE_CLEARANCE,
-	TX_RESULT_UNINITIALIZED = 48, // driver only
-	TX_RESULT_1XTX_CLEAR, // driver only
 	TX_RESULT_NUM
 } ENUM_TX_RESULT_CODE_T, *P_ENUM_TX_RESULT_CODE_T;
 
@@ -1298,9 +1296,6 @@ wlanCfgSetCb(IN P_ADAPTER_T prAdapter, const PCHAR pucKey, WLAN_CFG_SET_CB pfSet
 
 WLAN_STATUS wlanCfgParse(IN P_ADAPTER_T prAdapter, PUINT_8 pucConfigBuf, UINT_32 u4ConfigBufLen, BOOLEAN isFwConfig);
 VOID wlanFeatureToFw(IN P_ADAPTER_T prAdapter);
-#if CFG_SUPPORT_SEND_ONLY_ONE_CFG
-WLAN_STATUS wlanFeatureToFwOnlyOneCfg(IN P_ADAPTER_T prAdapter, const PCHAR pucKey, PCHAR pucValue);
-#endif
 #endif
 
 VOID wlanLoadDefaultCustomerSetting(IN P_ADAPTER_T prAdapter);
