@@ -82,5 +82,6 @@ int videoin_hal_set_bitmode(enum VIDEO_BIT_MODE mode, bool packet_16bit_en);
 int videoin_hal_clock(bool on);
 void videoin_hal_set_m4u_port(bool en);
 int videoin_hal_init(uintptr_t videoin_reg_base, uintptr_t larb4_reg_base);
-
+int videoin_idk_set(bool en, uint16_t height);
+int videoin_hal_fefifo_demode(bool en);
 #endif

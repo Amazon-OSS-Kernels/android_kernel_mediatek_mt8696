@@ -504,6 +504,8 @@ static void vInitAvInfoVar(void)
 	}
 
 	u1hdcponoff_bak = 0;
+	emp_data_is_sending = false;
+	memset(&hdmi_emp, 0, sizeof(struct hdmi_emp_t));
 }
 
 void vSetHDMIMdiTimeOut(unsigned int i4_count)
@@ -1085,6 +1087,7 @@ int hdmi_internal_video_config(
 	vSendStaticHdrInfoFrame();
 
 	vSendVrrEMP();
+	vSendEMP();
 	vSendHFVendorSpecificInfoFrame();
 
 	HDMI_DRV_LOG("e_deep_color_bit=%d-------\n",

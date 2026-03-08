@@ -117,6 +117,7 @@ uint32_t graphic_header[] = {
 bool dump_file_opened;
 mm_segment_t idk_dump_fs;
 struct file *idk_dump_fp;
+struct file *idk_dump_fp1;
 
 
 static uint32_t *y_idk_dump_addr_va;
@@ -134,12 +135,19 @@ dma_addr_t graphic_idk_dump_load_pa;
 uint32_t *graphic_header_idk_load_addr_va;
 dma_addr_t graphic_header_idk_dump_load_pa;
 
+uint32_t *graphic2_idk_load_addr_va;
+dma_addr_t graphic2_idk_dump_load_pa;
+
+uint32_t *graphic2_header_idk_load_addr_va;
+dma_addr_t graphic2_header_idk_dump_load_pa;
+
 enum VIDEO_BIT_MODE idk_dump_bpp;
 uint32_t idk_dump_len;
 
 uint32_t sdk_alloc_size;
 
 bool graphic_buf_allocated;
+bool graphic2_buf_allocated;
 
 void disp_dovi_idk_dump_frame_end(void)
 {
@@ -148,8 +156,16 @@ void disp_dovi_idk_dump_frame_end(void)
 		uint32_t graphic_size = 4096 * 2160 * 4;
 		uint32_t graphic_header_size = 48;
 
-		filp_close(idk_dump_fp, NULL);
-		set_fs(idk_dump_fs);
+		dovi_printf("dump file closed\n");
+
+		if (dump_big_file) {
+			filp_close(idk_dump_fp1, NULL);
+			dump_big_file = 0;
+			dump_times = 0;
+		} else
+			filp_close(idk_dump_fp, NULL);
+		dump_times = 0;
+		//set_fs(idk_dump_fs);
 		dump_file_opened = false;
 
 		dma_free_coherent(dovi_dev, idk_dump_size,
@@ -166,6 +182,11 @@ void disp_dovi_idk_dump_frame_end(void)
 		dma_free_coherent(dovi_dev, graphic_header_size,
 			graphic_header_idk_load_addr_va,
 		    graphic_header_idk_dump_load_pa);
+		if (graphic2_buf_allocated)
+			disp_dovi_free_graphic2_buffer();
+
+		dovi_printf("dump file closed end\n");
+
 	}
 }
 
@@ -173,24 +194,34 @@ void disp_dovi_idk_dump_frame_start(uint32_t file_id)
 {
 	if (!dump_file_opened) {
 		char fileName[MAX_FILE_NAME];
-		uint32_t idk_dump_size = 4096 * 2160 * 2;
-		uint32_t graphic_size = 4096 * 2160 * 4;
+		char fileName1[MAX_FILE_NAME];
+		uint32_t idk_dump_size = 1920 * 1080 * 2;
+		uint32_t graphic_size = 1920 * 1080 * 4;
 		uint32_t graphic_header_size = 48;
 		int ret = 0;
 
 		memset(fileName, 0, MAX_FILE_NAME);
-		if (ll_rgb_desired)
-			ret = sprintf(fileName,
-			"/sdcard/dump_%d_frame.rgb", file_id);
-		else
-			ret = sprintf(fileName,
-			"/sdcard/dump_%d_frame.yuv", file_id);
+		if (1) {
+			if (ll_rgb_desired)
+				ret = sprintf(fileName,
+				"/data/dovi/dump_%d_frame.rgb", file_id);
+			else
+				ret = sprintf(fileName,
+				"/data/dovi/dump_%d_frame.yuv", file_id);
+		} else {
+			if (ll_rgb_desired)
+				ret = sprintf(fileName,
+				"/sdcard/dump_%d_frame.rgb", file_id);
+			else
+				ret = sprintf(fileName,
+				"/sdcard/dump_%d_frame.yuv", file_id);
+		}
 
 		if (ret <= 0)
 			return;
 
 		idk_dump_fs = get_fs();
-		set_fs(KERNEL_DS);
+		//set_fs(KERNEL_DS);
 		idk_dump_fp = filp_open(fileName,
 			O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE, 0644);
 
@@ -198,6 +229,19 @@ void disp_dovi_idk_dump_frame_start(uint32_t file_id)
 			dovi_error("open file %s fail\n", fileName);
 
 		dovi_printf("dump %s\n", fileName);
+
+		if (dump_big_file) {
+			ret = sprintf(fileName1,
+				"/data/dovi/dump_%d_frame1.yuv", file_id);
+			if (ret <= 0)
+				return;
+			idk_dump_fp1 = filp_open(fileName1,
+				O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE, 0644);
+
+			if (IS_ERR(idk_dump_fp1))
+				dovi_error("open file %s fail\n", fileName1);
+			dovi_printf("dump %s\n", fileName1);
+		}
 		dump_file_opened = true;
 
 		y_idk_dump_addr_va =
@@ -289,9 +333,127 @@ void disp_dovi_free_graphic_buffer(void)
 	}
 }
 
+void disp_dovi_alloc_graphic2_buffer(void)
+{
+	if (!graphic2_buf_allocated) {
+		uint32_t graphic_size = 4096 * 2160 * 4;
+		uint32_t graphic_header_size = 48;
+
+		graphic2_idk_load_addr_va =
+		    dma_alloc_coherent(dovi_dev, graphic_size,
+		    &graphic2_idk_dump_load_pa,
+				       GFP_KERNEL);
+		graphic2_header_idk_load_addr_va =
+		    dma_alloc_coherent(dovi_dev,
+		    graphic_header_size,
+		    &graphic2_header_idk_dump_load_pa, GFP_KERNEL);
+
+		dovi_default("graphic2_addr_va %p 0x%x\n",
+			graphic2_idk_load_addr_va,
+			(uint32_t) graphic2_idk_dump_load_pa);
+		dovi_default("graphic2_header_va %p 0x%x\n",
+			     graphic2_header_idk_load_addr_va,
+			     (uint32_t) graphic2_header_idk_dump_load_pa);
+
+		graphic2_buf_allocated = true;
+	}
+}
+
+void disp_dovi_free_graphic2_buffer(void)
+{
+	if (graphic2_buf_allocated) {
+		uint32_t graphic_size = 4096 * 2160 * 4;
+		uint32_t graphic_header_size = 48;
+
+		graphic2_buf_allocated = false;
+
+		dma_free_coherent(dovi_dev, graphic_size,
+			graphic2_idk_load_addr_va,
+		    graphic2_idk_dump_load_pa);
+		dma_free_coherent(dovi_dev, graphic_header_size,
+			graphic2_header_idk_load_addr_va,
+			graphic2_header_idk_dump_load_pa);
+	}
+}
+
 
 void disp_dovi_idk_dump_frame(void)
 {
+	int ret;
+
+	if (dump_file_opened) {
+		/* write date */
+		dovi_default("write one frame to file!\n");
+		if (ll_rgb_desired && dump_crycb) {
+			/* GBR TO RGB */
+			vfs_write(idk_dump_fp,
+				(const char *)cr_idk_dump_addr_va, idk_dump_len,
+				&idk_dump_fp->f_pos);
+			vfs_write(idk_dump_fp,
+				(const char *)y_idk_dump_addr_va, idk_dump_len,
+				&idk_dump_fp->f_pos);
+			vfs_write(idk_dump_fp,
+				(const char *)cb_idk_dump_addr_va, idk_dump_len,
+				&idk_dump_fp->f_pos);
+		} else if (dump_big_file && (dump_times >= 60)) {
+			ret = vfs_write(idk_dump_fp1,
+				(const char *)y_idk_dump_addr_va, idk_dump_len,
+				&idk_dump_fp1->f_pos);
+			if (ret < 0)
+				dovi_error("write error y ret %d\n", ret);
+			ret = vfs_write(idk_dump_fp1,
+				(const char *)cb_idk_dump_addr_va, idk_dump_len,
+				&idk_dump_fp1->f_pos);
+			ret = vfs_write(idk_dump_fp1,
+				(const char *)cr_idk_dump_addr_va, idk_dump_len,
+				&idk_dump_fp1->f_pos);
+			dump_times++;
+			dovi_default("write frame 2 %d!\n", dump_times);
+		} else {
+			ret = vfs_write(idk_dump_fp,
+				(const char *)y_idk_dump_addr_va, idk_dump_len,
+				  &idk_dump_fp->f_pos);
+			if (ret < 0)
+				dovi_error("write error y ret %d\n", ret);
+			ret = vfs_write(idk_dump_fp,
+				(const char *)cb_idk_dump_addr_va, idk_dump_len,
+				  &idk_dump_fp->f_pos);
+			if (ret < 0)
+				dovi_error("write error u ret %d\n", ret);
+			if (dump_format == 422) {
+				dovi_default("write frame 422\n");
+			} else {
+				ret = vfs_write(idk_dump_fp,
+					(const char *)cr_idk_dump_addr_va,
+					idk_dump_len,
+					&idk_dump_fp->f_pos);
+				if (ret < 0)
+					dovi_error("write error v %d\n", ret);
+			}
+
+			dump_times++;
+			if (dump_big_file) {
+				//dump_times++;
+				dovi_default("write frame %d!\n", dump_times);
+				if (dump_times == 60)
+					filp_close(idk_dump_fp, NULL);
+			}
+		}
+		dovi_default("write one frame done %d %d!\n",
+			dump_times, idk_dump_len);
+	} else {
+		dovi_error("file is not open!\n");
+	}
+}
+
+void disp_dovi_idk_dump_gfx_frame(void)
+{
+	int ret;
+	mm_segment_t fs;
+
+	fs = get_fs();
+	set_fs(KERNEL_DS);
+
 	if (dump_file_opened) {
 		/* write date */
 		dovi_default("write one frame to file!\n");
@@ -307,19 +469,26 @@ void disp_dovi_idk_dump_frame(void)
 				(const char *)cb_idk_dump_addr_va, idk_dump_len,
 				&idk_dump_fp->f_pos);
 		} else {
-			vfs_write(idk_dump_fp,
+			ret = vfs_write(idk_dump_fp,
 				(const char *)y_idk_dump_addr_va, idk_dump_len,
 				  &idk_dump_fp->f_pos);
-			vfs_write(idk_dump_fp,
+			if (ret < 0)
+				dovi_error("write error y ret %d\n", ret);
+			ret = vfs_write(idk_dump_fp,
 				(const char *)cb_idk_dump_addr_va, idk_dump_len,
 				  &idk_dump_fp->f_pos);
-			vfs_write(idk_dump_fp,
+			if (ret < 0)
+				dovi_error("write error u ret %d\n", ret);
+			ret = vfs_write(idk_dump_fp,
 				(const char *)cr_idk_dump_addr_va, idk_dump_len,
 				  &idk_dump_fp->f_pos);
+			if (ret < 0)
+				dovi_error("write error v ret %d\n", ret);
 		}
 	} else {
 		dovi_error("file is not open!\n");
 	}
+	set_fs(fs);
 }
 
 #if 0 //8696 review
@@ -490,6 +659,174 @@ void disp_dovi_idk_dump_vin(bool enable,
 }
 #endif
 
+#if 1 //for dovi idk dump
+void disp_dovi_idk_dump_vin(bool enable,
+	enum VIDEOIN_SRC_SEL src,
+	enum VIDEOIN_YCbCr_FORMAT fmt)
+{
+	int h_start = 0;
+	int v_odd_start = 0;
+	int v_even_start = 0;
+	enum VIDEO_BIT_MODE bit_mode;
+	bool is_16_packet;
+	bool is_uv_swap;
+	uint16_t htotal = dovi_res.htotal;
+	/* uint16_t vtotal = dovi_res.vtotal; */
+	uint16_t width = dovi_res.width;
+	uint16_t height = dovi_res.height;
+	bool is_progressive =
+		dovi_res.is_progressive;
+
+	enum VIDEO_CHN_SEL cb_sel;
+	enum VIDEO_CHN_SEL cr_sel;
+
+	bool is_444;
+
+	dovi_info("xiao htotal = %d, cmd dump_bit = %d fmt %d\n",
+		htotal, dump_bit_depth, dump_format);
+
+	//cmd set dump bit depth
+	if (dump_bit_depth == 8)
+		idk_dump_bpp = VIDEOIN_BITMODE_8;
+	else if (dump_bit_depth == 10)
+		idk_dump_bpp = VIDEOIN_BITMODE_10;
+	else if (dump_bit_depth == 12)
+		idk_dump_bpp = VIDEOIN_BITMODE_12;
+
+	//cmd set dump format
+	if (dump_format == 422)
+		fmt = VIDEOIN_FORMAT_422;
+	else if (dump_format == 420)
+		fmt = VIDEOIN_FORMAT_420;
+	else
+		fmt = VIDEOIN_FORMAT_444;
+
+	if (idk_dump_bpp == VIDEOIN_BITMODE_8) {
+		bit_mode = VIDEOIN_BITMODE_8;
+		is_16_packet = false;
+	} else if (idk_dump_bpp == VIDEOIN_BITMODE_10) {
+		bit_mode = VIDEOIN_BITMODE_10;
+		is_16_packet = true;
+	} else if (idk_dump_bpp == VIDEOIN_BITMODE_12) {
+		bit_mode = VIDEOIN_BITMODE_12;
+		is_16_packet = true;
+	} else {
+		bit_mode = VIDEOIN_BITMODE_8;
+		is_16_packet = false;
+		dovi_error("bpp error %d\n", idk_dump_bpp);
+		return;
+	}
+
+	if (!is_16_packet)
+		idk_dump_len = width * height;
+	else if (is_16_packet)
+		idk_dump_len = width * height * 2;
+
+	if (fmt == VIDEOIN_FORMAT_420)
+		is_444 = false;
+	else if (fmt == VIDEOIN_FORMAT_422)
+		is_444 = false;
+	else if (fmt == VIDEOIN_FORMAT_444)
+		is_444 = true;
+	else if (fmt > VIDEOIN_FORMAT_444) {
+		dovi_error("color fmt error %d\n", fmt);
+		return;
+	}
+
+	is_uv_swap = false;
+
+	if (height == 480) {
+		if (src == VIDEOIN_SRC_SEL_VDO_BE_FIFO_OUTPUT)
+			h_start = 0x80;
+		else
+			h_start = 0xBE;
+		if (is_progressive == true) {
+			v_odd_start = 0x2A;
+			v_even_start = 0x2A;
+		} else {
+			v_odd_start = 0x16;
+			v_even_start = 0x16;
+		}
+		v_odd_start = 0x25;
+		v_even_start = 0x0;
+	} else if (height == 576) {
+		h_start = 0xEC;
+		v_odd_start = 0x2C;
+		v_even_start = 0x2C;
+	} else if (height == 720) {
+		if (src == VIDEOIN_SRC_SEL_VDO_BE_FIFO_OUTPUT)
+			h_start = 0x10C;
+		else
+			h_start = 0xBE;
+		v_odd_start = 0x19;
+		v_even_start = 0x0;//0x19;
+	} else if (height == 1080) {
+		if (src == VIDEOIN_SRC_SEL_VDO_BE_FIFO_OUTPUT)
+			h_start = 0xC8;
+		else
+			h_start = 0xBE;
+
+		if (is_progressive == true) {
+			v_odd_start = 0x29;
+			v_even_start = 0x29;
+		} else {
+			v_odd_start = 0x15;
+			v_even_start = 0x15;
+		}
+	} else if (height == 2160) {
+		if (src == VIDEOIN_SRC_SEL_VDO_BE_FIFO_OUTPUT)
+			h_start = 0x126;
+		else
+			h_start = 0x17F;	/* RGB2HDMI */
+
+		v_odd_start = 0x29;//0x52;
+		v_even_start = 0x0;//0x52;
+	}
+
+	if (h_start % 2)
+		is_uv_swap = true;
+
+	if (is_uv_swap || (dump_format == 422)) {
+		cb_sel = SEL_CR_CHN;
+		cr_sel = SEL_CB_CHN;
+	} else {
+		cb_sel = SEL_CB_CHN;
+		cr_sel = SEL_CR_CHN;
+	}
+
+	if (idk_dump_fefifo)
+		src = VIDEOIN_SRC_SEL_MVDO_FE_FIFO_INPUT;
+
+	videoin_hal_enable(enable);
+	if (enable) {
+		videoin_hal_update_addr(y_idk_dump_addr_pa,
+					cb_idk_dump_addr_pa,
+					cr_idk_dump_addr_pa, is_444);
+		vdout_sys_hal_videoin_source_sel(src);
+		videoin_hal_set_h(width, htotal, is_444,
+			is_16_packet, bit_mode);
+		videoin_hal_set_v(height, fmt);
+		videoin_hal_set_color_format(fmt);
+		if (idk_dump_fefifo) {
+			videoin_hal_set_channel_select(1, 0, 2);
+			videoin_hal_demode_enable(true);
+			//videoin_hal_fefifo_demode(false);
+		} else {
+			videoin_hal_set_channel_select(SEL_Y_CHN,
+				cb_sel, cr_sel);
+			videoin_hal_demode_enable(true);
+		}
+		videoin_hal_set_bitmode(bit_mode, is_16_packet);
+		videoin_hal_set_active_zone(h_start,
+			v_odd_start, v_even_start);
+		//add for 8696 idk
+		videoin_idk_set(enable, height);
+		vdout_sys_hal_idk_set(enable, htotal);
+	}
+}
+
+#endif
+
 void disp_dovi_dump_buffer(char *file_name,
 	unsigned char *buff, uint32_t len)
 {
@@ -535,10 +872,10 @@ void disp_dovi_load_buffer(char *file_name,
 	set_fs(KERNEL_DS);
 	fp = filp_open(file_name, O_RDONLY, 0x0);
 
-	dovi_printf("load %s len %d\n", file_name, len);
+	dovi_printf("load %s len %d %p\n", file_name, len, fp);
 
 	if (IS_ERR(fp)) {
-		dovi_error("open file %s fail\n", file_name);
+		dovi_error("open file %s %ld fail\n", file_name, PTR_ERR(fp));
 		return;
 	}
 
@@ -1136,10 +1473,11 @@ void disp_dovi_enable_vdp(uint32_t vdp_id, uint32_t pattern)
 	struct fmt_active_info active_info = { 0 };
 	uint32_t src_width = 0;
 	uint32_t src_height = 0;
-	uint32_t dst_width= 0, dst_height= 0;
+	uint32_t dst_width = 0, dst_height = 0;
 	uint32_t h_factor = 0;
 	struct vdp_hal_region src_region = { 0 };
 	struct vdp_hal_region out_region = { 0 };
+	uint8_t table_id = 0;
 
 
 	if (dovi_res.frequency == 25 || dovi_res.frequency == 50)
@@ -1155,6 +1493,10 @@ void disp_dovi_enable_vdp(uint32_t vdp_id, uint32_t pattern)
 	/*disp_path_set_delay(DISP_PATH_SVDO_OUT, dovi_res.res_mode);*/
 	fmt_hal_set_tv_type(DISP_FMT_SUB, tv_type);
 
+	if (vdp_id == 0)
+		table_id = DISP_PATH_M_VDO;
+	else
+		table_id = DISP_PATH_S_VDO;
 	disp_path_get_active_zone(vdp_id,
 		dovi_res.res_mode, &h_start, &v_start_odd,
 		&v_start_even);

@@ -591,6 +591,81 @@ bool fgCaHDMIGetHdr10pVSIFInfo(unsigned char *pdata)
 	return true;
 }
 
+bool fgCaHDMILoadEMP(unsigned char en, unsigned int num, unsigned char *pdata)
+{
+	int tz_ret = 0;
+	union MTEEC_PARAM param[4];
+	unsigned char *ptr;
+	KREE_SHAREDMEM_HANDLE hdmitx_shm_handle;
+	struct KREE_SHAREDMEM_PARAM hdmitx_shm_param;
+
+	if (num > DOVI_VSEM_METADATA_MAX_PACKET) {
+		TX_DEF_LOG("[CA] %s fail, too long\n", __func__);
+		return false;
+	}
+
+	if (ca_hdmi_handle == 0) {
+		TX_DEF_LOG("[CA] TEE ca_hdmi_handle=0\n");
+		return false;
+	}
+
+	if (num > DOVI_VSEM_METADATA_MAX_PACKET) {
+		TX_DEF_LOG("[CA] emp size err\n");
+		return false;
+	}
+
+	ptr = kmalloc((num * 31), GFP_KERNEL);
+	if (ptr == NULL) {
+		TX_DEF_LOG("[CA] hdr_status kmalloc fail!\n");
+		return false;
+	}
+	memcpy(ptr, pdata, (num * 31));
+
+	hdmitx_shm_param.buffer = ptr;
+	hdmitx_shm_param.size = num * 31;
+	tz_ret = KREE_RegisterSharedmem(hdmitx_mem_session,
+		&hdmitx_shm_handle, &hdmitx_shm_param);
+	if (tz_ret != TZ_RESULT_SUCCESS) {
+		TX_DEF_LOG("[CA]KREE_RegisterSharedmem Error\n");
+		kfree(ptr);
+		return false;
+	}
+
+	param[0].value.a = en;
+	param[0].value.b = 0;
+	param[1].value.a = num;
+	param[1].value.b = 0;
+	param[2].memref.handle = (uint32_t) hdmitx_shm_handle;
+	param[2].memref.offset = 0;
+	param[2].memref.size = num * 31;
+	emp_data_is_sending = true;
+	tz_ret = KREE_TeeServiceCall(ca_hdmi_handle,
+		HDMI_TA_LOAD_EMP,
+		TZ_ParamTypes3(TZPT_VALUE_INPUT,
+			TZPT_VALUE_INPUT,
+			TZPT_MEMREF_INPUT), param);
+	emp_data_is_sending = false;
+	if (tz_ret != TZ_RESULT_SUCCESS) {
+		TX_DEF_LOG("[CA]HDMI_TA_LOAD_EMP err:%X\n", tz_ret);
+		tz_ret = KREE_UnregisterSharedmem(hdmitx_mem_session,
+			hdmitx_shm_handle);
+		if (tz_ret != TZ_RESULT_SUCCESS)
+			TX_DEF_LOG("[CA]KREE_UnregisterSharedmem Error\n");
+		kfree(ptr);
+		return false;
+	}
+
+	tz_ret = KREE_UnregisterSharedmem(hdmitx_mem_session,
+		hdmitx_shm_handle);
+	if (tz_ret != TZ_RESULT_SUCCESS) {
+		TX_DEF_LOG("[CA]KREE_UnregisterSharedmem Error\n");
+		kfree(ptr);
+		return false;
+	}
+
+	kfree(ptr);
+	return true;
+}
 void fgCaHDMISetSecureRegEntry(unsigned int Tx_entry,
 	unsigned int Rx_entry)
 {

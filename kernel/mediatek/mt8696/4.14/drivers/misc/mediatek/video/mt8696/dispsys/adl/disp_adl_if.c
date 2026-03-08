@@ -1623,7 +1623,7 @@ int disp_config_adl_table(struct adl_src_tbl *adl_tbl)
 		adl_error("adl[%d] b0103 table oversize %d\n", clit, src_size);
 		return ADL_ERR;
 	}
-	memset(p_adl_ctx->src_tbl.hdr_b0103.p_data, 0, FE_ADL_SIZE);
+	//memset(p_adl_ctx->src_tbl.hdr_b0103.p_data, 0, FE_ADL_SIZE);
 	if (src_size > 0) {
 		memcpy(p_adl_ctx->src_tbl.hdr_b0103.p_data,
 			adl_tbl->hdr_b0103.p_data, src_size);
@@ -1636,7 +1636,7 @@ int disp_config_adl_table(struct adl_src_tbl *adl_tbl)
 		adl_error("adl[%d] b02ss table oversize %d\n", clit, src_size);
 		return ADL_ERR;
 	}
-	memset(p_adl_ctx->src_tbl.hdr_b0202ss.p_data, 0, FE_ADL_SIZE);
+	//memset(p_adl_ctx->src_tbl.hdr_b0202ss.p_data, 0, FE_ADL_SIZE);
 	if (src_size > 0) {
 		memcpy(p_adl_ctx->src_tbl.hdr_b0202ss.p_data,
 			adl_tbl->hdr_b0202ss.p_data, src_size);
@@ -1648,7 +1648,7 @@ int disp_config_adl_table(struct adl_src_tbl *adl_tbl)
 		adl_error("adl[%d] b02si table oversize %d\n", clit, src_size);
 		return ADL_ERR;
 	}
-	memset(p_adl_ctx->src_tbl.hdr_b0202si.p_data, 0, FE_ADL_SIZE);
+	//memset(p_adl_ctx->src_tbl.hdr_b0202si.p_data, 0, FE_ADL_SIZE);
 	if (src_size > 0) {
 		memcpy(p_adl_ctx->src_tbl.hdr_b0202si.p_data,
 			adl_tbl->hdr_b0202si.p_data, src_size);
@@ -1660,7 +1660,7 @@ int disp_config_adl_table(struct adl_src_tbl *adl_tbl)
 		adl_error("adl[%d] b02ts table oversize %d\n", clit, src_size);
 		return ADL_ERR;
 	}
-	memset(p_adl_ctx->src_tbl.hdr_b0202ts.p_data, 0, FE_ADL_SIZE);
+	//memset(p_adl_ctx->src_tbl.hdr_b0202ts.p_data, 0, FE_ADL_SIZE);
 	if (src_size > 0) {
 		memcpy(p_adl_ctx->src_tbl.hdr_b0202ts.p_data,
 			adl_tbl->hdr_b0202ts.p_data, src_size);
@@ -1672,7 +1672,7 @@ int disp_config_adl_table(struct adl_src_tbl *adl_tbl)
 		adl_error("adl[%d] b02si table oversize %d\n", clit, src_size);
 		return ADL_ERR;
 	}
-	memset(p_adl_ctx->src_tbl.hdr_b0202ti.p_data, 0, FE_ADL_SIZE);
+	//memset(p_adl_ctx->src_tbl.hdr_b0202ti.p_data, 0, FE_ADL_SIZE);
 	if (src_size > 0) {
 		memcpy(p_adl_ctx->src_tbl.hdr_b0202ti.p_data,
 			adl_tbl->hdr_b0202ti.p_data, src_size);
@@ -1684,7 +1684,7 @@ int disp_config_adl_table(struct adl_src_tbl *adl_tbl)
 		adl_error("adl[%d] b0105 table oversize %d\n", clit, src_size);
 		return ADL_ERR;
 	}
-	memset(p_adl_ctx->src_tbl.hdr_b0105.p_data, 0, FE_ADL_SIZE);
+	//memset(p_adl_ctx->src_tbl.hdr_b0105.p_data, 0, FE_ADL_SIZE);
 	if (src_size > 0) {
 		memcpy(p_adl_ctx->src_tbl.hdr_b0105.p_data,
 			adl_tbl->hdr_b0105.p_data, src_size);
@@ -1696,7 +1696,7 @@ int disp_config_adl_table(struct adl_src_tbl *adl_tbl)
 		adl_error("adl[%d] ootf table oversize %d\n", clit, src_size);
 		return ADL_ERR;
 	}
-	memset(p_adl_ctx->src_tbl.hdr_ootf.p_data, 0, FE_ADL_SIZE);
+	//memset(p_adl_ctx->src_tbl.hdr_ootf.p_data, 0, FE_ADL_SIZE);
 	if (src_size > 0) {
 		memcpy(p_adl_ctx->src_tbl.hdr_ootf.p_data,
 			adl_tbl->hdr_ootf.p_data, src_size);
@@ -1708,7 +1708,7 @@ int disp_config_adl_table(struct adl_src_tbl *adl_tbl)
 		adl_error("adl[%d] degam table oversize %d\n", clit, src_size);
 		return ADL_ERR;
 	}
-	memset(p_adl_ctx->src_tbl.tosd_degam.p_data, 0, FE_ADL_SIZE);
+	//memset(p_adl_ctx->src_tbl.tosd_degam.p_data, 0, FE_ADL_SIZE);
 	if (src_size > 0) {
 		memcpy(p_adl_ctx->src_tbl.tosd_degam.p_data,
 			adl_tbl->tosd_degam.p_data, src_size);
@@ -1721,7 +1721,7 @@ int disp_config_adl_table(struct adl_src_tbl *adl_tbl)
 		adl_error("adl[%d] fg table oversize %d\n", clit, src_size);
 		return ADL_ERR;
 	}
-	memset(p_adl_ctx->src_tbl.fgrain.p_data, 0, FE_ADL_SIZE);
+	//memset(p_adl_ctx->src_tbl.fgrain.p_data, 0, FE_ADL_SIZE);
 	if (src_size > 0) {
 		memcpy(p_adl_ctx->src_tbl.fgrain.p_data,
 			adl_tbl->fgrain.p_data, src_size);
@@ -1734,7 +1734,7 @@ int disp_config_adl_table(struct adl_src_tbl *adl_tbl)
 		adl_error("adl[%d] scm table oversize %d\n", clit, src_size);
 		return ADL_ERR;
 	}
-	memset(p_adl_ctx->src_tbl.scmb.p_data, 0, MD_MAX_SIZE);
+	//memset(p_adl_ctx->src_tbl.scmb.p_data, 0, MD_MAX_SIZE);
 	if (src_size > 0) {
 		memcpy(p_adl_ctx->src_tbl.scmb.p_data,
 			adl_tbl->scmb.p_data, src_size);

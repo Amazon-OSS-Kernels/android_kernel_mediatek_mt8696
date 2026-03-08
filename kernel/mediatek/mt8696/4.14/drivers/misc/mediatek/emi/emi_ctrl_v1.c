@@ -182,6 +182,9 @@ static int emi_probe(struct platform_device *pdev)
 
 #if ENABLE_MPU
 	mpu_init(&emi_ctrl, pdev);
+#if ENABLE_MPU_TEST
+	emi_mpu_test_init(&emi_ctrl, pdev);
+#endif
 #endif
 
 #if ENABLE_ELM

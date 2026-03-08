@@ -28,8 +28,7 @@ extern unsigned int dovi_dbg_level;
 #define DOVI_VSVDB_LOG (1 << 4)
 #define DOVI_SETTING_LOG (1 << 5)
 #define DOVI_FLOW (1 << 6)
-
-
+#define DOVI_DBG (1 << 7)
 
 #define dovi_printf(fmt, args...) pr_info("[dovi] "fmt, ##args)
 
@@ -91,6 +90,11 @@ extern unsigned int dovi_dbg_level;
 	} \
 } while (0)
 
+#define dovi_dbg(format, ...) do { \
+	if (dovi_dbg_level & (DOVI_DBG)) { \
+		dovi_printf(""format, ##__VA_ARGS__); \
+	} \
+} while (0)
 
 #define	dovi_default(format, ...) \
 { \

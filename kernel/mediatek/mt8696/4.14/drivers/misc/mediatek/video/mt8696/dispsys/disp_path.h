@@ -18,7 +18,7 @@
 #include <linux/device.h>
 #include <linux/types.h>
 
-#define FULL_SCREEN_IDX 2 /*0-default,  1-dolby*/
+#define FULL_SCREEN_IDX 2 /*0-default,  1-dovi*/
 #define DISP_PATH_SHADOW_ENABLE
 
 struct full_screen_param {
@@ -43,8 +43,8 @@ enum DISP_SOF_TYPE {
 	DISP_SOF_4_M_FILM_GRAIN_1_END,
 	DISP_SOF_5_M_FILM_GRAIN_2_STA,
 	DISP_SOF_5_M_FILM_GRAIN_2_END,
-	DISP_SOF_6_M_DOLBY_FE_STA,
-	DISP_SOF_6_M_DOLBY_FE_END,
+	DISP_SOF_6_M_HDR_FE_STA,
+	DISP_SOF_6_M_HDR_FE_END,
 	DISP_SOF_7_S_VDO_MAIN_STA,
 	DISP_SOF_7_S_VDO_MAIN_END,
 	DISP_SOF_8_S_VDO_AUX_STA,
@@ -57,24 +57,24 @@ enum DISP_SOF_TYPE {
 	DISP_SOF_11_S_FILM_GRAIN_1_END,
 	DISP_SOF_12_S_FILM_GRAIN_2_STA,
 	DISP_SOF_12_S_FILM_GRAIN_2_END,
-	DISP_SOF_13_S_DOLBY_FE_STA,
-	DISP_SOF_13_S_DOLBY_FE_END,
+	DISP_SOF_13_S_HDR_FE_STA,
+	DISP_SOF_13_S_HDR_FE_END,
 	DISP_SOF_14_UHD_OSD_STA,
 	DISP_SOF_14_UHD_OSD_END,
 	DISP_SOF_15_UHD_FE_FIFO_STA,
 	DISP_SOF_15_UHD_FE_FIFO_END,
-	DISP_SOF_16_UHD_DOLBY_FE_STA,
-	DISP_SOF_16_UHD_DOLBY_FE_END,
+	DISP_SOF_16_UHD_HDR_FE_STA,
+	DISP_SOF_16_UHD_HDR_FE_END,
 	DISP_SOF_17_FHD_OSD_STA,
 	DISP_SOF_17_FHD_OSD_END,
 	DISP_SOF_18_FHD_FE_FIFO_STA,
 	DISP_SOF_18_FHD_FE_FIFO_END,
-	DISP_SOF_19_FHD_DOLBY_FE_STA,
-	DISP_SOF_19_FHD_DOLBY_FE_END,
+	DISP_SOF_19_FHD_HDR_FE_STA,
+	DISP_SOF_19_FHD_HDR_FE_END,
 	DISP_SOF_20_DISP_MIX_STA,
 	DISP_SOF_20_DISP_MIX_END,
-	DISP_SOF_21_DOLBY_BE_STA,
-	DISP_SOF_21_DOLBY_BE_END,
+	DISP_SOF_21_HDR_BE_STA,
+	DISP_SOF_21_HDR_BE_END,
 	DISP_SOF_22_BE_FIFO_STA,
 	DISP_SOF_22_BE_FIFO_END,
 	DISP_SOF_23_DISP_MUNULOAD_STA,
@@ -170,10 +170,10 @@ int disp_path_reset(void);
 
 int disp_path_init(struct disp_path_resolution *resolution);
 
-void set_fs_index(uint32_t idx);
+void set_fs_index(uint32_t layer, uint32_t idx);
 
 extern unsigned int g_hdmi_res;
-extern unsigned int g_force_dolby;
+extern unsigned int g_force_dovi;
 extern unsigned int g_hdr_type;
 extern unsigned int g_out_format;
 extern struct disp_path_context disp_path;

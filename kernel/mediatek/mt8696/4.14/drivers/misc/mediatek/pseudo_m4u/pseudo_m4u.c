@@ -323,10 +323,8 @@ static int pseudo_m4u_sec_init(unsigned int u4NonSecPa,
 					TZPT_VALUE_OUTPUT);
 	ret = KREE_TeeServiceCall(m4u_session, M4U_TZCMD_SEC_INIT,
 			paramTypes, param);
-	if (ret != TZ_RESULT_SUCCESS) {
-		M4U_ERR("m4u sec init error 0x%x\n", ret);
-		return -1;
-	}
+	/* For svp. iommu sec memory must be initialized successfully. */
+	BUG_ON(ret != TZ_RESULT_SUCCESS);
 
 	*security_mem_size = param[1].value.a;
 	return 0;

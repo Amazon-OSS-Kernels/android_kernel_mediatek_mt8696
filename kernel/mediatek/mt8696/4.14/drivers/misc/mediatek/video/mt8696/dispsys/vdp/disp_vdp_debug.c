@@ -65,6 +65,7 @@ static char VDP_STR_HELP[] =
  */
 static char vdp_dbg_buf[2048];
 static char vdp_cmd_buf[512];
+unsigned int vdo_set_fps;
 
 static unsigned int vdp_read_reg(unsigned int addr)
 {
@@ -265,6 +266,41 @@ static void vdp_process_dbg_opt(const char *opt)
 		}
 		enable_frame_drop_log = en;
 		DISP_LOG_I("enable_frame_drop_log %d\n", enable_frame_drop_log);
+	}  else if (strncmp(opt, "set_fps:", 8) == 0) {
+		unsigned int en = 0;
+		char *p;
+
+		p = (char *)opt + 8;
+		STR_CONVERT(&p, &en, uint, goto Error);
+		vdo_set_fps = en;
+		DISP_LOG_I("vdo_set_fps %d\n", vdo_set_fps);
+	} else if (strncmp(opt, "idkstop:", 8) == 0) {
+		char *p;
+		unsigned int idk_num = 0;
+
+		p = (char *)opt + 8;
+		STR_CONVERT(&p, &idk_num, uint, goto Error);
+		STR_CONVERT(&p, &idk_stop_num, uint, goto Error);
+		idk_now_num[0] = idk_num;
+		idk_now_num[1] = idk_num;
+		idk_vdp_num[0] = idk_num;
+		idk_vdp_num[1] = idk_num;
+		DISP_LOG_I("idkstop %d %d\n", idk_num, idk_stop_num);
+	} else if (strncmp(opt, "idk_close_area:", 15) == 0) {
+		char *p;
+
+		p = (char *)opt + 15;
+		STR_CONVERT(&p, &idk_close_area, uint, goto Error);
+		DISP_LOG_I("idk_close_area %d\n", idk_close_area);
+	} else if (strncmp(opt, "idk_no_drop:", 12) == 0) {
+		char *p;
+
+		p = (char *)opt + 12;
+		STR_CONVERT(&p, &idk_no_drop, uint, goto Error);
+		STR_CONVERT(&p, &last_ion_fd[0], uint, goto Error);
+		STR_CONVERT(&p, &last_ion_fd[1], uint, goto Error);
+		DISP_LOG_I("idk_no_drop %d last_ion_fd %d %d\n",
+			idk_no_drop, last_ion_fd[0], last_ion_fd[1]);
 	} else if (strncmp(opt, "set_tgt:", 8) == 0) {
 		char *p;
 

@@ -76,8 +76,8 @@ static unsigned int aEDIDHdr10PlusVSVDBHeader = 0x90848b;
 
 unsigned int _ui4svd_128_VIC[128];
 unsigned int _u4i_svd_420_CMDB;
-
-static unsigned char _bEdidData2[256] = {
+bool new_edid;
+unsigned char _bEdidData2[256] = {
 	0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00,
 	0x4d, 0xd9, 0x02, 0xd7, 0x01, 0x01, 0x01,
 	0x01,
@@ -295,28 +295,29 @@ void vClearEdidInfo(void)
 	_HdmiSinkAvCap.ui1_sink_hdr_content_max_frame_average_luminance = 0;
 	_HdmiSinkAvCap.ui1_sink_hdr_content_min_luminance = 0;
 	_HdmiSinkAvCap.ui1_sink_hdr10plus_app_version = 0xff;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_length = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_version = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_v1_low_latency = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_v2_interface = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_low_latency_support = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_v2_supports_10b_12b_444 = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_support_backlight_control = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_backlt_min_lumal = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tmin = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tmax = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tminPQ = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tmaxPQ = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Rx = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Ry = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Gx = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Gy = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Bx = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_By = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Wx = 0;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Wy = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_length = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_version = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_v1_low_latency = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_v2_interface = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_low_latency_support = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_v2_supports_10b_12b_444 = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_support_backlight_control = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_backlt_min_lumal = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_dm_version = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tmin = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tmax = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tminPQ = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tmaxPQ = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Rx = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Ry = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Gx = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Gy = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Bx = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_By = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Wx = 0;
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Wy = 0;
 	for (bInx = 0; bInx < 32; bInx++)
-		_HdmiSinkAvCap.ui1_sink_dolbyvision_block[bInx] = 0;
+		_HdmiSinkAvCap.ui1_sink_dovi_block[bInx] = 0;
 	for (bInx = 0; bInx < 7; bInx++)
 		_HdmiSinkAvCap.ui1_sink_hdr_block[bInx] = 0;
 	for (bInx = 0; bInx < 8; bInx++)
@@ -420,6 +421,8 @@ unsigned char hdmi_fgreadedid(unsigned char i1noedid)
 			}
 		}
 
+		if (new_edid)
+			memcpy(_bEdidData, _bEdidData2, 256);
 		bExtBlockNo = _bEdidData[EDID_ADDR_EXT_BLOCK_FLAG];
 		vSetSharedInfo(SI_EDID_EXT_BLOCK_NO, bExtBlockNo);
 	}
@@ -1639,9 +1642,9 @@ void vParserDolbyVisionBlock(unsigned char *prData)
 
 	bLength = (*prData) & 0x1F;
 	bVersion = ((*(prData + 5)) >> 5) & 0x07;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_length =
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_length =
 		bLength + 1;
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_version =
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_version =
 		bVersion;
 
 	if (bLength > 0x1A) {
@@ -1651,82 +1654,84 @@ void vParserDolbyVisionBlock(unsigned char *prData)
 	} else {
 		bDataLen = bLength;
 	}
-	memcpy(_HdmiSinkAvCap.ui1_sink_dolbyvision_block,
+	memcpy(_HdmiSinkAvCap.ui1_sink_dovi_block,
 		prData, (bDataLen + 1));
 
 
 	if ((bLength == 0x19) && (bVersion == 0)) {
 		_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr |=
-			EDID_SUPPORT_DOLBY_HDR;
+			EDID_SUPPORT_DOVI_HDR;
 		if ((*(prData + 5)) & 0x01)
 			_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr |=
 			EDID_SUPPORT_YUV422_12BIT;
 		if ((*(prData + 5)) & 0x02)
 			_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr |=
-			EDID_SUPPORT_DOLBY_HDR_2160P60;
+			EDID_SUPPORT_DOVI_HDR_2160P60;
 
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tminPQ =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tminPQ =
 			((*(prData + 19)) << 4) |
 			(((*(prData + 18)) >> 4) &
 			0x0F);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tmaxPQ =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tmaxPQ =
 			((*(prData + 20)) << 4) | ((*(prData + 18)) & 0x0F);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Rx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Rx =
 			((*(prData + 7)) << 4) |
 			(((*(prData + 6)) >> 4) &
 			0x0F);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Ry =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Ry =
 			((*(prData + 8)) << 4) | ((*(prData + 6)) & 0x0F);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Gx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Gx =
 			((*(prData + 10)) << 4) | (((*(prData + 9)) >> 4) &
 			0x0F);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Gy =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Gy =
 			((*(prData + 11)) << 4) | ((*(prData + 9)) & 0x0F);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Bx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Bx =
 			((*(prData + 13)) << 4) | (((*(prData + 12)) >> 4) &
 			0x0F);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_By =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_By =
 			((*(prData + 14)) << 4) | ((*(prData + 12)) & 0x0F);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Wx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Wx =
 			((*(prData + 16)) << 4) | (((*(prData + 15)) >> 4) &
 			0x0F);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Wy =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Wy =
 			((*(prData + 17)) << 4) | ((*(prData + 15)) & 0x0F);
 		HDMI_PLUG_LOG("[HDMI TX]Dovi: vsdb v0, length=0x19, dynamic_hdr=0x%x\n",
 			_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr);
 	} else if ((bLength == 0x0E) &&
 	(bVersion == 1)) {
 		_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr |=
-			EDID_SUPPORT_DOLBY_HDR;
+			EDID_SUPPORT_DOVI_HDR;
 		if ((*(prData + 5)) & 0x01)
 			_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr |=
 			EDID_SUPPORT_YUV422_12BIT;
 		if ((*(prData + 5)) & 0x02)
 			_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr |=
-			EDID_SUPPORT_DOLBY_HDR_2160P60;
+			EDID_SUPPORT_DOVI_HDR_2160P60;
 
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tmin =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_dm_version =
+			((*(prData + 5)) >> 2) & 0x07;
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tmin =
 			(*(prData + 7)) >> 1;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tmax =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tmax =
 			(*(prData + 6)) >> 1;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Rx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Rx =
 			*(prData + 9);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Ry =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Ry =
 			*(prData + 10);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Gx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Gx =
 			*(prData + 11);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Gy =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Gy =
 			*(prData + 12);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Bx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Bx =
 			*(prData + 13);
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_By =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_By =
 			*(prData + 14);
 		HDMI_PLUG_LOG("[HDMI TX]Dovi: vsdb v1, length=0x0E, dynamic_hdr=0x%x\n",
 			_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr);
 	} else if ((bLength == 0x0B) && (bVersion == 1)) {
 		_HdmiSinkAvCap
 			.ui1_sink_support_dynamic_hdr |=
-			EDID_SUPPORT_DOLBY_HDR;
+			EDID_SUPPORT_DOVI_HDR;
 		if ((*(prData + 5)) & 0x01)
 			_HdmiSinkAvCap
 			.ui1_sink_support_dynamic_hdr |=
@@ -1734,38 +1739,40 @@ void vParserDolbyVisionBlock(unsigned char *prData)
 		if ((*(prData + 5)) & 0x02)
 			_HdmiSinkAvCap
 			.ui1_sink_support_dynamic_hdr |=
-			EDID_SUPPORT_DOLBY_HDR_2160P60;
+			EDID_SUPPORT_DOVI_HDR_2160P60;
 
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_dm_version =
+			((*(prData + 5)) >> 2) & 0x07;
 		_HdmiSinkAvCap
-			.ui4_sink_dolbyvision_vsvdb_v1_low_latency =
+			.ui4_sink_dovi_vsvdb_v1_low_latency =
 			(*(prData + 8)) & 0x03;
 		if (_HdmiSinkAvCap
-			.ui4_sink_dolbyvision_vsvdb_v1_low_latency == 1)
+			.ui4_sink_dovi_vsvdb_v1_low_latency == 1)
 			_HdmiSinkAvCap
-			.ui4_sink_dolbyvision_vsvdb_low_latency_support = 1;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tmin =
+			.ui4_sink_dovi_vsvdb_low_latency_support = 1;
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tmin =
 			(*(prData + 7)) >> 1;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tmax =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tmax =
 			(*(prData + 6)) >> 1;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Rx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Rx =
 			((*(prData + 11)) >> 3) | 0xA0;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Ry =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Ry =
 			(((*(prData + 11)) & 0x07) << 2)
 						 | (((*(prData + 10)) & 0x01)
 						 << 1) |
 						 ((*(prData + 9)) &
 						 0x01) | 0x40;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Gx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Gx =
 			(*(prData + 9)) >> 1;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Gy =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Gy =
 			((*(prData + 10)) >> 1) | 0x80;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Bx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Bx =
 			((*(prData + 8)) >> 5) | 0x20;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_By =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_By =
 			(((*(prData + 8)) >> 2) & 0x07) | 0x08;
 		HDMI_PLUG_LOG("[HDMI TX]Dovi: vsdb v1, length=0x0B, dynamic_hdr=0x%x, v1 low-latency=0x%x\n",
-			_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr, _HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_v1_low_latency);
-	} else if ((bLength >= 0x0B) && (bVersion == 2)) {
+			_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr, _HdmiSinkAvCap.ui4_sink_dovi_vsvdb_v1_low_latency);
+	} else if (bVersion == 2) {
 		/* v2 VSVDB length could be greater than 0xB
 		 * and should not be treated as unrecognized
 		 * block. Instead, we should parse it as a regular
@@ -1773,44 +1780,47 @@ void vParserDolbyVisionBlock(unsigned char *prData)
 		 */
 		_HdmiSinkAvCap
 		.ui1_sink_support_dynamic_hdr |=
-			EDID_SUPPORT_DOLBY_HDR;
+			EDID_SUPPORT_DOVI_HDR;
 		if ((*(prData + 5)) & 0x01)
 			_HdmiSinkAvCap
 		.ui1_sink_support_dynamic_hdr |=
 			EDID_SUPPORT_YUV422_12BIT;
 		_HdmiSinkAvCap
-		.ui4_sink_dolbyvision_vsvdb_v2_interface =
+		.ui4_sink_dovi_vsvdb_dm_version =
+			((*(prData + 5)) >> 2) & 0x07;
+		_HdmiSinkAvCap
+		.ui4_sink_dovi_vsvdb_v2_interface =
 			(*(prData + 7)) & 0x03;
 
 		_HdmiSinkAvCap
-		.ui4_sink_dolbyvision_vsvdb_low_latency_support = 1;
+		.ui4_sink_dovi_vsvdb_low_latency_support = 1;
 		_HdmiSinkAvCap
-		.ui4_sink_dolbyvision_vsvdb_v2_supports_10b_12b_444 =
+		.ui4_sink_dovi_vsvdb_v2_supports_10b_12b_444 =
 			(((*(prData + 8)) & 0x01) << 1) |
 			((*(prData + 9)) & 0x01);
 		_HdmiSinkAvCap
-		.ui4_sink_dolbyvision_vsvdb_support_backlight_control =
+		.ui4_sink_dovi_vsvdb_support_backlight_control =
 			((*(prData + 5)) >> 1) & 0x01;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_backlt_min_lumal =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_backlt_min_lumal =
 			(*(prData + 6)) & 0x03;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tminPQ =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tminPQ =
 			((*(prData + 6)) >> 3) * 20;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tmaxPQ =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tmaxPQ =
 			((*(prData + 7)) >> 3) * 65 + 2055;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Rx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Rx =
 			((*(prData + 10)) >> 3) | 0xA0;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Ry =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Ry =
 			((*(prData + 11)) >> 3) | 0x40;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Gx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Gx =
 			(*(prData + 8)) >> 1;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Gy =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Gy =
 			((*(prData + 9)) >> 1) | 0x80;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Bx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Bx =
 			((*(prData + 10)) & 0x07) | 0x20;
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_By =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_By =
 			((*(prData + 11)) & 0x07) | 0x08;
 		HDMI_PLUG_LOG("[HDMI TX]Dovi: vsdb v2, length=0x%x, dynamic_hdr=0x%x, v2 low-latency=1, v2 interface=0x%x\n",
-			bLength, _HdmiSinkAvCap.ui1_sink_support_dynamic_hdr, _HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_v2_interface);
+			bLength, _HdmiSinkAvCap.ui1_sink_support_dynamic_hdr, _HdmiSinkAvCap.ui4_sink_dovi_vsvdb_v2_interface);
 	}
 }
 
@@ -3310,21 +3320,21 @@ void vShowEdidInformation(void)
 		EDID_SUPPORT_PHILIPS_HDR)
 		HDMI_PLUG_LOG("EDID_SUPPORT_PHILIPS_HDR\n");
 	if (_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr &
-		EDID_SUPPORT_DOLBY_HDR)
+		EDID_SUPPORT_DOVI_HDR)
 		HDMI_PLUG_LOG(
-		"EDID_SUPPORT_DOLBY_HDR(Dolby HDR Enable Bit)\n");
+		"EDID_SUPPORT_DOVI_HDR(Dovi HDR Enable Bit)\n");
 	if (_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr &
 		EDID_SUPPORT_YUV422_12BIT)
 		HDMI_PLUG_LOG("EDID_SUPPORT_YUV422_12BIT\n");
 	if (_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr &
-		EDID_SUPPORT_DOLBY_HDR_2160P60)
-		HDMI_PLUG_LOG("EDID_SUPPORT_DOLBY_HDR_2160P60\n");
+		EDID_SUPPORT_DOVI_HDR_2160P60)
+		HDMI_PLUG_LOG("EDID_SUPPORT_DOVI_HDR_2160P60\n");
 	if (!(_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr &
-		EDID_SUPPORT_DOLBY_HDR_2160P60) &&
+		EDID_SUPPORT_DOVI_HDR_2160P60) &&
 		(_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr &
-		EDID_SUPPORT_DOLBY_HDR))
+		EDID_SUPPORT_DOVI_HDR))
 		HDMI_PLUG_LOG(
-	"[HDMI TX]Dolby enable and Dolby 2160P60 disable, max Dolby 2160P30\n");
+	"[HDMI TX]Dovi enable and Dovi 2160P60 disable, max Dovi 2160P30\n");
 	if (_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr &
 		EDID_SUPPORT_HDR10_PLUS)
 		HDMI_PLUG_LOG("EDID_SUPPORT_HDR10_PLUS\n");
@@ -3760,49 +3770,51 @@ void hdmi_AppGetEdidInfo(
 		_HdmiSinkAvCap.ui1_sink_hdr_content_max_frame_average_luminance;
 		pv_get_info->ui1_sink_hdr_content_min_luminance =
 		_HdmiSinkAvCap.ui1_sink_hdr_content_min_luminance;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_length =
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_length;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_version =
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_version;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_v1_low_latency =
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_v1_low_latency;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_v2_interface =
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_v2_interface;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_low_latency_support =
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_low_latency_support;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_v2_supports_10b_12b_444 =
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_v2_supports_10b_12b_444;
-	pv_get_info->ui4_sink_dolbyvision_vsvdb_support_backlight_control =
-	_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_support_backlight_control;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_backlt_min_lumal =
-		_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_backlt_min_lumal;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_tmin =
-			_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tmin;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_tmax =
-			_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tmax;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_tminPQ =
-			_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tminPQ;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_tmaxPQ =
-			_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_tmaxPQ;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Rx =
-			_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Rx;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Ry =
-			_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Ry;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Gx =
-			_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Gx;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Gy =
-			_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Gy;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Bx =
-			_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Bx;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_By =
-			_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_By;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Wx =
-			_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Wx;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Wy =
-			_HdmiSinkAvCap.ui4_sink_dolbyvision_vsvdb_Wy;
-		for (i = 0; i < 32; i++)
-			pv_get_info->ui1_sink_dolbyvision_block[i] =
-			_HdmiSinkAvCap.ui1_sink_dolbyvision_block[i];
+	pv_get_info->ui4_sink_dovi_vsvdb_length =
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_length;
+	pv_get_info->ui4_sink_dovi_vsvdb_version =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_version;
+	pv_get_info->ui4_sink_dovi_vsvdb_v1_low_latency =
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_v1_low_latency;
+	pv_get_info->ui4_sink_dovi_vsvdb_v2_interface =
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_v2_interface;
+	pv_get_info->ui4_sink_dovi_vsvdb_low_latency_support =
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_low_latency_support;
+	pv_get_info->ui4_sink_dovi_vsvdb_dm_version =
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_dm_version;
+	pv_get_info->ui4_sink_dovi_vsvdb_v2_supports_10b_12b_444 =
+_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_v2_supports_10b_12b_444;
+pv_get_info->ui4_sink_dovi_vsvdb_support_backlight_control =
+_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_support_backlight_control;
+	pv_get_info->ui4_sink_dovi_vsvdb_backlt_min_lumal =
+	_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_backlt_min_lumal;
+	pv_get_info->ui4_sink_dovi_vsvdb_tmin =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tmin;
+	pv_get_info->ui4_sink_dovi_vsvdb_tmax =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tmax;
+	pv_get_info->ui4_sink_dovi_vsvdb_tminPQ =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tminPQ;
+	pv_get_info->ui4_sink_dovi_vsvdb_tmaxPQ =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_tmaxPQ;
+	pv_get_info->ui4_sink_dovi_vsvdb_Rx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Rx;
+	pv_get_info->ui4_sink_dovi_vsvdb_Ry =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Ry;
+	pv_get_info->ui4_sink_dovi_vsvdb_Gx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Gx;
+	pv_get_info->ui4_sink_dovi_vsvdb_Gy =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Gy;
+	pv_get_info->ui4_sink_dovi_vsvdb_Bx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Bx;
+	pv_get_info->ui4_sink_dovi_vsvdb_By =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_By;
+	pv_get_info->ui4_sink_dovi_vsvdb_Wx =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Wx;
+	pv_get_info->ui4_sink_dovi_vsvdb_Wy =
+		_HdmiSinkAvCap.ui4_sink_dovi_vsvdb_Wy;
+	for (i = 0; i < 32; i++)
+		pv_get_info->ui1_sink_dovi_block[i] =
+		_HdmiSinkAvCap.ui1_sink_dovi_block[i];
 	}else {
 		unsigned int removeBT2020 = ~(SINK_COLOR_SPACE_BT2020_CYCC | SINK_COLOR_SPACE_BT2020_YCC | SINK_COLOR_SPACE_BT2020_RGB);
 		HDMI_PLUG_LOG("removeBT2020=0x%x, pv_get_info->ui2_sink_colorimetry=0x%x\n", removeBT2020, pv_get_info->ui2_sink_colorimetry);
@@ -3814,28 +3826,29 @@ void hdmi_AppGetEdidInfo(
 		pv_get_info->ui1_sink_hdr_content_max_frame_average_luminance = 0;
 		pv_get_info->ui1_sink_hdr_content_min_luminance = 0;
 		pv_get_info->ui1_sink_hdr10plus_app_version = 0xff;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_length = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_version = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_v1_low_latency = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_v2_interface = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_low_latency_support = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_v2_supports_10b_12b_444 = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_support_backlight_control = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_backlt_min_lumal = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_tmin = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_tmax = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_tminPQ = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_tmaxPQ = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Rx = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Ry = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Gx = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Gy = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Bx = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_By = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Wx = 0;
-		pv_get_info->ui4_sink_dolbyvision_vsvdb_Wy = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_length = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_version = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_v1_low_latency = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_v2_interface = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_low_latency_support = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_v2_supports_10b_12b_444 = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_support_backlight_control = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_backlt_min_lumal = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_tmin = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_tmax = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_tminPQ = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_tmaxPQ = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_Rx = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_Ry = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_Gx = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_Gy = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_Bx = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_By = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_Wx = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_Wy = 0;
+		pv_get_info->ui4_sink_dovi_vsvdb_dm_version = 0;
 		for (i = 0; i < 32; i++)
-			pv_get_info->ui1_sink_dolbyvision_block[i] = 0;
+			pv_get_info->ui1_sink_dovi_block[i] = 0;
 	}
 
 	for (i = 0; i < EDID_LENGTH; i++)
@@ -3877,5 +3890,18 @@ unsigned char hdmi_check_edid_header(void)
 void hdmi_clear_edid_data(void)
 {
 	memset(_bEdidData, 0, EDID_SIZE);
+}
+
+/* some sny dovi tv can not support dovi sdk2.6 new vsif structure.
+ * always show black screen,so get Manufacturer ID to distinguish
+ * 00  ff  ff  ff  ff  ff  ff  00  4d d9
+ */
+
+bool is_sny_dv_tv(void)
+{
+	if ((_bEdidData[0x08] == 0x4d) && (_bEdidData[0x09] ==  0xd9))
+		return true;
+
+	return false;
 }
 #endif

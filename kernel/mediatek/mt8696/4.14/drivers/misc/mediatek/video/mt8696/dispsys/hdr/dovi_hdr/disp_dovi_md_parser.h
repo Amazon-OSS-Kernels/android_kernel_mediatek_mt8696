@@ -17,5 +17,4 @@
 #define FILENAME_LEN_MAX               512
 #define BITSTREAM_BUFFER_SIZE          1024
 
-
 #endif

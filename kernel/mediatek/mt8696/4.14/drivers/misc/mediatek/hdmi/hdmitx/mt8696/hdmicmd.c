@@ -1702,6 +1702,34 @@ do { \
 	} \
 } while (0)
 
+void mt_hdmi_set_edid(int en)
+{
+	char *edid_file_name = "edid.bin";
+	mm_segment_t fs;
+	struct file *fp = NULL;
+	char *file_name = "/sdcard/edid/edid.bin";
+	uint32_t len = 256;
+
+	fs = get_fs();
+	set_fs(KERNEL_DS);
+	fp = filp_open(file_name, O_RDONLY, 0x0);
+
+	new_edid = en;
+	HDMI_ATTR_SPRINTF("load %s len %d %p %d\n", file_name, len, fp, new_edid);
+
+	if (IS_ERR(fp)) {
+		HDMI_ATTR_SPRINTF("open file %s %ld fail\n", file_name, PTR_ERR(fp));
+		return;
+	}
+
+	/* read date */
+	vfs_read(fp, _bEdidData2, len, &fp->f_pos);
+
+	filp_close(fp, NULL);
+	set_fs(fs);
+	HDMI_ATTR_SPRINTF("set_edid /sdcard/edid/%s\n",
+		edid_file_name);
+}
 void mt_hdmi_show_edid_info(void)
 {
 	unsigned int u4Res = 0;
@@ -2238,15 +2266,15 @@ void mt_hdmi_show_edid_info(void)
 		EDID_SUPPORT_PHILIPS_HDR)
 		HDMI_ATTR_SPRINTF("[HDMI TX]EDID_SUPPORT_PHILIPS_HDR\n");
 	if (_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr &
-		EDID_SUPPORT_DOLBY_HDR)
+		EDID_SUPPORT_DOVI_HDR)
 		HDMI_ATTR_SPRINTF(
-	"[HDMI TX]EDID_SUPPORT_DOLBY_HDR(Dolby HDR Enable Bit)\n");
+	"[HDMI TX]EDID_SUPPORT_DOVI_HDR(Dovi HDR Enable Bit)\n");
 	if (_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr &
 		EDID_SUPPORT_YUV422_12BIT)
 		HDMI_ATTR_SPRINTF("[HDMI TX]EDID_SUPPORT_YUV422_12BIT\n");
 	if (_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr &
-		EDID_SUPPORT_DOLBY_HDR_2160P60)
-		HDMI_ATTR_SPRINTF("[HDMI TX]EDID_SUPPORT_DOLBY_HDR_2160P60\n");
+		EDID_SUPPORT_DOVI_HDR_2160P60)
+		HDMI_ATTR_SPRINTF("[HDMI TX]EDID_SUPPORT_DOVI_HDR_2160P60\n");
 	if (_HdmiSinkAvCap.ui1_sink_support_dynamic_hdr &
 		EDID_SUPPORT_HDR10_PLUS)
 		HDMI_ATTR_SPRINTF("[HDMI TX]EDID_SUPPORT_HDR10_PLUS\n");
@@ -3332,6 +3360,25 @@ static unsigned int set_colordeep(char *str_p)
 	return 0;
 }
 
+static unsigned int set_dovi_vsif_ctl(char *str_p)
+{
+	unsigned int vsif_ver = 0;
+	int ret;
+
+	if (strncmp(str_p, "help", 4) == 0) {
+		HDMI_ATTR_SPRINTF("dovivsif:0/1 (0-old,1-new)\n");
+		return 0;
+	}
+
+	ret = sscanf(str_p, "0x%x", &vsif_ver);
+
+	HDMI_ATTR_SPRINTF("vsif_ver = %d\n", vsif_ver);
+
+	DoviVsifVerCtrl(vsif_ver);
+
+	return 0;
+}
+
 static unsigned int set_dolbyhdr(char *str_p)
 {
 	unsigned int dolbyhdren;
@@ -3346,7 +3393,7 @@ static unsigned int set_dolbyhdr(char *str_p)
 
 	HDMI_ATTR_SPRINTF("dolbyhdren = %d\n", dolbyhdren);
 
-	vDolbyHdrEnable(dolbyhdren);
+	vDoviHdrEnable(dolbyhdren);
 
 	return 0;
 }
@@ -3877,7 +3924,7 @@ static void _HdrEnable(char *str_p)
 	} else {
 		vHdrEnable(fgHdrEnable);
 		vBT2020Enable(fgBT2020Enable);
-		vDolbyHdrEnable(fgDolbyHdrEnable);
+		vDoviHdrEnable(fgDolbyHdrEnable);
 	}
 }
 
@@ -4084,6 +4131,8 @@ static void process_dbg_cmd(char *opt)
 		set_colordeep(opt + 7);
 	else if (strncmp(opt, "dolbyhdr:", 9) == 0)
 		set_dolbyhdr(opt + 9);
+	else if (strncmp(opt, "dovivsif:", 9) == 0)
+		set_dovi_vsif_ctl(opt + 9);
 	else if (strncmp(opt, "readirq", 7) == 0)
 		set_readirq(opt + 7);
 	else if (strncmp(opt, "hdcp:", 5) == 0)
@@ -4100,6 +4149,10 @@ static void process_dbg_cmd(char *opt)
 		set_hdr10p_ediden(opt + 7);
 	else if (strncmp(opt, "showedid", 8) == 0)
 		mt_hdmi_show_edid_info();
+	else if (strncmp(opt, "setedid:", 8) == 0) {
+		ret = sscanf(opt+8, "%x", &en);
+		mt_hdmi_set_edid(en);
+	}
 	else if (strncmp(opt, "sethpd:", 7) == 0)
 		set_hpd_status(opt + 7);
 	else if (strncmp(opt, "cectest", 7) == 0) {
@@ -4204,7 +4257,7 @@ static void process_dbg_cmd(char *opt)
 		if (ret < 1)
 			return;
 		vHdr10PlusEnable(false);
-		vDolbyHdrEnable(en);
+		vDoviHdrEnable(en);
 	} else if (strncmp(opt, "dovill:", 7) == 0) {
 		ret = sscanf(opt+7, "%x", &en);
 		if (ret < 1)
@@ -4212,7 +4265,7 @@ static void process_dbg_cmd(char *opt)
 		memset(&hdr_metadata, 0, sizeof(hdr_metadata));
 		if (en) {
 			vHdr10PlusEnable(false);
-			vLowLatencyDolbyVisionEnable(false);
+			vLowLatencyDoviEnable(false);
 			hdr_metadata.e_DynamicRangeType =
 				VID_PLA_DR_TYPE_DOVI_LOWLATENCY;
 			hdr_metadata.metadata_info
@@ -4221,9 +4274,9 @@ static void process_dbg_cmd(char *opt)
 			hdr_metadata.metadata_info
 				.dovi_lowlatency_metadata.ui4_EffTmaxPQ = 0;
 			vVdpSetHdrMetadata(true, hdr_metadata);
-			vLowLatencyDolbyVisionEnable(true);
+			vLowLatencyDoviEnable(true);
 		} else
-			vLowLatencyDolbyVisionEnable(false);
+			vLowLatencyDoviEnable(false);
 	} else if (strncmp(opt, "hlg:", 4) == 0) {
 		ret = sscanf(opt+4, "%x", &en);
 		if (ret < 1)

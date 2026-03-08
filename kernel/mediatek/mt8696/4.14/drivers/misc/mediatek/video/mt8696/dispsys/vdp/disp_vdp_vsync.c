@@ -50,6 +50,7 @@
 #include "disp_fefifo_drv.h"
 #include "disp_fefifo_if.h"
 #include "disp_dovi_common_if.h"
+#include "disp_dovi_io.h"
 #ifdef DISP_GCE_SUPPORT
 #include "cmdq-sec.h"
 #endif
@@ -99,6 +100,12 @@ bool print_video_fence_history;
 
 int debug_frame_count[2]; /* vdp show fps */
 uint32_t dovi_w_drop;
+uint32_t idk_now_num[2];
+uint32_t idk_stop_num;
+uint32_t idk_vdp_num[2];
+uint32_t idk_close_area;
+uint32_t idk_no_drop;
+uint32_t last_ion_fd[VIDEO_LAYER_MAX_COUNT];
 
 struct video_buffer_info *
 disp_video_init_buf_info(struct video_buffer_info *buf)
@@ -496,7 +503,7 @@ void vdp_set_hal_config(struct video_buffer_info *buf1,
 	hal_config->cur_fb_info.is_10bit = buf1->is_10bit;
 	hal_config->cur_fb_info.is_10bit_tile_mode =
 		buf1->is_10bit_lbs2bit_tile_mode;
-	hal_config->cur_fb_info.is_dolby = buf1->is_dolby;
+	hal_config->cur_fb_info.is_dovi = buf1->is_dovi;
 	hal_config->cur_fb_info.is_interlace = buf1->is_interlace;
 	hal_config->cur_fb_info.is_ufo = buf1->is_ufo;
 	hal_config->cur_fb_info.is_jumpmode = buf1->is_jumpmode;
@@ -782,7 +789,7 @@ static void vdp_select_dsd_pll(unsigned char vdp_id, enum DSD_CASE_E dsd_type)
 }
 
 extern uint32_t vdp_not_mix;
-static void vdp_config_fefifo_dispmix(uint8_t vdp_id, uint8_t is_dolby,
+static void vdp_config_fefifo_dispmix(uint8_t vdp_id, uint8_t is_dovi,
 	uint32_t x_offset, uint32_t y_offset, uint32_t dst_width,
 	uint32_t dst_height, struct fmt_active_info dispfmt_active_info,
 	struct fmt_hd_scl_info hd_scl_info)
@@ -798,7 +805,7 @@ static void vdp_config_fefifo_dispmix(uint8_t vdp_id, uint8_t is_dolby,
 	uint32_t width_overflow = 0;
 
 	vdp_printf(VDP_DOVI_LOG, "%s %d (%d %d %d %d) (%d %d %d %d %d %d)\n",
-		__func__, is_dolby,
+		__func__, is_dovi,
 		x_offset, y_offset, dst_width, dst_height,
 		dispfmt_active_info.h_begine, dispfmt_active_info.h_end,
 		dispfmt_active_info.v_even_begine,
@@ -813,10 +820,12 @@ static void vdp_config_fefifo_dispmix(uint8_t vdp_id, uint8_t is_dolby,
 		hd_scl_info.out_y_odd_pos, hd_scl_info.out_y_odd_pos_e,
 		hd_scl_info.out_y_even_pos, hd_scl_info.out_y_even_pos_e);
 
+#if 0
 	if ((vdp_id == SUB_VIDEO_INDEX) && (_subv_type == 0))
-		is_dolby = 0;
-
-	if (is_dolby) {
+		is_dovi = 0;
+	vdp_printf(VDP_DOVI_LOG, "idk24 flow %d\n", is_dovi);
+#endif
+	if (is_dovi) {
 		/*eco flow,8 case of h 4 pixel align and V 2 line align*/
 		if (x_offset % 2 == 0) {
 			b_dummy = false;
@@ -1094,6 +1103,7 @@ static void vdp_update_fmt_setting(unsigned char vdp_id,
 	uint32_t src_height = 0;
 	uint32_t dst_width = 0;
 	uint32_t dst_height = 0;
+	uint8_t table_id = 0;
 
 	/* store HDMI h start / v start */
 	int h_start = 0;
@@ -1119,7 +1129,12 @@ static void vdp_update_fmt_setting(unsigned char vdp_id,
 	h_factor = src_width * DISPFMT_H_FACTOR / dst_width;
 
 	/*get the active zone information */
-	disp_path_get_active_zone(vdp_id, disp_common_info.resolution->res_mode,
+	if (vdp_id == 0)
+		table_id = DISP_PATH_M_VDO;
+	else
+		table_id = DISP_PATH_S_VDO;
+
+	disp_path_get_active_zone(table_id, disp_common_info.resolution->res_mode,
 				  &h_start, &v_start_odd, &v_start_even);
 
 	/* fill DISPFMT active zone */
@@ -1248,7 +1263,7 @@ static void vdp_update_fmt_setting(unsigned char vdp_id,
 		fmt_hal_set_active_zone(vdp_id, &vdoutfmt_active_info);
 		fmt_hal_dsd_enable(vdp_id, &fmt_dsd_scl_info);
 		/*
-		if ((vdp_id == 0) && (dolby_path_enable == 0))
+		if ((vdp_id == 0) && (dovi_path_en == 0))
 			disp_path_set_dsd_delay(
 				DISP_PATH_MVDO_OUT,
 				disp_common_info.resolution->res_mode);
@@ -1267,7 +1282,7 @@ static void vdp_update_fmt_setting(unsigned char vdp_id,
 
 	if (vdp_id == MAIN_VIDEO_INDEX) {
 		vdp_config_fefifo_dispmix(MAIN_VIDEO_INDEX,
-			config_info->cur_fb_info.is_dolby,
+			config_info->cur_fb_info.is_dovi,
 			config_info->cur_fb_info.out_region.x,
 			config_info->cur_fb_info.out_region.y,
 			dst_width, dst_height,
@@ -1275,7 +1290,7 @@ static void vdp_update_fmt_setting(unsigned char vdp_id,
 	}
 	else if (vdp_id == SUB_VIDEO_INDEX) {
 		vdp_config_fefifo_dispmix(SUB_VIDEO_INDEX,
-			config_info->cur_fb_info.is_dolby,
+			config_info->cur_fb_info.is_dovi,
 			config_info->cur_fb_info.out_region.x,
 			config_info->cur_fb_info.out_region.y,
 			dst_width, dst_height,
@@ -1742,15 +1757,22 @@ static int vdp_routine(void *data)
 	static uint64_t pre_pts[2];
 	int32_t display_vsync_count = 0;
 	struct disp_hw *vdp_drv = disp_vdp_get_drv();
+	uint8_t table_id = 0;
 	struct DISP_PATH_LAYER_INFO path_layer_info = {0};
 
-/* just for dolby idk. Guarantee osd not to cover video even if video is full
+/* just for dovi idk. Guarantee osd not to cover video even if video is full
  * screen.
  */
 #if 0
 	int params_count = 7;
 	const char *vdp_show[7] = {"vdp.cli", "0", "0", "0",
 		"1920", "1080", "1920"};
+	const char *vdp_show_4k[7] = {"vdp.cli", "0", "0", "0",
+		"3840", "2160", "3840"};
+	const char *vdp_show_720p[7] = {"vdp.cli", "0", "0", "0",
+		"1280", "720", "1280"};
+	const char *vdp_show_480p[7] = {"vdp.cli", "0", "0", "0",
+		"720", "480", "720"};
 #endif
 
 	while (1) {
@@ -1786,12 +1808,57 @@ static int vdp_routine(void *data)
 			layer_info = &video_layer[i];
 
 			disp_hdr_vsync_handle(i, display_vsync_count);
+			//for dovi idk
+			if (dovi_idk_dump && (i == 0)) {
+				#if 0
+				if ((idk_close_area == 1) ||
+					(idk_vdo_en > 1))
+					vdp_cli_get()->target_area.enable =
+						false;
+				else if (dovi_res.width == 3840)
+					_vdp_cli_debug_set_disp_area(
+					params_count, vdp_show_4k);
+				else if (dovi_res.width == 1920)
+					_vdp_cli_debug_set_disp_area(
+					params_count, vdp_show);
+				else if (dovi_res.width == 1280)
+					_vdp_cli_debug_set_disp_area(
+					params_count, vdp_show_720p);
+				else if (dovi_res.width == 720)
+					_vdp_cli_debug_set_disp_area(
+					params_count, vdp_show_480p);
+				#endif
+
+				if (idk_dump_vsync_cnt >= 0)
+					idk_dump_vsync_cnt++;
+
+				if (idk_dump_vsync_cnt ==
+					(dovi_idk_disp_cnt/2 + 10))
+					disp_dovi_idk_dump_frame();
+			}
+
 			/* FRC control
 			 ** whether the current display buffer display time is up
 			 */
 			if (vdp_cli_get()->enable_pts_debug)
 				layer_show_count[i]++;
 
+/* just for dovi idk => run this code */
+#if 1
+			if (dovi_idk_dump && idk_stop_num &&
+				(idk_now_num[i] >= idk_stop_num))
+				continue;
+			if (dovi_idk_dump && idk_stop_frame_num > 0) {
+				if (hdr_frame_num >= idk_stop_frame_num)
+					continue;
+			}
+			if (dovi_idk_dump && (layer_info->display_duration >=
+				layer_info->vsync_duration))
+				continue;
+
+			if (dovi_idk_dump && (i == 0))
+				idk_dump_vsync_cnt = 0;
+#endif
 			mutex_lock(&(layer_info->sync_lock));
 
 			buf = NULL;
@@ -1835,11 +1902,11 @@ static int vdp_routine(void *data)
 				DISP_LOG_N("no buffer now, clock off done\n");
 			}
 
-			if (i == 0 && !find_next &&
-			    layer_info->state == VDP_LAYER_RUNNING &&
-			    video_layer[1].layer_start) {
-				disp_hdr_config_video_non();
-			}
+			if (!find_next &&
+				layer_info->state == VDP_LAYER_RUNNING
+				&& video_layer[i].layer_start
+				&& video_layer[1 - i].layer_start)
+				disp_hdr_config_video_non(i);
 
 			mutex_unlock(&(layer_info->sync_lock));
 
@@ -1860,9 +1927,28 @@ static int vdp_routine(void *data)
 					}
 				#endif
 				continue;
+				}
+
+			if (dovi_idk_dump &&
+				(buf->current_fence_index ==
+				(layer_info->timeline_idx + 1))) {
+				idk_now_num[i]++;
+				if ((buf->pts == 0 &&
+				idk_vdo_pts[i] > buf->pts) ||
+				(buf->pts > 0 &&
+				idk_vdo_pts[i] == buf->pts &&
+				!idk_no_drop)) {
+					idk_vdo_pts[i] = 0;
+					dovi_idk_settings(0);
+			vdp_cli_get()->target_area.enable = false;
+					vdp_printf(
+				VDP_AVSYNC_LOG,
+				"vdp layer stop\n");
+					continue;
+				} else
+					idk_vdo_pts[i] = buf->pts;
 			}
 
-/* normal flow. But if do dolby idk => annotate this code */
 #if 1
 
 			/* find a valid buffer */
@@ -1977,34 +2063,6 @@ static int vdp_routine(void *data)
 				}
 #endif
 
-#if 0 //8696 review
-
-			if (hdr10_plus_get_frame_delay_flag() &&
-			    (buf->hdr10_type == HDR10_TYPE_PLUS) && (i == 0) &&
-			    (!video_layer[0].layer_start)) {
-				getrawmonotonic(&buf->ts);
-				buf->timestap2 =
-					(unsigned long)buf->ts.tv_sec * 1000 +
-					buf->ts.tv_nsec / 1000000;
-
-				DISP_LOG_N(
-					"pts %lld, timestap1 %ld, timestap2 %ld, timer %ld\n",
-					buf->pts, buf->timestap1,
-					buf->timestap2,
-					buf->timestap2 - buf->timestap1);
-			}
-
-
-			if ((vdp_hdr_info[0].dr_range == DISP_DR_TYPE_DOVI) &&
-			    (dovi_get_profile4() == true)) {
-				/*wait for the acquired fence */
-				layer_info->timeline_idx++;
-				debug_frame_count[layer_info->layer_id]++;
-				find_next = false;
-				continue;
-			}
-#endif
-
 /*wait for the buffer write operation done */
 			if (buf->acquire_fence_fd != -1) {
 				sync_fence = sync_file_get_fence(
@@ -2065,28 +2123,35 @@ static int vdp_routine(void *data)
 			       sizeof(struct vdp_hal_config_info));
 			config_info.vdp_id = i;
 
-			if (pre_pts[i] != buf->pts) {
-				if (dovi_idk_dump)
-					layer_info->display_duration +=
-						(layer_info->vsync_duration *
-						 dovi_idk_disp_cnt);
-				else if (buf->source_duration)
+			if (dovi_idk_dump)
+				layer_info->display_duration +=
+					(layer_info->vsync_duration *
+					 dovi_idk_disp_cnt);
+			else if (pre_pts[i] != buf->pts) {
+				if (buf->source_duration)
 					layer_info->display_duration +=
 						buf->source_duration;
 				else
 					layer_info->display_duration = 0;
 			}
 
-			if (i == MAIN_VIDEO_INDEX) {
-				if (buf->is_dolby)
-					set_fs_index(1);
-				else
-					set_fs_index(0);
-			}
 
+			#ifdef CONFIG_DOVI_SUPPORT
+			if (buf->is_dovi && g_dovi_efuse)
+				set_fs_index(i, 1);
+			else
+			#endif
+				set_fs_index(i, 0);
+
+			if (dovi_idk_dump && (idk_vdo_en == 2))
+				set_fs_index(i, 1);
 			/* get the active zone from display path */
+			if (i == 0)
+				table_id = DISP_PATH_M_VDO;
+			else
+				table_id = DISP_PATH_S_VDO;
 			disp_path_get_active_zone(
-				i, disp_common_info.resolution->res_mode,
+				table_id, disp_common_info.resolution->res_mode,
 				&h_start, &v_start_odd, &v_start_even);
 
 			/* set the active zone information to vdp hal */

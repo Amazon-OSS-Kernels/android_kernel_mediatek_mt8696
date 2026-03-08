@@ -99,7 +99,7 @@ int dovi_be_hal_set_enable(uint32_t enable)
 {
 	if (dv_vdo_be_en != enable) {
 		dv_vdo_be_en = enable;
-		dovi_info("%s %d\n", __func__, enable);
+		dovi_printf("%s %d\n", __func__, enable);
 	}
 
 	return 1;

@@ -1788,9 +1788,6 @@ int disp_osd_update_register(uint32_t plane, int index)
 	INT32 ret = OSD_RET_OK;
 	UINT32 u4Index = 0;
 
-	if (fg_dovi_idk_test)
-		return ret;
-
 	if (fg_config_update[plane]) {
 		if (osd.osd_irq_thread_update[plane] == vsync_cnt)
 			OSD_LOG_D(
@@ -1940,6 +1937,14 @@ static int disp_mgr_post_osd_buffer(struct disp_osd_input_config *buffer_info)
 		OSD_LOG_E("disp osd config lay id error\n");
 		ret = -OSD_RET_INV_ARG;
 		goto err;
+	}
+
+	if (fg_dovi_idk_test) {
+		buffer_info->fence_fd = MTK_OSD_NO_FENCE_FD;
+		buffer_info->config.release_fence_fd = MTK_OSD_NO_FENCE_FD;
+		buffer_info->config.present_fence_fd = MTK_OSD_NO_FENCE_FD;
+		vfree(pBuffList);
+		return ret;
 	}
 
 	if (osd_drop_command_check(i, buffer_info)) {

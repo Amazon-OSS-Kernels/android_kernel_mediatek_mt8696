@@ -44,7 +44,7 @@
 #include "disp_r2r_if.h"
 
 
-#define R2R_FULL_SCREEN_IDX 2 /*0-default,  1-dolby*/
+#define R2R_FULL_SCREEN_IDX 2 /*0-default,  1-dovi*/
 #define R2R_DTS_MAX_ND_SIZE 50
 #define R2R_TEST_FRAME_MAX_SIZE (4096*2160*4)
 

@@ -1313,9 +1313,11 @@ s32 cmdq_pkt_poll_timeout(struct cmdq_pkt *pkt, u32 value, u8 subsys,
 	/* instruction may hit boundary case,
 	 * check if op code is jump and get next instruction if necessary
 	 */
-	if (inst->op == CMDQ_CODE_JUMP)
+	if (inst && (inst->op == CMDQ_CODE_JUMP))
 		inst = (struct cmdq_instruction *)cmdq_pkt_get_va_by_offset(
 			pkt, end_addr_mark + CMDQ_INST_SIZE);
+	if (!inst)
+		return -EINVAL;
 	if (absolute)
 		shift_pa = CMDQ_REG_SHIFT_ADDR(cmd_pa);
 	else
@@ -1328,10 +1330,12 @@ s32 cmdq_pkt_poll_timeout(struct cmdq_pkt *pkt, u32 value, u8 subsys,
 	if (cnt_end_addr_mark) {
 		inst = (struct cmdq_instruction *)cmdq_pkt_get_va_by_offset(
 			pkt, cnt_end_addr_mark);
-		if (inst->op == CMDQ_CODE_JUMP)
+		if (inst && (inst->op == CMDQ_CODE_JUMP))
 			inst = (struct cmdq_instruction *)
 				cmdq_pkt_get_va_by_offset(
 				pkt, end_addr_mark + CMDQ_INST_SIZE);
+		if (!inst)
+			return -EINVAL;
 		shift_pa = CMDQ_REG_SHIFT_ADDR(
 			pkt->cmd_buf_size - cnt_end_addr_mark - CMDQ_INST_SIZE);
 		inst->arg_b = CMDQ_GET_ARG_B(shift_pa);
@@ -1509,8 +1513,7 @@ s32 cmdq_pkt_finalize(struct cmdq_pkt *pkt)
 	if (cmdq_util_is_feature_en(CMDQ_LOG_FEAT_PERF))
 		cmdq_pkt_perf_end(pkt);
 
-#if IS_ENABLED(CONFIG_MTK_SEC_VIDEO_PATH_SUPPORT) || \
-	IS_ENABLED(CONFIG_MTK_CAM_SECURITY_SUPPORT)
+#ifdef CMDQ_SECURE_SUPPORT
 	if (pkt->sec_data) {
 		err = cmdq_sec_insert_backup_cookie(pkt);
 		if (err)
@@ -1749,8 +1752,7 @@ void cmdq_pkt_err_dump_cb(struct cmdq_cb_data data)
 
 	cmdq_dump_core(client->chan);
 
-#if IS_ENABLED(CONFIG_MTK_SEC_VIDEO_PATH_SUPPORT) || \
-	IS_ENABLED(CONFIG_MTK_CAM_SECURITY_SUPPORT)
+#ifdef CMDQ_SECURE_SUPPORT
 	/* for secure path dump more detail */
 	if (pkt->sec_data) {
 		cmdq_util_msg("thd:%d Hidden thread info since it's secure",
@@ -1820,8 +1822,7 @@ void cmdq_pkt_err_dump_cb(struct cmdq_cb_data data)
 			"DISPATCH:%s(%s) unknown instruction thread:%d",
 			mod, cmdq_util_hw_name(client->chan), thread_id);
 	}
-#if IS_ENABLED(CONFIG_MTK_SEC_VIDEO_PATH_SUPPORT) || \
-	IS_ENABLED(CONFIG_MTK_CAM_SECURITY_SUPPORT)
+#ifdef CMDQ_SECURE_SUPPORT
 done:
 #endif
 	cmdq_util_err("End of Error %u", err_num);
@@ -1985,8 +1986,7 @@ int cmdq_pkt_wait_complete(struct cmdq_pkt *pkt)
 	pkt->rec_wait = sched_clock();
 	cmdq_trace_begin("%s", __func__);
 
-#if IS_ENABLED(CONFIG_MTK_SEC_VIDEO_PATH_SUPPORT) || \
-	IS_ENABLED(CONFIG_MTK_CAM_SECURITY_SUPPORT)
+#ifdef CMDQ_SECURE_SUPPORT
 	if (pkt->sec_data)
 		cmdq_sec_pkt_wait_complete(pkt);
 	else

@@ -58,8 +58,8 @@ static char STR_HELP[] =
 	"          3: home screen scenario - interlace, keep osd_fhd/hdmi/p2i power\n"
 	"          4: uhd mvdo scenario - keep osd_fhd/hdmi/vdo3 power\n"
 	"          5: uhd mvdo(no ui) scenario - keep hdmi/vdo3 power\n"
-	"          6: uhd dolby scenario - keep osd_fhd/hdmi/vdo3/dolby power\n"
-	"          7: uhd dolby scenario(no ui) - keep hdmi/vdo3/dolby power\n";
+	"          6: uhd dovi scenario - keep osd_fhd/hdmi/vdo3/dovi power\n"
+	"          7: uhd dovi scenario(no ui) - keep hdmi/vdo3/dovi power\n";
 
 static int disp_hw_get_ion_buffer(void)
 {

@@ -23,6 +23,10 @@ struct emi_info_t {
 extern void bwl_init(struct platform_driver *emi_ctrl);
 extern void mpu_init(
 	struct platform_driver *emi_ctrl, struct platform_device *pdev);
+#if ENABLE_MPU_TEST
+extern void emi_mpu_test_init(
+	struct platform_driver *emi_ctrl, struct platform_device *pdev);
+#endif
 extern void elm_init(
 	struct platform_driver *emi_ctrl, struct platform_device *pdev);
 extern void bw_timer_init(void);

@@ -63,18 +63,18 @@ struct vdp_hal_fb_addr {
 struct vdp_hal_fb_info {
 	uint8_t is_secruity;
 	uint8_t is_interlace;
-	uint8_t is_dolby;
+	uint8_t is_dovi;
 	uint8_t is_scan_line;
 	uint8_t is_yuv422;
 	uint8_t is_10bit;
 	uint8_t is_ufo;
 	uint8_t is_10bit_tile_mode;
 	uint8_t is_jumpmode;
-	uint8_t is_dolby_vs10;
+	uint8_t is_dovi_vs10;
 
 	uint8_t is_hdr10plus;
 
-	/* for dolby or hdr10 metadata svp path */
+	/* for dovi or hdr10 metadata svp path */
 	uint32_t metadata_size;
 	uint32_t metadata_sec_handle;
 
@@ -115,7 +115,7 @@ struct vdp_hal_data_info {
 	uint8_t enable;
 	uint8_t is_secruity;
 	uint8_t is_interlace;
-	uint8_t is_dolby;
+	uint8_t is_dovi;
 	uint8_t is_el_exist;
 	uint8_t is_second_field;
 	uint32_t addr_y[VDP_ADDR_MAX];

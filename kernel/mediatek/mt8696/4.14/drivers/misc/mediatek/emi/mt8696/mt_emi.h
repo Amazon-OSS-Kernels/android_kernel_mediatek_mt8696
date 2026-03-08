@@ -20,6 +20,8 @@
 #define ENABLE_ELM	0
 #define ENABLE_MBW	0
 #define ENABLE_BWG	0
+#define ENABLE_MPU_TEST	0
+
 /* #define DECS_ON_SSPM */
 /* #define ENABLE_MPU_SLVERR */
 #define DBG_INFO_READY	0
@@ -29,9 +31,6 @@
 #define ELM_IRQ_INDEX	1 /* fcBianco uses CGM IRQ as ELM IRQ */
 
 /* macro for MPU */
-#define ENABLE_AP_REGION	0
-#define AP_REGION_ID		31
-
 #define EMI_MPUD0_ST		(CEN_EMI_BASE + 0x160)
 #define EMI_MPUD_ST(domain)	(EMI_MPUD0_ST + (4*domain))
 #define EMI_MPUD0_ST2		(CEN_EMI_BASE + 0x200)

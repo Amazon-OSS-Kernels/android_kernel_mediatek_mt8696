@@ -94,6 +94,24 @@ void vdout_sys_hal_set_hdmi(enum HDMI_VIDEO_RESOLUTION res)
 	vdout_sys_hal_4k2k_clock_enable(res);
 }
 
+//for dovi idk
+void vdout_sys_hal_idk_set(bool en, uint16_t htotal)
+{
+	if (en) {
+		if (htotal == 4400)
+			vWriteVDOUTMsk(0x5C8, (0x0 << 28), (0xf << 28));
+		else if (htotal == 2200)
+			vWriteVDOUTMsk(0x5C8, (0x2 << 28), (0xf << 28));
+		else if (htotal == 1650)
+			vWriteVDOUTMsk(0x5C8, (0x3 << 28), (0xf << 28));
+		else if (htotal == 858)
+			vWriteVDOUTMsk(0x5C8, (0x6 << 28), (0xf << 28));
+		else
+			vWriteVDOUTMsk(0x5C8, (0x2 << 28), (0xf << 28));//2k60hz
+	}
+	//vWriteMMSYSMsk(MMSYS_COMMON_CFG0, (0x5 << 16), (0xf << 16));
+}
+
 void vdout_sys_hal_videoin_source_sel(enum VIDEOIN_SRC_SEL src_point)
 {
 	vWriteMMSYSMsk(MMSYS_COMMON_CFG0, src_point, VIDEO_IN_SRC_SEL);

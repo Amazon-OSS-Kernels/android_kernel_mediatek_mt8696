@@ -179,5 +179,6 @@ void vdout_sys_hal_set_new_sd_sel(bool en);
 void vdout_sys_hal_shadow_en(bool en);
 void vdout_sys_hal_shadow_update(void);
 int vdout_sys_hal_init(struct vdout_init_param *param);
+void vdout_sys_hal_idk_set(bool en, uint16_t htotal);
 
 #endif

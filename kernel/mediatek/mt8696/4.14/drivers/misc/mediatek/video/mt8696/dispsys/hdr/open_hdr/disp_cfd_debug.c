@@ -174,17 +174,6 @@ static void cfd_process_dbg_opt(const char *opt)
 			   enable);
 		disp_cfd_tz_dbg_lvl_enable(level, enable);
 
-	} else if (strncmp(opt, "test:", 5) == 0) {
-		char *p = (char *)opt + 5;
-		unsigned int layer_id = 0;
-		unsigned int test_no = 0;
-
-		STR_CVT_U32(&p, &layer_id, goto Error);
-		STR_CVT_U32(&p, &test_no, goto Error);
-		cfd_default("set cfd test case %d %d enable\n",
-			layer_id, test_no);
-		disp_cfd_set_test_case(layer_id, test_no);
-
 	} else if (strncmp(opt, "tz_init:", 8) == 0) {
 		char *p = (char *)opt + 8;
 		unsigned int enable = 0;

@@ -169,7 +169,7 @@ static struct mutex disp_dovi_main_mutex;
 
 #define DOVI_PATH_TEST_MASK 0x100
 
-bool dolby_ut_enable;
+bool dovi_ut_enable;
 uint32_t d_ml_tbl_dpt;
 uint32_t m_ml_tbl_dpt;
 bool ml_update;
@@ -849,12 +849,12 @@ int disp_dovi_default_path(uint32_t option)
 	uint32_t case_id = 0;
 
 	if (option)
-		dolby_ut_enable = true;
+		dovi_ut_enable = true;
 	else
-		dolby_ut_enable = false;
+		dovi_ut_enable = false;
 
-	dovi_printf("option %d dobly_enable %d\n", option,
-		dolby_ut_enable);
+	dovi_printf("option %d dovi_enable %d\n", option,
+		dovi_ut_enable);
 
 	dovi_printf("dovi ut info out(%d %d %d %d)\n",
 		dv_ut_info.out_format,
@@ -885,40 +885,40 @@ int disp_dovi_default_path(uint32_t option)
 		dv_ut_info.dv_layer[3].width,
 		dv_ut_info.dv_layer[3].heigh);
 
-	if (dolby_ut_enable) {
+	if (dovi_ut_enable) {
 		dovi_info("enable dobly clock:\n");
 		if (dv_ut_info.dv_layer[0].on) {
 			disp_clock_enable(DISP_CLK_M_HDR_VDO_FE,
-				dolby_ut_enable);
-			dovi_vdo_fe_hal_set_enable(0, dolby_ut_enable);
+				dovi_ut_enable);
+			dovi_vdo_fe_hal_set_enable(0, dovi_ut_enable);
 			case_id = dv_ut_info.dv_layer[0].case_id;
 		}
 		if (dv_ut_info.dv_layer[1].on) {
 			disp_clock_enable(DISP_CLK_S_HDR_VDO_FE,
-				dolby_ut_enable);
-			dovi_vdo_fe_hal_set_enable(1, dolby_ut_enable);
+				dovi_ut_enable);
+			dovi_vdo_fe_hal_set_enable(1, dovi_ut_enable);
 			case_id = dv_ut_info.dv_layer[1].case_id;
 		}
 		if (dv_ut_info.dv_layer[2].on) {
 			disp_clock_enable(DISP_CLK_FHD_HDR_GFX_FE,
-				dolby_ut_enable);
-			dovi_gfx_fe_hal_set_enable(0, dolby_ut_enable);
+				dovi_ut_enable);
+			dovi_gfx_fe_hal_set_enable(0, dovi_ut_enable);
 			case_id = dv_ut_info.dv_layer[2].case_id;
 		}
 		if (dv_ut_info.dv_layer[3].on) {
 			disp_clock_enable(DISP_CLK_UHD_HDR_GFX_FE,
-				dolby_ut_enable);
-			dovi_gfx_fe_hal_set_enable(1, dolby_ut_enable);
+				dovi_ut_enable);
+			dovi_gfx_fe_hal_set_enable(1, dovi_ut_enable);
 			case_id = dv_ut_info.dv_layer[3].case_id;
 		}
 
 		disp_clock_enable(DISP_CLK_HDR_VDO_BE,
-			dolby_ut_enable);
+			dovi_ut_enable);
 
 		dovi_vdo_fe_init(dovi_reg_base);
 		dovi_gfx_fe_init(dovi_reg_base);
 		dovi_be_init(dovi_reg_base);
-		dovi_be_hal_set_enable(dolby_ut_enable);
+		dovi_be_hal_set_enable(dovi_ut_enable);
 
 		switch (case_id) {
 		case 5005:
@@ -937,12 +937,12 @@ int disp_dovi_default_path(uint32_t option)
 	}
 	disp_path_set_hw_path(DISP_PATH_M_HDR_VDO_FE, 1);
 	disp_path_set_hw_path(DISP_PATH_DISP_HDR_VDO_BE, 1);
-	if (!dolby_ut_enable) {
-		disp_clock_enable(DISP_CLK_HDR_VDO_BE, dolby_ut_enable);
-		disp_clock_enable(DISP_CLK_FHD_HDR_GFX_FE, dolby_ut_enable);
-		disp_clock_enable(DISP_CLK_UHD_HDR_GFX_FE, dolby_ut_enable);
-		disp_clock_enable(DISP_CLK_M_HDR_VDO_FE, dolby_ut_enable);
-		disp_clock_enable(DISP_CLK_S_HDR_VDO_FE, dolby_ut_enable);
+	if (!dovi_ut_enable) {
+		disp_clock_enable(DISP_CLK_HDR_VDO_BE, dovi_ut_enable);
+		disp_clock_enable(DISP_CLK_FHD_HDR_GFX_FE, dovi_ut_enable);
+		disp_clock_enable(DISP_CLK_UHD_HDR_GFX_FE, dovi_ut_enable);
+		disp_clock_enable(DISP_CLK_M_HDR_VDO_FE, dovi_ut_enable);
+		disp_clock_enable(DISP_CLK_S_HDR_VDO_FE, dovi_ut_enable);
 		dovi_ut_external_bypass(0);
 		dovi_ut_external_bypass(1);
 		dovi_ut_external_bypass(2);
@@ -953,9 +953,9 @@ int disp_dovi_default_path(uint32_t option)
 
 #ifdef CONFIG_MTK_INTERNAL_HDMI_SUPPORT
 	if (option == 3 || option == 4)
-		vDolbyHdrEnable(true);
+		vDoviHdrEnable(true);
 	else
-		vDolbyHdrEnable(false);
+		vDoviHdrEnable(false);
 #endif
 
 	return DOVI_STATUS_OK;
@@ -1152,6 +1152,31 @@ void dovi_ut_alloc_adl_ml_table_mem(uint32_t en)
 
 }
 
+void dovi_idk_dump_vdo_bypass(uint32_t id1)
+{
+	switch (id1) {
+	case DV_MAIN_FE:
+		UT_WriteREGMsk(d_top_reg_base + 0x2c, 0x2, 0xFF);
+		break;
+	case DV_SUB_FE:
+		UT_WriteREGMsk(d_top_reg_base + 0x18, 0x2, 0xFF);
+		break;
+	case DV_FHD_FE:
+		UT_WriteREGMsk(m_top_reg_base + 0x20, 0x1, 0x3);
+		break;
+	case DV_UHD_FE:
+		UT_WriteREGMsk(mmsys_cfg_reg_base + 0x700, 0x1, 0x3);
+		break;
+	case DV_BE:
+		UT_WriteREGMsk(m_top_reg_base + 0x20, 0x1 << 4, 0x10);
+		UT_WriteREGMsk(m_top_reg_base + 0x20, 0x0 << 8, 0x100);
+		break;
+	default:
+		break;
+	}
+	UT_WriteREGMsk(m_top_reg_base + 0x20, 0x1 << 4, 0x10);
+	UT_WriteREGMsk(m_top_reg_base + 0x20, 0x0 << 8, 0x100);
+}
 
 void dovi_ut_external_bypass(uint32_t id1)
 {

@@ -19,6 +19,7 @@
 #include "mtk_vcu.h"
 #include "venc_ipi_msg.h"
 #include "venc_vcu_if.h"
+#include "venc_drv_if.h"
 #include "mtk_vcodec_intr.h"
 #include "mtk_vcodec_enc_pm.h"
 #include "mtk_vcodec_enc.h"
@@ -75,13 +76,18 @@ static void handle_enc_waitisr_msg(struct venc_vcu_inst *vcu,
 
 int vcu_enc_ipi_handler(void *data, unsigned int len, void *priv)
 {
+	struct mtk_vcodec_dev *dev = (struct mtk_vcodec_dev *)priv;
 	struct venc_vcu_ipi_msg_common *msg = data;
 	struct venc_vcu_inst *vcu;
+	struct venc_inst *inst = NULL;
 	struct mtk_vcodec_ctx *ctx;
 	int ret = 0;
 	unsigned long flags;
 	struct task_struct *task = NULL;
 	struct files_struct *f = NULL;
+	struct list_head *p, *q;
+	struct mtk_vcodec_ctx *temp_ctx;
+	int msg_valid = 0;
 
 	vcu_get_file_lock();
 	vcu_get_task(&task, &f, 0);
@@ -94,10 +100,26 @@ int vcu_enc_ipi_handler(void *data, unsigned int len, void *priv)
 	}
 
 	vcu = (struct venc_vcu_inst *)(unsigned long)msg->venc_inst;
-	if ((vcu != priv) && (msg->msg_id < VCU_IPIMSG_VENC_SEND_BASE)) {
-		pr_info("%s, vcu:%p != priv:%p\n", __func__, vcu, priv);
-		return 1;
+
+	/* Check IPI inst is valid */
+	mutex_lock(&dev->ctx_mutex);
+	msg_valid = 0;
+	list_for_each_safe(p, q, &dev->ctx_list) {
+		temp_ctx = list_entry(p, struct mtk_vcodec_ctx, list);
+		inst = (struct venc_inst *)temp_ctx->drv_handle;
+		if (inst != NULL && vcu == &inst->vcu_inst) {
+			msg_valid = 1;
+			break;
+		}
 	}
+	if (!msg_valid) {
+		mtk_v4l2_err(" msg msg_id %X vcu not exist %p\n",
+			msg->msg_id, vcu);
+		mutex_unlock(&dev->ctx_mutex);
+		ret = -EINVAL;
+		return ret;
+	}
+	mutex_unlock(&dev->ctx_mutex);
 
 	mtk_vcodec_debug(vcu, "msg_id %x inst %p status %d",
 					 msg->msg_id, vcu, msg->status);
@@ -198,7 +220,7 @@ static int vcu_enc_send_msg(struct venc_vcu_inst *vcu, void *msg,
 		return -EIO;
 	}
 
-	status = vcu_ipi_send(vcu->dev, vcu->id, msg, len, vcu);
+	status = vcu_ipi_send(vcu->dev, vcu->id, msg, len, vcu->ctx->dev);
 	if (status) {
 		mtk_vcodec_err(vcu, "vcu_ipi_send msg_id %x len %d fail %d",
 					   *(uint32_t *)msg, len, status);
@@ -281,8 +303,8 @@ int vcu_enc_init(struct venc_vcu_inst *vcu)
 	vcu->failure = 0;
 	vcu_get_ctx_ipi_binding_lock(vcu->dev, &vcu->ctx_ipi_binding, VCU_VENC);
 
-	status = vcu_ipi_register(vcu->dev, vcu->id, vcu->handler,
-							  NULL, vcu);
+	status = vcu_ipi_register(vcu->dev,
+		vcu->id, vcu->handler, NULL, vcu->ctx->dev);
 	if (status) {
 		mtk_vcodec_err(vcu, "vcu_ipi_register fail %d", status);
 		return -EINVAL;
@@ -320,7 +342,7 @@ int vcu_enc_query_cap(struct venc_vcu_inst *vcu, unsigned int id, void *out)
 	vcu->handler = vcu_enc_ipi_handler;
 
 	err = vcu_ipi_register(vcu->dev,
-		vcu->id, vcu->handler, NULL, vcu);
+		vcu->id, vcu->handler, NULL, vcu->ctx->dev);
 	if (err != 0) {
 		mtk_vcodec_err(vcu, "vcu_ipi_register fail status=%d", err);
 		return err;

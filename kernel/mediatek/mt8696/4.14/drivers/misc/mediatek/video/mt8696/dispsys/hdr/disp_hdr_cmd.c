@@ -93,8 +93,31 @@ static void hdr_process_dbg_opt(const char *opt)
 
 		hdr_printf("set delay %d %d\n", delay_hdr_num,
 			delay_hdr_mute_num);
-	} else {
+	} else if (strncmp(opt, "fsdr:", 5) == 0) {
+		p = (char *)opt + 5;
 
+		STR_CVT_U32(&p, &force_sdr_output, goto Error);
+
+		hdr_printf("forcesdr %d\n", force_sdr_output);
+	} else if (strncmp(opt, "allm:", 5) == 0) {
+		char *p = (char *)opt + 5;
+		unsigned int allm_en = 0;
+		unsigned int allm_type = 0;
+
+		STR_CVT_U32(&p, &allm_en, goto Error);
+		STR_CVT_U32(&p, &allm_type, goto Error);
+
+		hdr_allm_ctl_by_cmd = (bool)allm_en;
+		hdr_allm_type = allm_type;
+		hdr_printf("set src allm %d %d!\n", hdr_allm_ctl_by_cmd,
+			hdr_allm_type);
+	} else if (strncmp(opt, "dv_s_type:", 10) == 0) {
+		p = (char *)opt + 10;
+
+		STR_CVT_U32(&p, &use_dv_s_type, goto Error);
+
+		hdr_printf("use_dv_s_type %d\n", use_dv_s_type);
+	} else {
 		hdr_error("test debug cmd pass.\n");
 		goto Error;
 	}

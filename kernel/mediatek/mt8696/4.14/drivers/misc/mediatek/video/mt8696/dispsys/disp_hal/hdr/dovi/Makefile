@@ -30,7 +30,7 @@ obj-y += dovi_vdo_fe_hal.o
 obj-y += dovi_gfx_fe_hal.o
 obj-y += dovi_be_hal.o
 obj-y += dovi_common_hal.o
-obj-y += dovi_v2_4_2_table.o
+obj-y += dovi_v2_6_table.o
 obj-y += dovi_table.o
 
 # EOF

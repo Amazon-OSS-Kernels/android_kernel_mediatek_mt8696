@@ -71,7 +71,6 @@ enum CFD_TZ_CALL_CMD {
 	CFD_TZ_CALL_CMD_CONFIG_FRAME_LAYER1,
 	CFD_TZ_CALL_CMD_CONFIG_FRAME_LAYER2,
 	CFD_TZ_CALL_CMD_CONFIG_FRAME_LAYER3,
-	CFD_TZ_CALL_CMD_TEST_CASE,
 	CFD_TZ_CALL_CMD_BACKUP_HDR10PLUS_SECURE_HANDLE,
 	CFD_TZ_CALL_CMD_PARSER_HDR10PLUS_SECURE_HANDLE,
 	CFD_TZ_CALL_CMD_MAX,
@@ -346,8 +345,6 @@ enum cfd_status cfd_sec_init(void);
 enum cfd_status cfd_sec_deinit(void);
 enum cfd_status cfd_sec_status(void);
 enum cfd_status cfd_sec_config_frame(uint32_t layer_id);
-enum cfd_status cfd_sec_test_case(uint32_t layer_id,
-	uint32_t test_no, uint32_t mode);
 enum cfd_status cfd_backup_hdr10plus_sec_handle(void *buffer,
 	uint32_t size);
 struct cfd_share_memory_info_t *cfd_sec_get_share_mem(int layer_id);

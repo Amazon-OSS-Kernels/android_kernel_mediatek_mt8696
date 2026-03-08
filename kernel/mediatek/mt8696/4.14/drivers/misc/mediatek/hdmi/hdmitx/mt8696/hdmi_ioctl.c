@@ -396,6 +396,9 @@ void hdmi_game_io_mode(unsigned int mode)
 
 	TX_DEF_LOG("%s: low_latency_io_mode: %d, low_latency_disp_en: %d\n",
 		__func__,low_latency_io_mode, low_latency_disp_en);
+#if defined(CONFIG_MTK_FB)
+	disp_hw_mgr_send_event(DISP_EVENT_ALLM, (void *)&mode);
+#endif
 
 	if (low_latency_io_mode == HDMI_LOW_LATENCY_MODE_EN)
 		vHdmiGameModeEn(TRUE);
@@ -1379,8 +1382,8 @@ struct HDMI_EDID_T __user *data)
 	err |= get_user(u, &data->ui1_sink_hdr10plus_app_version);
 	err |= put_user(u, &data32->ui1_sink_hdr10plus_app_version);
 
-	err |= get_user(u, &data->ui1_sink_dolbyvision_block[32]);
-	err |= put_user(u, &data32->ui1_sink_dolbyvision_block[32]);
+	err |= get_user(u, &data->ui1_sink_dovi_block[32]);
+	err |= put_user(u, &data32->ui1_sink_dovi_block[32]);
 
 	err |= get_user(u, &data->ui1rawdata_edid[EDID_LENGTH]);
 	err |= put_user(u, &data32->ui1rawdata_edid[EDID_LENGTH]);

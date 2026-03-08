@@ -27,6 +27,7 @@
 #define MAX_PRIMARY_INDEX 18
 #define MAX_DM_EXT_BLOCKS 255
 #define MAX_UNKNOWN_MD_SIZE 256
+#define CONFIG_DOVI_SUPPORT 1
 
 
 enum MTK_DISPIF_TYPE {
@@ -52,7 +53,7 @@ enum MTK_DISPIF_DEVICE_TYPE {
 };
 
 enum MTK_HDR_TYPE_FLAG {
-	MTK_HDR_TYPE_DOLBY_VISION = 1 << 0,
+	MTK_HDR_TYPE_DOVI = 1 << 0,
 	MTK_HDR_TYPE_HDR10 = 1 << 1,
 	MTK_HDR_TYPE_HLG = 1 << 2
 };
@@ -627,7 +628,7 @@ struct mtk_disp_buffer {
 
 	/* if buffer_info is video plane, should fill video info */
 	bool is_ufo;
-	bool is_dolby;
+	bool is_dovi;
 	bool is_progressive;
 	bool is_10bit;
 	bool is_10bit_lbs2bit_tile_mode;
@@ -654,7 +655,7 @@ struct mtk_disp_buffer {
 	uint32_t buffer_size;
 
 	uint32_t meta_data_size;
-	struct mtk_disp_dovi_md_t dolby_info;
+	struct mtk_disp_dovi_md_t dovi_info;
 
 	struct mtk_disp_film_grain_md_t film_grain_info;
 

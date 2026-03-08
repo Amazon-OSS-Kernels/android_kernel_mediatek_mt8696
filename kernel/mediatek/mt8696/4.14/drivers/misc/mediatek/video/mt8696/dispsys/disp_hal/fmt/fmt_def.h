@@ -180,7 +180,7 @@ extern struct fmt_context fmt;
 #define FMT_LOG(level, format...)                                              \
 	do {                                                                   \
 		if (level <= fmt.fmt_log_level)                                \
-			pr_err("[FMT] " format);                               \
+			pr_info("[FMT] " format);                               \
 	} while (0)
 
 #define FMT_LOG_E(format...) FMT_LOG(FMT_LL_ERROR, "error: " format)

@@ -39,7 +39,7 @@
 #include "disp_dovi_common_if.h"
 #include "disp_fefifo_if.h"
 #include "dovi_common_hal.h"
-#include "disp_mix_hal.h"
+
 
 #define START_CODE_LEN_MAX 5
 /* 0x7C 0x01 0x19 */
@@ -47,8 +47,6 @@
 
 uint32_t _u4VSyncCount;
 uint32_t dovi_enable;
-int gmin;
-int gmax;
 /*dovi_enable enable
  * 0 0 already disable   0
  * 0 1 disable to enable 1
@@ -57,7 +55,6 @@ int gmax;
  */
 uint32_t dovi_proc_state;
 
-uint32_t dovi_rpu_total_len;
 uint32_t dovi_out_res;
 uint32_t dovi_out_width;
 uint32_t dovi_out_height;
@@ -65,30 +62,18 @@ uint32_t dovi_out_height;
 bool dovi_md_parser_enable;
 struct dv_reg_tbl hw_reset_table;
 
-
-struct mtk_disp_hdr10_md_t *p_hdr_md;
+/*IDK2.6 new define*/
+struct src_params_t *p_src_param;
 struct cp_param_t *p_cp_param;
-uint32_t *p_comp_md;
-uint32_t *p_orig_md;
-uint32_t *p_hdmi_md;
-struct rpu_ext_config_fixpt_main_t *p_dv_comp_md;
-struct dm_metadata_t *p_dv_dm_md;
+uint32_t *p_sec_layer;
 struct dv_hw_reg *p_dv_out_params;
+uint32_t *p_hdmi_md;
 struct mtk_disp_hdr10_md_t *p_hdr10_md;
-unsigned char *rpu_bs_buffer;
-int *p_is_rbsp;
-bool *p_svp;
-uint32_t *p_sec_handle;
-uint32_t *p_rpu_bs_len;
-enum DISP_DR_TYPE_T *p_dr_type;
-uint32_t *p_frame_num;
-
-uint32_t *p_orig_md_len;
-uint32_t *p_hdmi_md_len;
+struct vsif_param_t *p_vsif;
 
 uint32_t dump_md_enable;
 uint32_t reg_test_enable;
-bool *p_profile4;
+int *p_profile4;
 bool set_graphic_max_lum_enable;
 bool set_video_max_lum_enable;
 
@@ -96,19 +81,23 @@ int graphic_max_lum;
 int video_max_lum;
 
 struct mtk_disp_hdr_md_info_t dovi_hdr_md_info[V_G_LAYER_MAX];
-/* record whether current main path is playing dolby video. */
-uint32_t dolby_path_enable;
+/* record whether current main path is playing dovi video. */
+uint32_t dovi_path_en;
 uint32_t dovi_vs10_path_en;
-uint32_t dolby_path_ready2start;
-enum dovi_signal_format_t dolby_out_format;
-bool dolby_force_output;
-enum dovi_signal_format_t dolby_force_out_format;
+uint32_t dovi_path_ready2start;
+enum dovi_signal_format_t dovi_out_format;
+bool dovi_force_output;
+enum dovi_signal_format_t dovi_force_out_format;
 enum HDMI_VIDEO_RESOLUTION old_resolution;
 struct mutex disp_dovi_mutex;
+bool dovi_hdmi_brightness_en;
+uint32_t dovi_hdmi_brightness;
+uint32_t sdk_vsem;
+
 /*
  *IDK Cert special flow
  *In IDK Cert, we must set one buf show idk_dump_vsync_cnt vsyncs
- *for dump data from dolby be by video in.
+ *for dump data from dovi be by video in.
  */
 bool dovi_idk_dump;
 uint32_t dovi_idk_disp_cnt;
@@ -116,11 +105,14 @@ int32_t idk_dump_vsync_cnt;
 bool dovi_idk_dump_set_vin;
 uint32_t dovi_ipcore_version = 4;
 struct dv_reg_tbl dv_bypass_table[2];
+int32_t fhd_color_format;
+int32_t uhd_color_format;
 bool dovi_black_pattern_en;
 uint32_t dovi_black_pattern_cnt;
 uint32_t dovi_black_pattern_cnt_max = 5;
 uint32_t f_graphic_off_cmd;
-
+uint32_t set_vsvdb;
+uint32_t dovi_get_ext_md;
 
 void dovi_set_hw_path(void)
 {
@@ -129,55 +121,55 @@ void dovi_set_hw_path(void)
 
 	if (dv_vdo_fe_en[0]) {
 		disp_path_set_hw_path(DISP_PATH_M_HDR_VDO_FE, 1);
-		disp_path_get_sof_info(DISP_SOF_6_M_DOLBY_FE_STA,
-			DISP_SOF_6_M_DOLBY_FE_END,
+		disp_path_get_sof_info(DISP_SOF_6_M_HDR_FE_STA,
+			DISP_SOF_6_M_HDR_FE_END,
 			&sof_start, &sof_end);
-		fmt_hal_set_sof(FMT_SOF_6_M_DOLBY_FE_STA,
-			FMT_SOF_6_M_DOLBY_FE_END,
+		fmt_hal_set_sof(FMT_SOF_6_M_HDR_FE_STA,
+			FMT_SOF_6_M_HDR_FE_END,
 			sof_start, sof_end);
 	} else
 		disp_path_set_hw_path(DISP_PATH_M_HDR_VDO_FE, 0);
 
 	if (dv_vdo_fe_en[1]) {
 		disp_path_set_hw_path(DISP_PATH_S_HDR_VDO_FE, 1);
-		disp_path_get_sof_info(DISP_SOF_13_S_DOLBY_FE_STA,
-			DISP_SOF_13_S_DOLBY_FE_END,
+		disp_path_get_sof_info(DISP_SOF_13_S_HDR_FE_STA,
+			DISP_SOF_13_S_HDR_FE_END,
 			&sof_start, &sof_end);
-		fmt_hal_set_sof(FMT_SOF_13_S_DOLBY_FE_STA,
-			FMT_SOF_13_S_DOLBY_FE_END,
+		fmt_hal_set_sof(FMT_SOF_13_S_HDR_FE_STA,
+			FMT_SOF_13_S_HDR_FE_END,
 			sof_start, sof_end);
 	} else
 		disp_path_set_hw_path(DISP_PATH_S_HDR_VDO_FE, 0);
 
 	if (dv_gfx_fe_en[0]) {
 		disp_path_set_hw_path(DISP_PATH_FHD_HDR_GFX_FE, 1);
-		disp_path_get_sof_info(DISP_SOF_19_FHD_DOLBY_FE_STA,
-			DISP_SOF_19_FHD_DOLBY_FE_END,
+		disp_path_get_sof_info(DISP_SOF_19_FHD_HDR_FE_STA,
+			DISP_SOF_19_FHD_HDR_FE_END,
 			&sof_start, &sof_end);
-		fmt_hal_set_sof(FMT_SOF_19_FHD_DOLBY_FE_STA,
-			FMT_SOF_19_FHD_DOLBY_FE_END,
+		fmt_hal_set_sof(FMT_SOF_19_FHD_HDR_FE_STA,
+			FMT_SOF_19_FHD_HDR_FE_END,
 			sof_start, sof_end);
 	} else
 		disp_path_set_hw_path(DISP_PATH_FHD_HDR_GFX_FE, 0);
 
 	if (dv_gfx_fe_en[1]) {
 		disp_path_set_hw_path(DISP_PATH_UHD_HDR_GFX_FE, 1);
-		disp_path_get_sof_info(DISP_SOF_16_UHD_DOLBY_FE_STA,
-			DISP_SOF_16_UHD_DOLBY_FE_END,
+		disp_path_get_sof_info(DISP_SOF_16_UHD_HDR_FE_STA,
+			DISP_SOF_16_UHD_HDR_FE_END,
 			&sof_start, &sof_end);
-		fmt_hal_set_sof(FMT_SOF_16_UHD_DOLBY_FE_STA,
-			FMT_SOF_16_UHD_DOLBY_FE_END,
+		fmt_hal_set_sof(FMT_SOF_16_UHD_HDR_FE_STA,
+			FMT_SOF_16_UHD_HDR_FE_END,
 			sof_start, sof_end);
 	} else
 		disp_path_set_hw_path(DISP_PATH_UHD_HDR_GFX_FE, 0);
 
 	if (dv_vdo_be_en) {
 		disp_path_set_hw_path(DISP_PATH_DISP_HDR_VDO_BE, 1);
-		disp_path_get_sof_info(DISP_SOF_21_DOLBY_BE_STA,
-			DISP_SOF_21_DOLBY_BE_END,
+		disp_path_get_sof_info(DISP_SOF_21_HDR_BE_STA,
+			DISP_SOF_21_HDR_BE_END,
 			&sof_start, &sof_end);
-		fmt_hal_set_sof(FMT_SOF_21_DOLBY_BE_STA,
-			FMT_SOF_21_DOLBY_BE_END,
+		fmt_hal_set_sof(FMT_SOF_21_HDR_BE_STA,
+			FMT_SOF_21_HDR_BE_END,
 			sof_start, sof_end);
 	} else
 		disp_path_set_hw_path(DISP_PATH_DISP_HDR_VDO_BE, 0);
@@ -192,40 +184,83 @@ uint32_t dovi_set_video_info(struct mtk_disp_hdr_md_info_t *hdr_metadata)
 {
 	dovi_func();
 
-	p_cp_param->width = dovi_out_width;
-	p_cp_param->height = dovi_out_height;
+	p_src_param[LAYER0].width = dovi_out_width;
+	p_src_param[LAYER0].height = dovi_out_height;
 
 	switch (hdr_metadata->dr_range) {
 	case DISP_DR_TYPE_DOVI:
-		p_cp_param->input_format = SIGNAL_FORMAT_DOVI;
+		p_src_param[LAYER0].input_format = SIGNAL_FORMAT_DOVI;
 		break;
 	case DISP_DR_TYPE_HDR10:
-		p_cp_param->input_format = SIGNAL_FORMAT_HDR10;
+		p_src_param[LAYER0].input_format = SIGNAL_FORMAT_HDR10;
 		break;
 	case DISP_DR_TYPE_HLG:
-		p_cp_param->input_format = SIGNAL_FORMAT_HDR10;
+		p_src_param[LAYER0].input_format = SIGNAL_FORMAT_HLG;
 		break;
 	default:
-		p_cp_param->input_format = SIGNAL_FORMAT_SDR;
+		p_src_param[LAYER0].input_format = SIGNAL_FORMAT_SDR10;
 		break;
 	}
 
-	p_cp_param->src_yuv_range = SIGNAL_RANGE_SMPTE;
-	p_cp_param->src_bit_depth = 10;
-	p_cp_param->src_fps = 60;
+	p_src_param[LAYER0].dr_type = hdr_metadata->dr_range;
+	p_src_param[LAYER0].input_mode = INPUT_MODE_OTT;
+
+	p_src_param[LAYER0].src_yuv_range = SIGNAL_RANGE_SMPTE;
+	p_src_param[LAYER0].src_bit_depth = 10;
+	p_src_param[LAYER0].color_format = CP_CLR_YUV;
+	p_src_param[LAYER0].chroma_format = CHROMA_FORMAT_UYVY;
+	p_src_param[LAYER0].src_fps = 60;
 
 	dovi_info("set video info:W:%d x H:%d, input_format:%d\n",
-		     p_cp_param->width, p_cp_param->height,
-		     p_cp_param->input_format);
+		     p_src_param[LAYER0].width, p_src_param[LAYER0].height,
+		     p_src_param[LAYER0].input_format);
 
 	return DOVI_RET_OK;
 }
 
+uint32_t dovi_set_sub_video_info(struct mtk_disp_hdr_md_info_t *hdr_metadata)
+{
+	dovi_func();
+
+	p_src_param[LAYER1].width = dovi_out_width;
+	p_src_param[LAYER1].height = dovi_out_height;
+
+	switch (hdr_metadata->dr_range) {
+	case DISP_DR_TYPE_DOVI:
+		p_src_param[LAYER1].input_format = SIGNAL_FORMAT_DOVI;
+		break;
+	case DISP_DR_TYPE_HDR10:
+		p_src_param[LAYER1].input_format = SIGNAL_FORMAT_HDR10;
+		break;
+	case DISP_DR_TYPE_HLG:
+		p_src_param[LAYER1].input_format = SIGNAL_FORMAT_HLG;
+		break;
+	default:
+		p_src_param[LAYER1].input_format = SIGNAL_FORMAT_SDR10;
+		break;
+	}
+
+	p_src_param[LAYER1].dr_type = hdr_metadata->dr_range;
+	p_src_param[LAYER1].input_mode = INPUT_MODE_OTT;
+
+	p_src_param[LAYER1].src_yuv_range = SIGNAL_RANGE_SMPTE;
+	p_src_param[LAYER1].src_bit_depth = 10;
+	p_src_param[LAYER1].color_format = CP_CLR_YUV;
+	p_src_param[LAYER1].chroma_format = CHROMA_FORMAT_UYVY;
+	p_src_param[LAYER1].src_fps = 60;
+
+	dovi_info("set sub video info:W:%d x H:%d, input_format:%d\n",
+		     p_src_param[LAYER1].width, p_src_param[LAYER1].height,
+		     p_src_param[LAYER1].input_format);
+
+	return DOVI_RET_OK;
+}
 
 uint32_t dovi_set_video_input_format(enum dovi_signal_format_t e_input_format)
 {
 	if (p_cp_param != NULL) {
-		p_cp_param->input_format = (enum signal_fmt_t)e_input_format;
+		p_src_param[LAYER0].input_format =
+			(enum signal_fmt_t)e_input_format;
 
 		dovi_info("[DOVI]Re-Update HDR Type Input:%d\n",
 			e_input_format);
@@ -238,7 +273,7 @@ uint32_t dovi_set_video_input_format(enum dovi_signal_format_t e_input_format)
 uint32_t dovi_get_input_format(enum DISP_DR_TYPE_T *dovi_input_dr)
 {
 	if ((p_cp_param != NULL) && (dovi_input_dr != NULL)) {
-		switch (p_cp_param->input_format) {
+		switch (p_src_param[LAYER0].input_format) {
 		case SIGNAL_FORMAT_DOVI:
 			*dovi_input_dr = DISP_DR_TYPE_DOVI;
 			break;
@@ -248,7 +283,31 @@ uint32_t dovi_get_input_format(enum DISP_DR_TYPE_T *dovi_input_dr)
 		case SIGNAL_FORMAT_HLG:
 			*dovi_input_dr = DISP_DR_TYPE_HLG;
 			break;
-		case SIGNAL_FORMAT_SDR:
+		case SIGNAL_FORMAT_SDR8:
+			*dovi_input_dr = DISP_DR_TYPE_SDR;
+			break;
+		default:
+			*dovi_input_dr = DISP_DR_TYPE_SDR;
+			break;
+		}
+	}
+	return DOVI_RET_OK;
+}
+
+uint32_t dovi_get_input_format1(enum DISP_DR_TYPE_T *dovi_input_dr)
+{
+	if ((p_cp_param != NULL) && (dovi_input_dr != NULL)) {
+		switch (p_src_param[LAYER1].input_format) {
+		case SIGNAL_FORMAT_DOVI:
+			*dovi_input_dr = DISP_DR_TYPE_DOVI;
+			break;
+		case SIGNAL_FORMAT_HDR10:
+			*dovi_input_dr = DISP_DR_TYPE_HDR10;
+			break;
+		case SIGNAL_FORMAT_HLG:
+			*dovi_input_dr = DISP_DR_TYPE_HLG;
+			break;
+		case SIGNAL_FORMAT_SDR8:
 			*dovi_input_dr = DISP_DR_TYPE_SDR;
 			break;
 		default:
@@ -264,7 +323,28 @@ uint32_t dovi_set_graphic_format(uint32_t g_format)
 	dovi_func();
 	dovi_info("set_graphic_format %d\n", g_format);
 
-	p_cp_param->g_format = g_format;
+	p_src_param[LAYER2].color_format = g_format;
+
+	return DOVI_RET_OK;
+}
+
+uint32_t dovi_set_uhd_graphic_format(uint32_t g_format)
+{
+	dovi_func();
+	dovi_info("set_graphic_format %d\n", g_format);
+
+	p_src_param[LAYER3].color_format = g_format;
+
+	return DOVI_RET_OK;
+}
+
+uint32_t dovi_set_be_out_css(enum chroma_format_t out_css)
+{
+	dovi_func();
+	dovi_info("dovi set out_css %d\n", out_css);
+
+	if (p_cp_param != NULL)
+		p_cp_param->out_chroma_format = out_css;
 
 	return DOVI_RET_OK;
 }
@@ -273,34 +353,98 @@ uint32_t dovi_set_graphic_info(uint32_t ucOn)
 {
 	dovi_func();
 	dovi_info("set_graphic_on %d\n", ucOn);
-	if (f_graphic_off_cmd)
-		p_cp_param->f_graphic_on = 0;
+
+	if ((p_src_param[LAYER2].en == ucOn) && !dovi_idk_test)
+		return DOVI_RET_OK;
+
+	if (ucOn)
+		p_src_param[LAYER2].en = true;
 	else
-		p_cp_param->f_graphic_on = ucOn;
+		p_src_param[LAYER2].en = false;
+
+	if (f_graphic_off_cmd)
+		p_src_param[LAYER2].en = false;
+
+	p_src_param[LAYER2].input_mode = INPUT_MODE_GRAPHICS;
+	p_src_param[LAYER2].input_format = SIGNAL_FORMAT_SDR8;
+	p_src_param[LAYER2].src_bit_depth = 8;
+	p_src_param[LAYER2].src_yuv_range = SIGNAL_RANGE_FULL;
+
+	if (dovi_idk_test && (pip_fhd_format == FORMAT_HDR)) {
+		p_src_param[LAYER2].input_format = SIGNAL_FORMAT_HDR8;
+		p_src_param[LAYER2].src_yuv_range = SIGNAL_RANGE_SMPTE;
+	} else if (dovi_idk_test && (pip_fhd_format == FORMAT_DOVI))
+		p_src_param[LAYER2].input_format = SIGNAL_FORMAT_DOVI;
 
 	return DOVI_RET_OK;
 }
 
-uint32_t dovi_set_graphic_priority_mode(bool fgOn)
+uint32_t dovi_set_graphic_info_uhd(uint32_t ucOn)
 {
-	dovi_info("set_graphic_on %d\n", fgOn);
+	dovi_func();
+	dovi_info("set_graphic_on uhd %d\n", ucOn);
 
-	p_cp_param->priority_mode = fgOn;
+	if ((p_src_param[LAYER3].en == ucOn) && !dovi_idk_test)
+		return DOVI_RET_OK;
 
+	if (ucOn)
+		p_src_param[LAYER3].en = true;
+	else
+		p_src_param[LAYER3].en = false;
+
+	if (f_graphic_off_cmd)
+		p_src_param[LAYER3].en = false;
+
+	p_src_param[LAYER3].input_mode = INPUT_MODE_GRAPHICS;
+	p_src_param[LAYER3].input_format = SIGNAL_FORMAT_SDR8;
+	p_src_param[LAYER3].src_bit_depth = 8;
+	p_src_param[LAYER3].src_yuv_range = SIGNAL_RANGE_FULL;
+
+	if (dovi_idk_test && (pip_uhd_format == FORMAT_HDR)) {
+		p_src_param[LAYER3].input_format = SIGNAL_FORMAT_HDR8;
+		p_src_param[LAYER3].src_yuv_range = SIGNAL_RANGE_SMPTE;
+	} else if (dovi_idk_test && (pip_uhd_format == FORMAT_DOVI))
+		p_src_param[LAYER3].input_format = SIGNAL_FORMAT_DOVI;
+
+	return DOVI_RET_OK;
+}
+
+uint32_t dovi_set_gfx_rpu_info(void)
+{
+	char *gfx_md_file_name;
+	uint32_t md_len = 100;
+
+	dovi_func();
+
+	gfx_md_file_name =
+		get_dovi_pip_gfx1_md(dovi_idk_file_id);
+	disp_dovi_load_buffer(gfx_md_file_name,
+		(uint8_t *)(p_src_param[LAYER2].rpu_bs_buffer),
+		md_len);
+	p_src_param[LAYER2].rpu_bs_len = md_len;
+	dovi_info("idk2.6 gfx rpu md %p len %d\n",
+		(p_src_param[LAYER2].rpu_bs_buffer),
+		p_src_param[LAYER2].rpu_bs_len);
 
 	return DOVI_RET_OK;
 }
 
 uint32_t dovi_set_priority_mode(uint32_t mode)
 {
-	dovi_func();
-	dovi_info("set_priority_mode %d\n", mode);
+	p_cp_param->priority_mode = mode;
 
 	if (force_priority_mode)
 		p_cp_param->priority_mode =
 		(enum pri_mode_t)priority_mode;
-	else
-		p_cp_param->priority_mode = mode;
+
+	if (!dovi_idk_test) {
+		if (p_cp_param->priority_mode == G_PRIORITY)
+			dovi_set_dovi2hdr10_mapping(1);
+		else
+			dovi_set_dovi2hdr10_mapping(0);
+	}
+	dovi_info("set_priority_mode %d %d %d\n", mode,
+		p_cp_param->output_format, p_cp_param->priority_mode);
 
 	return DOVI_RET_OK;
 }
@@ -316,10 +460,9 @@ uint32_t dovi_set_test_mode(int mode)
 
 uint32_t dovi_set_support_el(int value)
 {
-	p_cp_param->support_el = value;
+	//p_cp_param->support_el = value;
 
-	dovi_info("set_support_el %d\n",
-		p_cp_param->support_el);
+	//dovi_info("set_support_el %d\n", p_cp_param->support_el);
 
 	return DOVI_RET_OK;
 }
@@ -336,40 +479,59 @@ uint32_t dovi_get_priority_mode(uint32_t *mode)
 
 uint32_t dovi_update_graphic_info(void)
 {
+	int max_lum = 0;
+
 	dovi_func();
 	dovi_info("update_graphic_info\n");
 
-	if (gmin != 0)
-		p_cp_param->graphic_max_lum = gmin;
+	if (p_cp_param->output_format == SIGNAL_FORMAT_SDR8)
+		max_lum = 1000000;
+	else if (p_cp_param->output_format == SIGNAL_FORMAT_HDR10)
+		max_lum = 3000000;
+	else if (p_cp_param->output_format == SIGNAL_FORMAT_HLG)
+		max_lum = 1000000;
+	else if (p_cp_param->output_format == SIGNAL_FORMAT_DOVI)
+		max_lum = 3000000;
 	else
-		p_cp_param->graphic_min_lum = 50;
+		max_lum = 3000000;
 
-	if (gmax != 0)
-		p_cp_param->graphic_max_lum = gmax;
-	else if (p_cp_param->output_format == SIGNAL_FORMAT_SDR)
-		p_cp_param->graphic_max_lum = 1000000;
-	else if ((p_cp_param->input_format == SIGNAL_FORMAT_SDR)
-		 && (p_cp_param->output_format == SIGNAL_FORMAT_HDR10))
-		p_cp_param->graphic_max_lum = 3000000;
-	else if ((p_cp_param->input_format == SIGNAL_FORMAT_SDR)
-		 && (p_cp_param->output_format == SIGNAL_FORMAT_HLG))
-		p_cp_param->graphic_max_lum = 3000000;
-	else if ((p_cp_param->input_format == SIGNAL_FORMAT_SDR)
-		 && (p_cp_param->output_format == SIGNAL_FORMAT_DOVI))
-		p_cp_param->graphic_max_lum = 3000000;
-	else
-		p_cp_param->graphic_max_lum = 3000000;
+	p_src_param[LAYER2].min = 50;
+	p_src_param[LAYER3].min = 50;
+	p_src_param[LAYER2].max = max_lum;
+	p_src_param[LAYER3].max = max_lum;
 
-	if (set_graphic_max_lum_enable)
-		p_cp_param->graphic_max_lum =
-		graphic_max_lum * 10000;
+	if (set_graphic_max_lum_enable) {
+		p_src_param[LAYER2].max = graphic_max_lum * 10000;
+		p_src_param[LAYER3].max = graphic_max_lum * 10000;
+	}
 
-	dovi_info("set graphic_max_lum %d!\n",
-		p_cp_param->graphic_max_lum);
-	p_cp_param->g_bit_depth = 8;
+	dovi_info("set graphic_max_lum %d!\n", p_src_param[LAYER2].max);
+	p_src_param[LAYER2].src_bit_depth = 8;
+	p_src_param[LAYER3].src_bit_depth = 8;
 	/*if (!dovi_idk_test) */
-	p_cp_param->g_format = GRAPHIC_SDR_RGB;
-	p_cp_param->g_cf = CHROMA_FORMAT_P444;
+	p_src_param[LAYER2].color_format = CP_CLR_RGB;
+	p_src_param[LAYER3].color_format = CP_CLR_RGB;
+	p_src_param[LAYER2].chroma_format = CHROMA_FORMAT_P444;
+	p_src_param[LAYER3].chroma_format = CHROMA_FORMAT_P444;
+
+	if (dovi_idk_dump) {
+		if (pip_fhd_format == FORMAT_HDR)
+			p_src_param[LAYER2].max = 10000000;
+		else
+			p_src_param[LAYER2].max = 3000000;
+
+		if (pip_uhd_format == FORMAT_HDR)
+			p_src_param[LAYER3].max = 10000000;
+		else
+			p_src_param[LAYER3].max = 3000000;
+
+		p_src_param[LAYER2].color_format = fhd_color_format;
+		p_src_param[LAYER3].color_format = uhd_color_format;
+		dovi_info("set idk gfx_max_lum %d color format %d %d!\n",
+			p_src_param[LAYER2].max,
+			p_src_param[LAYER2].color_format,
+			p_src_param[LAYER3].color_format);
+	}
 
 	return DOVI_RET_OK;
 }
@@ -378,19 +540,28 @@ uint32_t dovi_set_output_format(enum dovi_signal_format_t out_format)
 {
 	dovi_func();
 
-	dovi_flow("set output format %d\n", out_format);
 	/*  The output are all dovi, when we set dovi or dovi_ll.
-	 *  dolby core will convert dovi to dovi_ll according
+	 *  dovi core will convert dovi to dovi_ll according
 	 *  the vsvdb and use_ll.
 	 */
-	if (out_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
+
+	/*if vsem form1 keep output disable be 444to422*/
+	if (out_format == DOVI_FORMAT_VSEM_DOVI)
+		dovi_set_be_out_css(CHROMA_FORMAT_P444);
+	else
+		dovi_set_be_out_css(CHROMA_FORMAT_UYVY);
+
+	if ((out_format == DOVI_FORMAT_DOVI_LOW_LATENCY) ||
+		(out_format == DOVI_FORMAT_VSEM_DOVI) ||
+		(out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY))
 		out_format = DOVI_FORMAT_DOVI;
 
 	/*trick for 8695 can play hlg in dovi path */
-	if (out_format == DOVI_FORMAT_HLG)
-		out_format = DOVI_FORMAT_HDR10;
+	//if (out_format == DOVI_FORMAT_HLG)
+	//	out_format = DOVI_FORMAT_HDR10;
 
 	p_cp_param->output_format = (enum signal_fmt_t)out_format;
+	dovi_info("set output format %d\n", out_format);
 
 	return DOVI_RET_OK;
 }
@@ -412,22 +583,26 @@ const struct disp_hw_resolution *resolution)
 	enum dovi_signal_format_t tv_out_format;
 	bool is_low_latency = false;
 
-	/* dolby hw not support 4096 dovi output */
-	if ((tv_cap->is_support_dolby_2160p60 ||
-		(tv_cap->is_support_dolby && !is_2160p60_out))
+	/* dovi hw not support 4096 dovi output */
+	if ((tv_cap->is_support_dovi_2160p60 ||
+		(tv_cap->is_support_dovi && !is_2160p60_out))
 	    && (resolution->width <= 3840)) {
-		if (tv_cap->is_support_dolby_low_latency) {
+		if (tv_cap->is_support_dovi_low_latency) {
+			#if 0
+			is_low_latency = true;
+			#else
 			/* vsvdb version2: interface 0 && 1 only supportll,
 			 * 2&&3 support both ll and std
 			 */
-			if (tv_cap->dolbyvision_vsvdb_version == 0x2) {
-				if ((tv_cap->dolbyvision_vsvdb_v2_interface
+			if (tv_cap->dovi_vsvdb_version == 0x2) {
+				if ((tv_cap->dovi_vsvdb_v2_interface
 					== 0x0)
-				    || (tv_cap->dolbyvision_vsvdb_v2_interface
+				    || (tv_cap->dovi_vsvdb_v2_interface
 				    == 0x1))
 					is_low_latency = true;
 			} else
 				is_low_latency = false;
+			#endif
 		} else
 			is_low_latency = false;
 
@@ -435,21 +610,44 @@ const struct disp_hw_resolution *resolution)
 			tv_out_format = DOVI_FORMAT_DOVI_LOW_LATENCY;
 		else
 			tv_out_format = DOVI_FORMAT_DOVI;
-	} else if (tv_cap->is_support_dolby && is_2160p60_out
-		   && (tv_cap->dolbyvision_vsvdb_version == 0x2)
-		   && ((tv_cap->dolbyvision_vsvdb_v2_interface == 0x2)
-		       || (tv_cap->dolbyvision_vsvdb_v2_interface == 0x3))) {
+	} else if (tv_cap->is_support_dovi && is_2160p60_out
+	//&& !(tv_cap->is_support_dovi_low_latency)) {
+		   && (tv_cap->dovi_vsvdb_version == 0x2)
+		   && ((tv_cap->dovi_vsvdb_v2_interface == 0x2)
+		   || (tv_cap->dovi_vsvdb_v2_interface == 0x3))) {
 		is_low_latency = false;
 		tv_out_format = DOVI_FORMAT_DOVI;
-	} else if (tv_cap->is_support_dolby_low_latency && is_2160p60_out) {
+	} else if (tv_cap->is_support_dovi_low_latency && is_2160p60_out) {
 		is_low_latency = true;
 		tv_out_format = DOVI_FORMAT_DOVI_LOW_LATENCY;
 	} else if (tv_cap->is_support_hdr)
 		tv_out_format = DOVI_FORMAT_HDR10;
 	else if (tv_cap->is_support_hlg)
-		tv_out_format = DOVI_FORMAT_SDR;
+		tv_out_format = DOVI_FORMAT_HLG;
 	else
 		tv_out_format = DOVI_FORMAT_SDR;
+
+	/*if game source, we keep output as lowlatency when tv support*/
+	if (hdr_allm_en && (tv_cap->is_support_dovi_low_latency)
+		&& ((tv_cap->u1_sink_allm_support) ||
+		(tv_cap->u1_sink_14gamemode_support))) {
+		is_low_latency = true;
+		tv_out_format = DOVI_FORMAT_DOVI_LOW_LATENCY;
+		dovi_info("keep lowlatency due to allm\n");
+	}
+
+	/*check vsvdb dmversion*/
+	if ((tv_cap->dovi_vsvdb_version == 2) &&
+		((tv_cap->dovi_vsvdb_dm_version == 3) ||
+		(tv_cap->dovi_vsvdb_dm_version == 5) ||
+		(tv_cap->dovi_vsvdb_dm_version == 6) ||
+		(tv_cap->dovi_vsvdb_dm_version == 7))
+		&& sdk_vsem) {
+		if (tv_out_format == DOVI_FORMAT_DOVI)
+			tv_out_format = DOVI_FORMAT_VSEM_DOVI;
+		else if (tv_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
+			tv_out_format = DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY;
+	}
 
 	/* make sure chosen format can be supported - if clock/tmds rate is
 	 *not enough, move to a lower format
@@ -457,13 +655,15 @@ const struct disp_hw_resolution *resolution)
 	if ((tv_cap->max_tmds_rate < DOVI_RES4K60_TMDS_RATE)
 		&& is_2160p60_out) {
 		if ((tv_out_format == DOVI_FORMAT_DOVI) ||
-		    (tv_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY))
+		    (tv_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY) ||
+		    (tv_out_format == DOVI_FORMAT_VSEM_DOVI) ||
+		    (tv_out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY))
 			dovi_info("2160p60 canot supported: maxrate=%d\n",
 				   tv_cap->max_tmds_rate);
 		if (tv_cap->is_support_hdr)
 			tv_out_format = DOVI_FORMAT_HDR10;
 		else if (tv_cap->is_support_hlg)
-			tv_out_format = DOVI_FORMAT_SDR;
+			tv_out_format = DOVI_FORMAT_HLG;
 		else
 			tv_out_format = DOVI_FORMAT_SDR;
 	}
@@ -482,8 +682,8 @@ uint32_t dovi_set_target_lum(int target_min_lum, int target_max_lum)
 {
 	dovi_func();
 
-	p_cp_param->target_min_lum = target_min_lum;
-	p_cp_param->target_max_lum = target_max_lum;
+	p_cp_param->min = target_min_lum;
+	p_cp_param->max = target_max_lum;
 
 	return DOVI_RET_OK;
 }
@@ -496,7 +696,7 @@ uint32_t dovi_update_target_lum(void)
 	dovi_func();
 
 	target_min_lum = 50;
-	if (p_cp_param->input_format == SIGNAL_FORMAT_DOVI) {
+	if (p_src_param[LAYER0].input_format == SIGNAL_FORMAT_DOVI) {
 		switch (p_cp_param->output_format) {
 		case SIGNAL_FORMAT_DOVI:
 			target_max_lum = 5000000;	/* 40000000; */
@@ -505,13 +705,13 @@ uint32_t dovi_update_target_lum(void)
 			target_max_lum = 10000000;	/* 40000000; */
 			break;
 		case SIGNAL_FORMAT_HLG:
-			target_max_lum = 10000000;	/* 40000000; */
+			target_max_lum = 3000000;	/* 40000000; */
 			break;
 		default:
 			target_max_lum = 1000000;
 			break;
 		}
-	} else if (p_cp_param->input_format == SIGNAL_FORMAT_HDR10) {
+	} else if (p_src_param[LAYER0].input_format == SIGNAL_FORMAT_HDR10) {
 		switch (p_cp_param->output_format) {
 		case SIGNAL_FORMAT_DOVI:
 			target_max_lum = 5000000;
@@ -520,13 +720,13 @@ uint32_t dovi_update_target_lum(void)
 			target_max_lum = 10000000;
 			break;
 		case SIGNAL_FORMAT_HLG:
-			target_max_lum = 10000000;
+			target_max_lum = 3000000;
 			break;
 		default:
 			target_max_lum = 1000000;
 			break;
 		}
-	} else if (p_cp_param->input_format == SIGNAL_FORMAT_HLG) {
+	} else if (p_src_param[LAYER0].input_format == SIGNAL_FORMAT_HLG) {
 		switch (p_cp_param->output_format) {
 		case SIGNAL_FORMAT_DOVI:
 			target_max_lum = 5000000;
@@ -535,7 +735,7 @@ uint32_t dovi_update_target_lum(void)
 			target_max_lum = 10000000;
 			break;
 		case SIGNAL_FORMAT_HLG:
-			target_max_lum = 10000000;
+			target_max_lum = 3000000;
 			break;
 		default:
 			target_max_lum = 1000000;
@@ -550,7 +750,7 @@ uint32_t dovi_update_target_lum(void)
 			target_max_lum = 10000000;
 			break;
 		case SIGNAL_FORMAT_HLG:
-			target_max_lum = 10000000;
+			target_max_lum = 3000000;
 			break;
 		default:
 			target_max_lum = 1000000;
@@ -558,19 +758,19 @@ uint32_t dovi_update_target_lum(void)
 		}
 	}
 
-	if (p_cp_param->output_format == SIGNAL_FORMAT_SDR)
-		p_cp_param->graphic_max_lum = 1000000;
+	if (p_cp_param->output_format == SIGNAL_FORMAT_SDR8)
+		p_src_param[LAYER2].max = 1000000;
 
 	/* adjust video lum with cli */
 	if (set_video_max_lum_enable)
 		target_max_lum = video_max_lum * 10000;
 
-	p_cp_param->target_min_lum = target_min_lum;
-	p_cp_param->target_max_lum = target_max_lum;
+	p_cp_param->min = target_min_lum;
+	p_cp_param->max = target_max_lum;
 
-	dovi_info("out_format %d, target luam %d %d\n",
-		  p_cp_param->output_format, target_min_lum,
-		  target_max_lum);
+	dovi_info("out_format %d %d, target lum %d %d\n",
+		  p_cp_param->output_format, p_src_param[LAYER0].input_format,
+		  target_min_lum, target_max_lum);
 
 	return DOVI_RET_OK;
 }
@@ -597,11 +797,22 @@ uint32_t dovi_set_low_latency_mode(int use_ll, int ll_rgb_desired)
 {
 	dovi_func();
 
-	dovi_flow("set use_ll %d ll_rgb_desired %d\n",
+	dovi_info("set use_ll %d ll_rgb_desired %d\n",
 		use_ll, ll_rgb_desired);
 
 	p_cp_param->use_ll = use_ll;
 	p_cp_param->ll_rgb_desired = ll_rgb_desired;
+
+	return DOVI_RET_OK;
+}
+
+uint32_t dovi_set_vsem_mode(int use_vsem)
+{
+	dovi_func();
+
+	dovi_flow("set vsem %d\n", use_vsem);
+
+	p_cp_param->use_vsem = use_vsem;
 
 	return DOVI_RET_OK;
 }
@@ -665,12 +876,58 @@ uint32_t dovi_set_vsvdb_hdmi(char *vsvdb_edid, int len)
 	return DOVI_RET_OK;
 }
 
+bool is_atsc_rpu(uint8_t *src_rpu)
+{
+	uint8_t atsc_code[7] = {0xB5, 0x00, 0x31, 0x47, 0x41, 0x39, 0x34};
+	uint32_t idx = 0;
+	bool ret = false;
+
+	if (src_rpu == NULL)
+		return ret;
+
+	if ((src_rpu[idx] == atsc_code[0])
+		&& (src_rpu[idx + 1] == atsc_code[1])
+		&& (src_rpu[idx + 2] == atsc_code[2])
+		&& (src_rpu[idx + 3] == atsc_code[3])
+		&& (src_rpu[idx + 4] == atsc_code[4])
+		&& (src_rpu[idx + 5] == atsc_code[5])
+		&& (src_rpu[idx + 6] == atsc_code[6]))
+		ret = true;
+
+	return ret;
+}
+
+bool is_dvb_rpu(uint8_t *src_rpu)
+{
+	uint8_t dvb_code[7] = {0xB5, 0x00, 0x3b, 0x00, 0x00, 0x00, 0x00};
+	uint32_t idx = 0;
+	bool ret = false;
+
+	if (src_rpu == NULL)
+		return ret;
+
+	if ((src_rpu[idx] == dvb_code[0])
+		&& (src_rpu[idx + 1] == dvb_code[1])
+		&& (src_rpu[idx + 2] == dvb_code[2])
+		&& (src_rpu[idx + 3] == dvb_code[3])
+		&& (src_rpu[idx + 4] == dvb_code[4])
+		&& (src_rpu[idx + 5] == dvb_code[5])
+		&& (src_rpu[idx + 6] == dvb_code[6]))
+		ret = true;
+
+	return ret;
+}
+
 enum DV_RPU_TYPE dovi_parse_rpu_av1(uint8_t *src_rpu,
 	uint32_t src_rpu_len,
 	uint8_t *dst_rpu, uint32_t *dst_rpu_len)
 {
 	enum DV_RPU_TYPE ret = HEVC_RPU;
 	uint8_t itu35_code[7] = {0xB5, 0x00, 0x3b, 0x00, 0x00, 0x08, 0x00};
+	//uint8_t atsc_code[7] = {0xB5, 0x00, 0x31, 0x47, 0x41, 0x39, 0x34};
+	//uint8_t dvb_code[7] = {0xB5, 0x00, 0x3b, 0x00, 0x00, 0x00, 0x00};
+	uint8_t cm_dm_code = 0x08;
+	uint8_t dm_dm_code = 0x09;
 	uint32_t idx = 0;
 
 	if (src_rpu == NULL || dst_rpu == NULL
@@ -678,6 +935,30 @@ enum DV_RPU_TYPE dovi_parse_rpu_av1(uint8_t *src_rpu,
 		dovi_info("%s params error\n", __func__);
 		ret = HEVC_RPU;
 		return ret;
+	}
+
+	if (is_atsc_rpu(src_rpu)) {
+		if ((src_rpu[idx + 7] == cm_dm_code)
+			|| (src_rpu[idx + 7] == dm_dm_code)) {
+			*dst_rpu_len = src_rpu_len;
+			memcpy((void *)dst_rpu, (void *)(src_rpu),
+			*dst_rpu_len);
+			dovi_rpu("atsc rpu len %d\n", *dst_rpu_len);
+			ret = ATSC_RPU;
+			return ret;
+		}
+	}
+
+	if (is_dvb_rpu(src_rpu)) {
+		if ((src_rpu[idx + 7] == cm_dm_code)
+			|| (src_rpu[idx + 7] == dm_dm_code)) {
+			*dst_rpu_len = src_rpu_len;
+			memcpy((void *)dst_rpu, (void *)(src_rpu),
+			*dst_rpu_len);
+			dovi_rpu("dvb rpu %d\n", *dst_rpu_len);
+			ret = DVB_RPU;
+			return ret;
+		}
 	}
 
 	if (!((src_rpu[idx] == itu35_code[0])
@@ -700,7 +981,7 @@ enum DV_RPU_TYPE dovi_parse_rpu_av1(uint8_t *src_rpu,
 	dovi_rpu("%s rpu len %d,first 0x%p\n", __func__,
 		*dst_rpu_len,
 		(uint32_t *)dst_rpu);
-	*p_is_rbsp = 1;
+
 	ret = AV1_RPU;
 	return ret;
 }
@@ -755,7 +1036,6 @@ int dovi_remove_rpu_nal_type(uint32_t first_frame,
 
 	dst_len += nal_len;
 
-
 	return dst_len;
 }
 
@@ -764,28 +1044,17 @@ int disp_dovi_common_init(void)
 	struct dovi_share_memory_info_t *p_share_mem =
 		dovi_share_mem;
 
-	p_dr_type = &p_share_mem->dr_type;
-	p_hdr_md = &p_share_mem->hdr10_md;
-	p_rpu_bs_len = &p_share_mem->rpu_bs_len;
-	p_frame_num = &p_share_mem->frame_num;
-	p_svp = &p_share_mem->svp;
-	p_sec_handle = &p_share_mem->sec_handle;
-	rpu_bs_buffer = p_share_mem->rpu_bs_buffer;
-	p_is_rbsp = &p_share_mem->is_rbsp;
+	/*idk2.6 new add */
+	p_src_param = p_share_mem->src_param;
+
 	p_cp_param = &p_share_mem->cp_param;
-	p_comp_md = p_share_mem->comp_md;
-	p_orig_md = p_share_mem->orig_md;
+	p_sec_layer = &p_share_mem->sec_layer;
+	p_vsif = &p_share_mem->vsif;
 	p_hdmi_md = p_share_mem->hdmi_md;
 	p_hdr10_md = &p_share_mem->hdr10_info_frame;
-
-	p_orig_md_len = &p_share_mem->orig_md_len;
-	p_hdmi_md_len = &p_share_mem->hdmi_md_len;
-
-	p_profile4 = &p_share_mem->profile4;
-
-	p_dv_dm_md = &p_share_mem->dv_dm_md;
-	p_dv_comp_md = &p_share_mem->dv_comp_md;
 	p_dv_out_params = &p_share_mem->dv_out_params;
+	p_profile4 = &p_share_mem->cp_param.profile;
+
 #if DOVI_TZ_OK
 #else
 	disp_dovi_common_test(2);
@@ -803,15 +1072,16 @@ int disp_dovi_common_test(uint32_t option)
 int disp_dovi_md(void)
 {
 	if (dump_md_enable) {
-		if (p_cp_param->input_format == SIGNAL_FORMAT_DOVI) {
-			disp_dovi_dump_comp(*p_frame_num,
-				(unsigned char *)p_comp_md, DOVI_COMP_SIZE);
-			disp_dovi_dump_orig_md(*p_frame_num,
-				(unsigned char *)p_comp_md,
-				*p_orig_md_len);
+		if (p_src_param[LAYER0].input_format == SIGNAL_FORMAT_DOVI) {
+			disp_dovi_dump_comp(p_src_param[LAYER0].src_frame_num,
+				(unsigned char *)p_src_param[LAYER0].comp_md,
+				DOVI_COMP_SIZE);
+			disp_dovi_dump_orig_md(p_src_param[LAYER0].src_frame_num,
+				(unsigned char *)p_src_param[LAYER0].orig_md,
+				p_src_param[LAYER0].orig_md_len);
 		}
 
-		disp_dovi_dump_hw_setting(1, *p_frame_num,
+		disp_dovi_dump_hw_setting(1, p_src_param[LAYER0].src_frame_num,
 		  (unsigned char *)p_dv_out_params,
 		  sizeof(struct dv_hw_reg));
 	}
@@ -869,6 +1139,10 @@ int disp_dovi_update_hdr10_info_frame(
 	p_hdr10_metadata->ui2_MaxFALL =
 		p_hdr10_info_frame->ui2_MaxFALL;
 	p_hdr10_metadata->fgNeedUpdStaticMeta = 1;
+	if (dovi_hdmi_brightness_en)
+		p_hdr10_metadata->ui2_MaxDisplayMasteringLuminance =
+		dovi_hdmi_brightness;
+
 	dovi_info("p_hdr10_metadata ui2_DisplayPrimariesX[%d %d %d]\n",
 		  p_hdr10_metadata->ui2_DisplayPrimariesX[0],
 		  p_hdr10_metadata->ui2_DisplayPrimariesX[1],
@@ -890,44 +1164,57 @@ int disp_dovi_update_hdr10_info_frame(
 
 void disp_dovi_force_output_setting(struct disp_hw_common_info *info)
 {
+	char *vsvdb_file_name = "vsvdb_push.bin";
 	struct disp_hw_tv_capbility *tv_cap = &info->tv;
 	//struct disp_hw *hdr_drv = disp_hdr_get_drv();
-	if (!dolby_force_output) {
-		DISP_LOG_E("dolby_force_output is false!\n");
+	if (!dovi_force_output) {
+		DISP_LOG_E("dovi_force_output is false!\n");
 		return;
 	}
 
-	//set_hdmi_info(dolby_out_format, tv_cap, false);
-
 	dovi_out_info.b_gfx_mode = false;
 	dovi_out_info.is_low_latency = false;
-	dovi_out_info.vsvdb_edid = tv_cap->vsvdb_edid;
+	dovi_out_info.is_vsem = false;
+	if (set_vsvdb) {
+		dovi_set_vsvdb_file_name(vsvdb_file_name);
+		dovi_out_info.vsvdb_edid = p_cp_param->vsvdb_hdmi;
+	} else
+		dovi_out_info.vsvdb_edid = tv_cap->vsvdb_edid;
 
-	if (dolby_force_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
+	if ((dovi_force_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
+		|| (dovi_force_out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY))
 		dovi_out_info.is_low_latency = true;
 	else
 		dovi_out_info.is_low_latency = false;
-	dolby_out_format = dolby_force_out_format;
 
-	dovi_out_info.out_format = dolby_out_format;
+	if ((dovi_force_out_format == DOVI_FORMAT_VSEM_DOVI)
+		|| (dovi_force_out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY))
+		dovi_out_info.is_vsem = true;
+	else
+		dovi_out_info.is_vsem = false;
+
+	dovi_out_format = dovi_force_out_format;
+
+	dovi_out_info.out_format = dovi_out_format;
 
 	if (!dovi_idk_dump) {
 		dovi_set_output_format(dovi_out_info.out_format);
 		dovi_set_low_latency_mode(dovi_out_info.is_low_latency,
 			ll_format);
-		dovi_set_priority_mode(dovi_out_info.b_gfx_mode);
+		dovi_set_vsem_mode(dovi_out_info.is_vsem);
+		dovi_set_priority_mode(!dovi_out_info.b_gfx_mode);
 		dovi_update_graphic_info();
 		dovi_set_vsvdb_hdmi(dovi_out_info.vsvdb_edid, 0x1A);
 	} else {
-		dolby_out_format = dovi_get_output_format();
+		dovi_out_format = dovi_get_output_format();
 		if (dovi_get_low_latency_mode() == 1)
-			dolby_out_format = DOVI_FORMAT_DOVI_LOW_LATENCY;
-		DISP_LOG_N("idk dump output %d!\n", dolby_out_format);
+			dovi_out_format = DOVI_FORMAT_DOVI_LOW_LATENCY;
+		DISP_LOG_N("idk dump output %d!\n", dovi_out_format);
 	}
 
-	//set_hdmi_info(dolby_out_format, tv_cap, true);
-
-	disp_path_set_hw_path(DISP_PATH_M_HDR_VDO_FE, 1);
+	//set_hdmi_info(dovi_out_format, tv_cap, true);
+	disp_hdr_fe_start_stop(0, true);
+	//disp_path_set_hw_path(DISP_PATH_M_HDR_VDO_FE, 1);
 }
 
 void set_hdmi_info(enum dovi_signal_format_t output_format,
@@ -936,14 +1223,14 @@ void set_hdmi_info(enum dovi_signal_format_t output_format,
 
 #ifdef CONFIG_MTK_INTERNAL_HDMI_SUPPORT
 	if (output_format == DOVI_FORMAT_DOVI)
-		vDolbyHdrEnable(enable);
+		vDoviHdrEnable(enable);
 	else if (output_format == DOVI_FORMAT_HDR10) {
 		vSetStaticHdrType(GAMMA_ST2084);
 		vHdrEnable(enable);
 		if (tv_cap->is_support_bt2020)
 			hdr_set_HDMI_BT2020_signal(enable);
 	} else if (output_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
-		vLowLatencyDolbyVisionEnable(enable);
+		vLowLatencyDoviEnable(enable);
 	else if (output_format == DOVI_FORMAT_HLG) {
 		vSetStaticHdrType(GAMMA_HLG);
 		vHdrEnable(enable);
@@ -960,7 +1247,7 @@ void dovi_update_output_setting(struct disp_hw_common_info *info,
 	struct disp_hw_tv_capbility *tv_cap = NULL;
 	const struct disp_hw_resolution *resolution = NULL;
 	bool is_2160p60_out = false;
-	enum dovi_signal_format_t original_dolby_out_format = 0;
+	enum dovi_signal_format_t original_dovi_out_format = 0;
 
 	if (info == NULL) {
 		dovi_error("%s info is null\n", __func__);
@@ -969,27 +1256,29 @@ void dovi_update_output_setting(struct disp_hw_common_info *info,
 
 	resolution = info->resolution;
 	is_2160p60_out = dovi_check_4k60_timing(resolution->res_mode);
-	original_dolby_out_format = dolby_out_format;
+	original_dovi_out_format = dovi_out_format;
 
 	tv_cap = &info->tv;
 
-	dovi_info("%s %d\n", __func__, dolby_out_format);
-	dovi_info("support %d %d %d %d 4k60:%d,ll:%d,4kout:%d,ver:%d %d\n",
+	dovi_info("%s %d\n", __func__, dovi_out_format);
+	dovi_info("support %d %d %d %d 4k60:%d,ll:%d,4kout:%d,ver:%d %d %d %d\n",
 		tv_cap->is_support_hdr,
 		tv_cap->is_support_hlg,
 		tv_cap->is_support_hdr10_plus,
-		tv_cap->is_support_dolby,
-		tv_cap->is_support_dolby_2160p60,
-		tv_cap->is_support_dolby_low_latency,
+		tv_cap->is_support_dovi,
+		tv_cap->is_support_dovi_2160p60,
+		tv_cap->is_support_dovi_low_latency,
 		is_2160p60_out,
-		tv_cap->dolbyvision_vsvdb_version,
-		tv_cap->dolbyvision_vsvdb_v2_interface);
+		tv_cap->dovi_vsvdb_version,
+		tv_cap->dovi_vsvdb_v2_interface,
+		tv_cap->dovi_vsvdb_dm_version,
+		tv_cap->is_support_bt2020);
 
 	if (buf_main != NULL) {
 		dovi_out_info.b_gfx_mode =
-			buf_main->is_dolby_graphic_mode;
+			buf_main->is_dovi_graphic_mode;
 		dovi_out_info.is_low_latency =
-			buf_main->is_dolby_low_latency;
+			buf_main->is_dovi_low_latency;
 	} else {
 		dovi_out_info.b_gfx_mode = false;
 		dovi_out_info.is_low_latency = false;
@@ -998,33 +1287,48 @@ void dovi_update_output_setting(struct disp_hw_common_info *info,
 	dovi_out_info.vsvdb_edid = tv_cap->vsvdb_edid;
 
 	/* get output format depend on tv capability */
-	dolby_out_format = get_tv_output_format(tv_cap,
+	dovi_out_format = get_tv_output_format(tv_cap,
 	is_2160p60_out, resolution);
 
-	if (dolby_force_output) {
-		if (dolby_force_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
-			dovi_out_info.is_low_latency = true;
-		else
-			dovi_out_info.is_low_latency = false;
-		dolby_out_format = dolby_force_out_format;
-		dovi_info("force outformat %d\n", dolby_out_format);
-	}
-
-	/*if ui select force sdr ,always keep sdr output*/
-	if (ui_force_hdr_type == 1)
-		dolby_out_format = DOVI_FORMAT_SDR;
-
-	if (dolby_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
+	if ((dovi_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY) ||
+		(dovi_out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY))
 		dovi_out_info.is_low_latency = true;
 	else
 		dovi_out_info.is_low_latency = false;
 
-	if (original_dolby_out_format != dolby_out_format)
-		dovi_default("%s, out format change %d->%d\n",
-			   __func__, original_dolby_out_format,
-			   dolby_out_format);
+	if ((dovi_out_format == DOVI_FORMAT_VSEM_DOVI) ||
+		(dovi_out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY))
+		dovi_out_info.is_vsem = true;
+	else
+		dovi_out_info.is_vsem = false;
 
-	dovi_out_info.out_format = dolby_out_format;
+	/*if ui select force sdr ,always keep sdr output*/
+	if (ui_force_hdr_type == 1)
+		dovi_out_format = DOVI_FORMAT_SDR;
+
+	if (dovi_force_output) {
+		if ((dovi_force_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY) ||
+			(dovi_force_out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY))
+			dovi_out_info.is_low_latency = true;
+		else
+			dovi_out_info.is_low_latency = false;
+
+		if ((dovi_force_out_format == DOVI_FORMAT_VSEM_DOVI) ||
+			(dovi_force_out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY))
+			dovi_out_info.is_vsem = true;
+		else
+			dovi_out_info.is_vsem = false;
+
+		dovi_out_format = dovi_force_out_format;
+		dovi_info("force outformat %d\n", dovi_out_format);
+	}
+
+	if (original_dovi_out_format != dovi_out_format)
+		dovi_default("%s, out format change %d->%d\n",
+			   __func__, original_dovi_out_format,
+			   dovi_out_format);
+
+	dovi_out_info.out_format = dovi_out_format;
 
 	if (osd_enable)
 		dovi_out_info.b_gfx_mode = true;
@@ -1035,14 +1339,15 @@ void dovi_update_output_setting(struct disp_hw_common_info *info,
 		dovi_set_output_format(dovi_out_info.out_format);
 		dovi_set_low_latency_mode(dovi_out_info.is_low_latency,
 			ll_format);
-		dovi_set_priority_mode(dovi_out_info.b_gfx_mode);
+		dovi_set_vsem_mode(dovi_out_info.is_vsem);
+		dovi_set_priority_mode(!dovi_out_info.b_gfx_mode);
 		dovi_update_graphic_info();
 		dovi_set_vsvdb_hdmi(dovi_out_info.vsvdb_edid, 0x1A);
 	} else {
-		dolby_out_format = dovi_get_output_format();
+		dovi_out_format = dovi_get_output_format();
 		if (dovi_get_low_latency_mode() == 1)
-			dolby_out_format = DOVI_FORMAT_DOVI_LOW_LATENCY;
-		DISP_LOG_I("idk dump output %d!\n", dolby_out_format);
+			dovi_out_format = DOVI_FORMAT_DOVI_LOW_LATENCY;
+		DISP_LOG_I("idk dump output %d!\n", dovi_out_format);
 	}
 }
 
@@ -1064,11 +1369,11 @@ void dovi_path_enable(void)
 	}
 
 	dovi_default("force hdr with video[%d %d %d]\n",
-		g_force_dolby,
+		g_force_dovi,
 		vdp_start_st[LAYER0],
 		vdp_start_st[LAYER1]);
 
-	if (!g_force_dolby) {
+	if (!g_force_dovi && !dovi_idk_test) {
 		dovi_black_pattern_en = true;
 		dovi_black_pattern_cnt = 0;
 		dovi_black_pattern_cnt_max = 5;
@@ -1078,7 +1383,7 @@ void dovi_path_enable(void)
 			disp_mix_hal_set_black_pattern(true);
 	}
 
-	if (!g_force_dolby) {
+	if (!g_force_dovi) {
 		if (vdp_start_st[LAYER0] == 1)
 			dovi_vdo_fe_hal_set_enable(LAYER0, true);
 		if (vdp_start_st[LAYER1] == 1)
@@ -1089,10 +1394,10 @@ void dovi_path_enable(void)
 	}
 
 	if (!tv_info_set_by_cmd)
-		disp_hw_mgr_get_info(&dovi_common_info);
+		disp_hw_mgr_get_info(&hdr_common_info);
 
 	dovi_set_video_input_format(DOVI_FORMAT_SDR);
-	dovi_update_output_setting(&dovi_common_info, NULL, NULL);
+	dovi_update_output_setting(&hdr_common_info, NULL, NULL);
 
 	if ((video_layer[0].state == VDP_LAYER_IDLE)
 	    || (video_layer[0].state == VDP_LAYER_STOPPING)
@@ -1100,43 +1405,58 @@ void dovi_path_enable(void)
 		dovi_vdo_fe_hal_set_out_fix_pattern_enable(true,
 		0x04, 0x200, 0x200);
 
-	if (dovi_out_info.out_format == DOVI_FORMAT_DOVI) {
+	if ((dovi_out_info.out_format == DOVI_FORMAT_DOVI)
+		|| (dovi_out_info.out_format == DOVI_FORMAT_VSEM_DOVI)) {
 		dovi_out_info.b_gfx_mode = true;
-		dovi_set_priority_mode(dovi_out_info.b_gfx_mode);
+		dovi_set_priority_mode(!dovi_out_info.b_gfx_mode);
 		priority_mode_change = true;
 	}
 
 	dovi_info("%s not mix graphic %d %d\n", __func__,
 		   dovi_hdr_md_info[0].enable, dovi_hdr_md_info[0].dr_range);
 
-	if (dolby_out_format == DOVI_FORMAT_DOVI)
+	switch (dovi_out_format) {
+	case DOVI_FORMAT_DOVI:
 		disp_adl_update_uhd_lut(true, dovi_sdr_ipt_gfx_fe_lut);
-	else if (dolby_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
+		break;
+	case DOVI_FORMAT_VSEM_DOVI:
+		disp_adl_update_uhd_lut(true, dovi_sdr_vsem_gfx_fe_lut);
+		break;
+	case DOVI_FORMAT_DOVI_LOW_LATENCY:
 		disp_adl_update_uhd_lut(true, dovi_sdr_ll_gfx_fe_lut);
+		break;
+	case DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY:
+		disp_adl_update_uhd_lut(true, dovi_sdr_vsemll_gfx_fe_lut);
+		break;
+	default:
+		break;
+	}
 
-
-	if (!g_force_dolby) {
+	if (!g_force_dovi) {
 		dovi_hdr_md_info[0].enable = DOVI_INOUT_FORMAT_CHANGE;
 		dovi_hdr_md_info[0].dr_range = DISP_DR_TYPE_SDR;
-		//hdr_drv->drv_call(DISP_CMD_METADATA_UPDATE,
-		//	&dovi_hdr_md_info[0]);
+		dovi_hdr_md_info[1].enable = DOVI_INOUT_FORMAT_CHANGE;
+		dovi_hdr_md_info[1].dr_range = DISP_DR_TYPE_SDR;
 		disp_dovi_process_cmd(LAYER0, DISP_CMD_METADATA_UPDATE,
 			&dovi_hdr_md_info[0]);
 	} else {
 		dovi_hdr_md_info[0].enable = DOVI_INOUT_FORMAT_CHANGE;
 		dovi_hdr_md_info[0].dr_range = DISP_DR_TYPE_SDR;
+		dovi_hdr_md_info[1].enable = DOVI_INOUT_FORMAT_CHANGE;
+		dovi_hdr_md_info[1].dr_range = DISP_DR_TYPE_SDR;
 		dovi_info("dobly path enable process!\n");
 		disp_dovi_process(1, &dovi_hdr_md_info[0]);
 	}
 
-	dolby_path_enable = 1;
+	dovi_path_en = 1;
 	dovi_vs10_path_en = ui_force_hdr_type;
 
-	if (!g_force_dolby) {
+
+	if (!g_force_dovi) {
 #ifdef CONFIG_MTK_INTERNAL_HDMI_SUPPORT
-		if ((dolby_path_enable)
-			&& ((dolby_out_format == DOVI_FORMAT_HDR10)
-			|| (dolby_out_format == DOVI_FORMAT_HLG))) {
+		if ((dovi_path_en)
+			&& ((dovi_out_format == DOVI_FORMAT_HDR10)
+			|| (dovi_out_format == DOVI_FORMAT_HLG))) {
 			memcpy(&rHdr, &dovi_hdr_md_info[0].hdr10_info,
 				sizeof(struct VID_PLA_HDR_METADATA_INFO_T));
 			rHdr.e_DynamicRangeType = VID_PLA_DR_TYPE_HDR10;
@@ -1168,26 +1488,27 @@ void dovi_path_enable(void)
 		}
 #endif
 	}
-	g_force_dolby = 0;
+	g_force_dovi = 0;
 }
 
 void dovi_path_disable(void)
 {
 	//struct disp_hw *hdr_drv = disp_hdr_get_drv();
 
-	if (dovi_vs10_path_en || dolby_path_enable) {
-		dolby_path_enable = 0;
+	if (dovi_vs10_path_en || dovi_path_en) {
+		dovi_path_en = 0;
 		dovi_vs10_path_en = 0;
-		g_force_dolby = 0;
-		dolby_path_ready2start = 1;
-
-		dovi_black_pattern_en = true;
-		dovi_black_pattern_cnt = 0;
-		dovi_black_pattern_cnt_max = 5;
-		if (dovi_black_en_bycmd)
-			dovi_black_pattern_cnt_max = dovi_black_cnt_bycmd;
-		if (dovi_black_pattern_cnt_max > 0)
-			disp_mix_hal_set_black_pattern(true);
+		g_force_dovi = 0;
+		dovi_path_ready2start = 1;
+		if (!dovi_idk_test) {
+			dovi_black_pattern_en = true;
+			dovi_black_pattern_cnt = 0;
+			dovi_black_pattern_cnt_max = 5;
+			if (dovi_black_en_bycmd)
+				dovi_black_pattern_cnt_max = dovi_black_cnt_bycmd;
+			if (dovi_black_pattern_cnt_max > 0)
+				disp_mix_hal_set_black_pattern(true);
+		}
 
 		dovi_default("set dobly path disable\n");
 		dovi_vdo_fe_hal_set_out_fix_pattern_enable(false,
@@ -1195,21 +1516,21 @@ void dovi_path_disable(void)
 
 		dovi_hdr_md_info[0].dr_range = DISP_DR_TYPE_PHLP_RESVERD;
 		dovi_hdr_md_info[0].enable = 0;
-		//hdr_drv->drv_call(DISP_CMD_METADATA_UPDATE,
-		//	&dovi_hdr_md_info[0]);
+		dovi_hdr_md_info[1].dr_range = DISP_DR_TYPE_PHLP_RESVERD;
+		dovi_hdr_md_info[1].enable = 0;
 		disp_dovi_process_cmd(LAYER0, DISP_CMD_METADATA_UPDATE,
 			&dovi_hdr_md_info[0]);
 
-	} else if (g_force_dolby) {
-		dovi_default("%s for g_force_dolby true, g_hdr_type %u\n",
+	} else if (g_force_dovi) {
+		dovi_info("%s for g_force_dovi true, g_hdr_type %u\n",
 			__func__, g_hdr_type);
 		dovi_vdo_fe_hal_set_enable(0, false);
 		dovi_vdo_fe_hal_set_enable(1, false);
 		dovi_gfx_fe_hal_set_enable(0, false);
 		dovi_gfx_fe_hal_set_enable(1, false);
 		dovi_be_hal_set_enable(false);
-		dolby_path_enable = 0;
-		g_force_dolby = 0;
+		dovi_path_en = 0;
+		g_force_dovi = 0;
 		g_hdr_type = 0;
 		g_out_format = 2;
 	} else {
@@ -1225,10 +1546,14 @@ void dovi_get_hdmi_output_format(uint32_t *out_format,
 		dovi_error("%s error params\n", __func__);
 		return;
 	}
-	switch (dolby_out_format) {
+	switch (dovi_out_format) {
 	case DOVI_FORMAT_DOVI:
 		*out_format = HDR_OUT_TYPE_DV_STD;
 		*bt2020_enable = false; /* does not matter */
+		break;
+	case DOVI_FORMAT_VSEM_DOVI:
+		*out_format = HDR_OUT_TYPE_VSEM_DV_STD;
+		*bt2020_enable = true;
 		break;
 	case DOVI_FORMAT_HDR10:
 		*out_format = HDR_OUT_TYPE_HDR10;
@@ -1240,6 +1565,10 @@ void dovi_get_hdmi_output_format(uint32_t *out_format,
 		break;
 	case DOVI_FORMAT_DOVI_LOW_LATENCY:
 		*out_format = HDR_OUT_TYPE_DV_LL;
+		*bt2020_enable = true;
+		break;
+	case DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY:
+		*out_format = HDR_OUT_TYPE_VSEM_DV_LL;
 		*bt2020_enable = true;
 		break;
 	case DOVI_FORMAT_HLG:
@@ -1288,193 +1617,203 @@ bool dovi_check_4k60_timing(enum HDMI_VIDEO_RESOLUTION res_mode)
 		return false;
 }
 
-void dovi_update_res_change(
+uint32_t dovi_update_res_change(
 	struct disp_hw_tv_capbility *tv_cap,
 	const struct disp_hw_resolution *resolution)
 {
 	bool is_4k60_out = dovi_check_4k60_timing(resolution->res_mode);
-	enum dovi_signal_format_t dolby_out_format_new;
+	enum dovi_signal_format_t dovi_out_format_new;
+	uint32_t res_real_change = 0;
 
 	dovi_out_info.vsvdb_edid = tv_cap->vsvdb_edid;
 
 	/* get output format depend on tv capability */
-	dolby_out_format_new =
+	dovi_out_format_new =
 	get_tv_output_format(tv_cap, is_4k60_out, resolution);
 
 	/*if ui select force sdr ,always keep sdr output*/
 	if (ui_force_hdr_type == 1)
-		dolby_out_format_new = DOVI_FORMAT_SDR;
+		dovi_out_format_new = DOVI_FORMAT_SDR;
 
-	if (dolby_force_output) {
-		if (dolby_force_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
+	if (dovi_force_output) {
+		if ((dovi_force_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY) ||
+			(dovi_force_out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY))
 			dovi_out_info.is_low_latency = true;
 		else
 			dovi_out_info.is_low_latency = false;
-		dolby_out_format_new = dolby_force_out_format;
-		dovi_info("force outformat %d\n", dolby_out_format_new);
+
+		if ((dovi_force_out_format == DOVI_FORMAT_VSEM_DOVI) ||
+			(dovi_force_out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY))
+			dovi_out_info.is_vsem = true;
+		else
+			dovi_out_info.is_vsem = false;
+
+		dovi_out_format_new = dovi_force_out_format;
+		dovi_info("force outformat %d\n", dovi_out_format_new);
 	}
 
-	dovi_out_info.out_format = dolby_out_format_new;
+	dovi_out_info.out_format = dovi_out_format_new;
 
 	if (osd_enable)
 		dovi_out_info.b_gfx_mode = true;
 	else
 		dovi_out_info.b_gfx_mode = false;
 
-	if (dovi_out_info.out_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
+	if ((dovi_out_info.out_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
+		|| (dovi_out_info.out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY))
 		dovi_out_info.is_low_latency = true;
 	else
 		dovi_out_info.is_low_latency = false;
 
-	if (dolby_out_format_new != dolby_out_format) {
+	if ((dovi_out_info.out_format == DOVI_FORMAT_VSEM_DOVI) ||
+		(dovi_out_info.out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY))
+		dovi_out_info.is_vsem = true;
+	else
+		dovi_out_info.is_vsem = false;
 
+	if (dovi_out_format_new != dovi_out_format) {
 		dovi_default("%s out_format change %d -> %d\n",
-			__func__, dolby_out_format, dolby_out_format_new);
+			__func__, dovi_out_format, dovi_out_format_new);
 
 		dovi_set_output_format(dovi_out_info.out_format);
 		dovi_set_low_latency_mode(dovi_out_info.is_low_latency,
 			ll_format);
-		dovi_set_priority_mode(dovi_out_info.b_gfx_mode);
+		dovi_set_vsem_mode(dovi_out_info.is_vsem);
+		dovi_set_priority_mode(!dovi_out_info.b_gfx_mode);
 		dovi_update_graphic_info();
 		dovi_set_vsvdb_hdmi(dovi_out_info.vsvdb_edid, 0x1A);
 
-	} else if (dolby_out_format_new == dolby_out_format) {
-		dovi_default("out_format is same as before %d\n",
-			dolby_out_format);
+	} else if (dovi_out_format_new == dovi_out_format) {
+		dovi_info("out_format is same as before %d\n",
+			dovi_out_format);
 
-		if ((dolby_out_format == DOVI_FORMAT_HDR10)
-		    || (dolby_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
-		    || (dolby_out_format == DOVI_FORMAT_HLG)) {
+		if ((dovi_out_format == DOVI_FORMAT_HDR10)
+		    || (dovi_out_format == DOVI_FORMAT_DOVI_LOW_LATENCY)
+		    || (dovi_out_format == DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY)
+		    || (dovi_out_format == DOVI_FORMAT_HLG)) {
 			dovi_set_output_format(dovi_out_info.out_format);
 			dovi_set_low_latency_mode(dovi_out_info.is_low_latency,
 				ll_format);
-			dovi_set_priority_mode(dovi_out_info.b_gfx_mode);
+			dovi_set_vsem_mode(dovi_out_info.is_vsem);
+			dovi_set_priority_mode(!dovi_out_info.b_gfx_mode);
 			dovi_update_graphic_info();
 			dovi_set_vsvdb_hdmi(dovi_out_info.vsvdb_edid, 0x1A);
+			res_real_change = 1;
 		}
 	}
 	if ((old_resolution != resolution->res_mode)
-	    || (dolby_out_format_new != dolby_out_format)) {
+	    || (dovi_out_format_new != dovi_out_format)) {
 		dovi_default("hdr old_res=%d, new_res=%d\n",
 			   old_resolution, resolution->res_mode);
 
-		if (dolby_out_format_new == DOVI_FORMAT_DOVI)
+		switch (dovi_out_format_new) {
+		case DOVI_FORMAT_DOVI:
 			disp_adl_update_uhd_lut(true, dovi_sdr_ipt_gfx_fe_lut);
-		else if (dolby_out_format_new == DOVI_FORMAT_DOVI_LOW_LATENCY)
+			break;
+		case DOVI_FORMAT_VSEM_DOVI:
+			disp_adl_update_uhd_lut(true, dovi_sdr_vsem_gfx_fe_lut);
+			break;
+		case DOVI_FORMAT_DOVI_LOW_LATENCY:
 			disp_adl_update_uhd_lut(true, dovi_sdr_ll_gfx_fe_lut);
+			break;
+		case DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY:
+			disp_adl_update_uhd_lut(true, dovi_sdr_vsemll_gfx_fe_lut);
+			break;
+		default:
+			break;
+		}
 
 		dovi_hdr_md_info[LAYER0].enable =
 		DOVI_RESOLUTION_CHANGE;
 
+		res_real_change = 1;
+
 		disp_dovi_process(1, &dovi_hdr_md_info[LAYER0]);
 	}
-	dolby_out_format = dolby_out_format_new;
+	dovi_out_format = dovi_out_format_new;
 	old_resolution = resolution->res_mode;
+
+	return res_real_change;
 }
 
-int dovi_frame_commit(struct video_buffer_info *buf_main,
-	struct video_buffer_info *buf_sub, bool sub_exist)
+int dovi_get_frame_info(uint32_t id, struct video_buffer_info *buf,
+	bool force_update)
 {
-	struct disp_hw *hdr_drv = disp_hdr_get_drv();
 	struct mtk_disp_hdr10_md_t *dv_hdr10_md = NULL;
 	struct VID_STATIC_HDMI_MD_T *buf_hdr10_md = NULL;
-	bool need_update = false;
 	unsigned short mix_lum = 0;
 	unsigned short max_lum = 0;
 	uint32_t enable = 0;
+	int ret = 0;
 
-	if ((sub_exist && (buf_sub == NULL)) ||
-		(buf_main == NULL)) {
-		dovi_error("%s buf is null\n", __func__);
-		return -1;
+	if (buf == NULL || id > LAYER1) {
+		dovi_printf("%s error %d\n", __func__, id);
+		return 0;
 	}
-
-	if (dolby_path_ready2start) {
-
-		/*enable black pattern for adaptive first frame*/
-		if (!dolby_path_enable) {
-			dovi_black_pattern_en = true;
-			dovi_black_pattern_cnt = 0;
-			dovi_black_pattern_cnt_max = 5;
-			if (dovi_black_en_bycmd)
-				dovi_black_pattern_cnt_max = dovi_black_cnt_bycmd;
-			if (dovi_black_pattern_cnt_max > 0)
-				disp_mix_hal_set_black_pattern(true);
-		}
-
-		/*enable dolby hal flag*/
-		dovi_vdo_fe_hal_set_enable(LAYER0, true);
-		dovi_be_hal_set_enable(true);
-		if (sub_exist)
-			dovi_vdo_fe_hal_set_enable(LAYER1, true);
-
-		dovi_update_output_setting(&dovi_common_info,
-			buf_main, buf_sub);
-
-		if (dovi_idk_dump)
-			hdr_drv->drv_call(DISP_CMD_OSD_UPDATE, &dovi_idk_dump);
-		dolby_path_enable = 1;
-		need_update = true;
-		dovi_printf("dobly path enable, pts %lld %d %d %d %d %d %d\n",
-			buf_main->pts, buf_main->hdr_info.dr_range,
-			dovi_hdr_md_info[LAYER0].dr_range,
-			dolby_out_format, dovi_out_info.is_low_latency,
-			dovi_out_info.b_gfx_mode, befifo_irq_cnt);
-		dolby_path_ready2start = 0;
-	}
-
-	if (dolby_force_output)
-		disp_dovi_force_output_setting(&dovi_common_info);
-
-	if ((dolby_path_enable)
-	    && ((buf_main->hdr_info.dr_range == DISP_DR_TYPE_DOVI)
-		|| (dovi_hdr_md_info[LAYER0].dr_range
-		!= buf_main->hdr_info.dr_range)
-		|| need_update)) {
-		if ((dovi_hdr_md_info[LAYER0].dr_range
-			!= buf_main->hdr_info.dr_range)
-			|| (dolby_force_output)) {
-			/*src hdr type change*/
+	if ((buf->hdr_info.dr_range == DISP_DR_TYPE_DOVI) ||
+		(dovi_hdr_md_info[id].dr_range != buf->hdr_info.dr_range)
+		|| force_update) {
+		if ((dovi_hdr_md_info[id].dr_range != buf->hdr_info.dr_range)
+			|| (dovi_force_output)) {
 			enable = DOVI_INOUT_FORMAT_CHANGE;
-			dovi_flow("%s,dr range change %d->%d\n", __func__,
-				dovi_hdr_md_info[LAYER0].dr_range,
-				buf_main->hdr_info.dr_range);
-			dolby_force_output = false;
+			dovi_dbg("%s[%d],dr range change %d->%d %d\n",
+			__func__, id, dovi_hdr_md_info[id].dr_range,
+			buf->hdr_info.dr_range, force_update);
+			dovi_force_output = false;
 		} else {
-			if (need_update)
+			if (force_update)
 				enable = DOVI_INOUT_FORMAT_CHANGE;
 			else
 				enable = 1;
-			dovi_info("%s %d %d %d %lld\n", __func__,
-			dovi_hdr_md_info[LAYER0].enable,
-			dovi_hdr_md_info[LAYER0].dr_range,
-			buf_main->hdr_info.enable,
-			buf_main->pts);
+			dovi_dbg("%s %d %d %d %lld\n", __func__,
+			dovi_hdr_md_info[id].enable,
+			dovi_hdr_md_info[id].dr_range,
+			buf->hdr_info.enable,
+			buf->pts);
 		}
-		/*hdr10<-->hlg output change*/
-		if (((dolby_out_format == DOVI_FORMAT_HDR10)
-			&& (buf_main->hdr_info.dr_range == DISP_DR_TYPE_HLG))
-			|| ((dolby_out_format == DOVI_FORMAT_HLG)
-			&& (buf_main->hdr_info.dr_range != DISP_DR_TYPE_HLG)))
-			dovi_update_output_setting(&dovi_common_info,
-			buf_main, buf_sub);
 
-		dovi_hdr_md_info[LAYER0] = buf_main->hdr_info;
-		dovi_hdr_md_info[LAYER0].enable = enable;
-		dovi_info("%s %d %d %d %lld\n", __func__,
-			dovi_hdr_md_info[LAYER0].enable,
-			dovi_hdr_md_info[LAYER0].dr_range,
-			buf_main->hdr_info.enable,
-			buf_main->pts);
+		dovi_hdr_md_info[id] = buf->hdr_info;
+		dovi_hdr_md_info[id].enable = enable;
+
 		dv_hdr10_md =
-			&dovi_hdr_md_info[LAYER0].metadata_info.hdr10_metadata;
-		buf_hdr10_md = &(buf_main->hdr10_info);
+			&dovi_hdr_md_info[id].metadata_info.hdr10_metadata;
+		buf_hdr10_md = &(buf->hdr10_info);
 		mix_lum =
 			buf_hdr10_md->ui2_MinDisplayMasteringLuminance;
 		max_lum =
 			buf_hdr10_md->ui2_MaxDisplayMasteringLuminance;
-		if ((buf_main->hdr_info.dr_range == DISP_DR_TYPE_HDR10)
-			|| (buf_main->hdr_info.dr_range == DISP_DR_TYPE_HLG)) {
+
+		/* atsc and dvb dovi need static metadata*/
+		if ((buf->hdr_info.dr_range == DISP_DR_TYPE_DOVI) &&
+			((buf->hdr10_type == HDR10_TYPE_ST2084) ||
+			(buf->hdr10_type == HDR10_TYPE_HLG))) {
+			dv_hdr10_md = &p_src_param[id].hdr10_md;
+			dv_hdr10_md->ui2_DisplayPrimariesX[0]
+				= buf_hdr10_md->ui2_DisplayPrimariesX[0];
+			dv_hdr10_md->ui2_DisplayPrimariesX[1]
+				= buf_hdr10_md->ui2_DisplayPrimariesX[1];
+			dv_hdr10_md->ui2_DisplayPrimariesX[2]
+				= buf_hdr10_md->ui2_DisplayPrimariesX[2];
+			dv_hdr10_md->ui2_DisplayPrimariesY[0]
+				= buf_hdr10_md->ui2_DisplayPrimariesY[0];
+			dv_hdr10_md->ui2_DisplayPrimariesY[1]
+				= buf_hdr10_md->ui2_DisplayPrimariesY[1];
+			dv_hdr10_md->ui2_DisplayPrimariesY[2]
+				= buf_hdr10_md->ui2_DisplayPrimariesY[2];
+			dv_hdr10_md->ui2_WhitePointX
+				= buf_hdr10_md->ui2_WhitePointX;
+			dv_hdr10_md->ui2_WhitePointY
+				= buf_hdr10_md->ui2_WhitePointY;
+			dv_hdr10_md->ui2_MaxDisplayMasteringLuminance
+				= max_lum;
+			dv_hdr10_md->ui2_MinDisplayMasteringLuminance
+				= mix_lum;
+			dv_hdr10_md->ui2_MaxCLL
+				= buf_hdr10_md->ui2_MaxCLL;
+			dv_hdr10_md->ui2_MaxFALL
+				= buf_hdr10_md->ui2_MaxFALL;
+		} else if ((buf->hdr_info.dr_range == DISP_DR_TYPE_HDR10)
+			|| (buf->hdr_info.dr_range == DISP_DR_TYPE_HLG)) {
 			dv_hdr10_md->ui2_DisplayPrimariesX[0]
 				= buf_hdr10_md->ui2_DisplayPrimariesX[0];
 			dv_hdr10_md->ui2_DisplayPrimariesX[1]
@@ -1500,11 +1839,86 @@ int dovi_frame_commit(struct video_buffer_info *buf_main,
 			dv_hdr10_md->ui2_MaxFALL
 				= buf_hdr10_md->ui2_MaxFALL;
 		}
+		ret = 1;
+	}
+	return ret;
+}
+int dovi_frame_commit(struct video_buffer_info *buf_main,
+	struct video_buffer_info *buf_sub, bool sub_exist)
+{
+	bool need_update = false;
+	uint32_t ret = 0;
 
-		//hdr_drv->drv_call(DISP_CMD_METADATA_UPDATE,
-		//		&dovi_hdr_md_info[LAYER0]);
-		disp_dovi_process_cmd(LAYER0, DISP_CMD_METADATA_UPDATE,
-			&dovi_hdr_md_info[0]);
+	if ((sub_exist && (buf_sub == NULL)) ||
+		(buf_main == NULL)) {
+		dovi_error("%s buf is null\n", __func__);
+		return -1;
+	}
+
+	/*sub hdr layer will disable here if sub video disable*/
+	if (!sub_exist)
+		dovi_vdo_fe_hal_set_enable(LAYER1, false);
+
+	if (dovi_path_ready2start) {
+		/*enable black pattern for adaptive first frame*/
+		if (!dovi_path_en && !dovi_idk_test) {
+			dovi_black_pattern_en = true;
+			dovi_black_pattern_cnt = 0;
+			dovi_black_pattern_cnt_max = 5;
+			if (dovi_black_en_bycmd)
+				dovi_black_pattern_cnt_max = dovi_black_cnt_bycmd;
+			if (dovi_black_pattern_cnt_max > 0)
+				disp_mix_hal_set_black_pattern(true);
+		}
+		/*enable dovi hal flag*/
+		dovi_vdo_fe_hal_set_enable(LAYER0, true);
+		dovi_be_hal_set_enable(true);
+		if (sub_exist)
+			dovi_vdo_fe_hal_set_enable(LAYER1, true);
+
+		dovi_update_output_setting(&hdr_common_info,
+			buf_main, buf_sub);
+
+		dovi_path_en = 1;
+		need_update = true;
+		dovi_default("dv path en, pts %lld %d %d %d %d %d %d %d\n",
+			buf_main->pts, buf_main->hdr_info.dr_range,
+			dovi_hdr_md_info[LAYER0].dr_range,
+			dovi_out_format, dovi_out_info.is_low_latency,
+			dovi_out_info.b_gfx_mode,
+			buf_main->hdr10_type, sub_exist);
+		dovi_path_ready2start = 0;
+	}
+
+	if (dovi_force_output)
+		disp_dovi_force_output_setting(&hdr_common_info);
+
+	if (sub_exist)
+		if (dovi_vdo_fe_hal_set_enable(LAYER1, true) == 1)
+			need_update = true;
+
+	/*get metadta info from main sub buffer*/
+	if (dovi_path_en || need_update) {
+
+		/*hdr10<-->hlg out change , base main only*/
+		if ((dovi_hdr_md_info[LAYER0].dr_range
+			!= buf_main->hdr_info.dr_range)
+			&& (((dovi_out_format == DOVI_FORMAT_HDR10)
+			&& (buf_main->hdr_info.dr_range == DISP_DR_TYPE_HLG))
+			|| ((dovi_out_format == DOVI_FORMAT_HLG)
+			&& (buf_main->hdr_info.dr_range != DISP_DR_TYPE_HLG))))
+			dovi_update_output_setting(&hdr_common_info,
+			buf_main, buf_sub);
+
+		ret |= dovi_get_frame_info(LAYER0, buf_main, need_update);
+		if (sub_exist)
+			ret |= dovi_get_frame_info(LAYER1,
+		buf_sub, need_update);
+
+		/*need do dovi process*/
+		if (ret > 0)
+			disp_dovi_process_cmd(LAYER0, DISP_CMD_METADATA_UPDATE,
+				&dovi_hdr_md_info[0]);
 
 		need_update = false;
 	}
@@ -1517,6 +1931,7 @@ int dovi_config_fefifo_swap(bool swap)
 {
 	struct disp_hw *hdr_drv = disp_hdr_get_drv();
 	struct FEFIFO_SRC_ORDER_T fifo_order = { 0 };
+
 	if (swap) {
 		if (dv_gfx_fe_en[0]) {
 			fifo_order.layer_id = 2;
@@ -1524,7 +1939,7 @@ int dovi_config_fefifo_swap(bool swap)
 			fifo_order.out_order = 0;
 			hdr_drv->drv_call(DISP_CMD_FEFIFO_SRC_SWAP,
 				&fifo_order);
-			dovi_info("set fefifo[2] %d swap\n", befifo_irq_cnt);
+			dovi_info("set fefifo[2] swap %d\n", befifo_irq_cnt);
 		} else {
 			fifo_order.layer_id = 2;
 			fifo_order.in_order = 0;
@@ -1539,7 +1954,7 @@ int dovi_config_fefifo_swap(bool swap)
 			fifo_order.out_order = 0;
 			hdr_drv->drv_call(DISP_CMD_FEFIFO_SRC_SWAP,
 				&fifo_order);
-			dovi_info("set fefifo[3] %d swap\n", befifo_irq_cnt);
+			dovi_info("set fefifo[3] swap %d\n", befifo_irq_cnt);
 		} else {
 			fifo_order.layer_id = 3;
 			fifo_order.in_order = 0;
@@ -1553,14 +1968,14 @@ int dovi_config_fefifo_swap(bool swap)
 		fifo_order.out_order = 0;
 		hdr_drv->drv_call(DISP_CMD_FEFIFO_SRC_SWAP,
 				&fifo_order);
-		dovi_info("set fefifo[2] %d no swap\n", befifo_irq_cnt);
+		dovi_info("set fefifo[2] no swap %d\n", befifo_irq_cnt);
 
 		fifo_order.layer_id = 3;
 		fifo_order.in_order = 0;
 		fifo_order.out_order = 0;
 		hdr_drv->drv_call(DISP_CMD_FEFIFO_SRC_SWAP,
 				&fifo_order);
-		dovi_info("set fefifo[3] %d no swap\n", befifo_irq_cnt);
+		dovi_info("set fefifo[3] no swap %d\n", befifo_irq_cnt);
 	}
 
 	return 0;
@@ -1570,9 +1985,6 @@ int dovi_config_adl(void)
 {
 	struct adl_src_tbl adl_tbl;
 	struct dv_hw_reg *p_reg = NULL;
-	void *lut_addr = NULL;
-	dma_addr_t lut_addr_pa = 0;
-	uint8_t *p_lut_tbl = NULL;
 
 	p_reg = p_dv_out_params;
 
@@ -1583,23 +1995,23 @@ int dovi_config_adl(void)
 		adl_tbl.client = DV_ADL_V_MAIN;
 
 		adl_tbl.hdr_b0103.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.g2l);
+			(uint8_t *)(&p_reg->dv_lut_tbls.g2l[0]);
 		adl_tbl.hdr_b0103.used_size = DV_ADL_SIZE;
 
 		adl_tbl.hdr_b0202ss.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.smluts);
+			(uint8_t *)(&p_reg->dv_lut_tbls.smluts[0]);
 		adl_tbl.hdr_b0202ss.used_size = DV_ADL_SIZE;
 
 		adl_tbl.hdr_b0202si.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.smluti);
+			(uint8_t *)(&p_reg->dv_lut_tbls.smluti[0]);
 		adl_tbl.hdr_b0202si.used_size = DV_ADL_SIZE;
 
 		adl_tbl.hdr_b0202ts.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.tmluts);
+			(uint8_t *)(&p_reg->dv_lut_tbls.tmluts[0]);
 		adl_tbl.hdr_b0202ts.used_size = DV_ADL_SIZE;
 
 		adl_tbl.hdr_b0202ti.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.tmluti);
+			(uint8_t *)(&p_reg->dv_lut_tbls.tmluti[0]);
 		adl_tbl.hdr_b0202ti.used_size = DV_ADL_SIZE;
 
 		adl_tbl.path = DOVI_PATH;
@@ -1608,60 +2020,34 @@ int dovi_config_adl(void)
 	}
 
 	if (dv_vdo_fe_en[1]) {
-		if (_subv_type == 0) {
-			switch (dolby_out_format) {
-			case DOVI_FORMAT_DOVI:
-				p_lut_tbl = (uint8_t *)sub_sdr_ipt_lut;
-				break;
-			case DOVI_FORMAT_HDR10:
-				p_lut_tbl = (uint8_t *)sub_sdr_hdr10_lut;
-				break;
-			case DOVI_FORMAT_SDR:
-				p_lut_tbl = (uint8_t *)sub_sdr_sdr_lut;
-				break;
-			case DOVI_FORMAT_DOVI_LOW_LATENCY:
-				p_lut_tbl = (uint8_t *)sub_sdr_ll_lut;
-				break;
-			default:
-				p_lut_tbl = (uint8_t *)sub_sdr_ipt_lut;
-				break;
-			}
-			disp_adl_get_clt_buf(DV_ADL_V_SUB,
-				&lut_addr, &lut_addr_pa);
-			memcpy(lut_addr, p_lut_tbl, DOVI_FE_LUT_SIZE);
-			disp_adl_cfg_client_en(DV_ADL_V_SUB, 1, 0);
-			disp_adl_cfg_client(DV_ADL_V_SUB,
-				lut_addr_pa, DOVI_MD_SIZE);
-		} else if (_subv_type == 1) {
-			/*update svdo lut, tmp use mvdolut*/
-			memset(&adl_tbl, 0, sizeof(struct adl_src_tbl));
+		/*update svdo lut, tmp use mvdolut*/
+		memset(&adl_tbl, 0, sizeof(struct adl_src_tbl));
 
-			adl_tbl.client = DV_ADL_V_SUB;
+		adl_tbl.client = DV_ADL_V_SUB;
 
-			adl_tbl.hdr_b0103.p_data =
-				(uint8_t *)(&p_reg->dv_lut_tbls.g2l);
-			adl_tbl.hdr_b0103.used_size = DV_ADL_SIZE;
+		adl_tbl.hdr_b0103.p_data =
+			(uint8_t *)(&p_reg->dv_lut_tbls.g2l[1]);
+		adl_tbl.hdr_b0103.used_size = DV_ADL_SIZE;
 
-			adl_tbl.hdr_b0202ss.p_data =
-				(uint8_t *)(&p_reg->dv_lut_tbls.smluts);
-			adl_tbl.hdr_b0202ss.used_size = DV_ADL_SIZE;
+		adl_tbl.hdr_b0202ss.p_data =
+			(uint8_t *)(&p_reg->dv_lut_tbls.smluts[1]);
+		adl_tbl.hdr_b0202ss.used_size = DV_ADL_SIZE;
 
-			adl_tbl.hdr_b0202si.p_data =
-				(uint8_t *)(&p_reg->dv_lut_tbls.smluti);
-			adl_tbl.hdr_b0202si.used_size = DV_ADL_SIZE;
+		adl_tbl.hdr_b0202si.p_data =
+			(uint8_t *)(&p_reg->dv_lut_tbls.smluti[1]);
+		adl_tbl.hdr_b0202si.used_size = DV_ADL_SIZE;
 
-			adl_tbl.hdr_b0202ts.p_data =
-				(uint8_t *)(&p_reg->dv_lut_tbls.tmluts);
-			adl_tbl.hdr_b0202ts.used_size = DV_ADL_SIZE;
+		adl_tbl.hdr_b0202ts.p_data =
+			(uint8_t *)(&p_reg->dv_lut_tbls.tmluts[1]);
+		adl_tbl.hdr_b0202ts.used_size = DV_ADL_SIZE;
 
-			adl_tbl.hdr_b0202ti.p_data =
-				(uint8_t *)(&p_reg->dv_lut_tbls.tmluti);
-			adl_tbl.hdr_b0202ti.used_size = DV_ADL_SIZE;
+		adl_tbl.hdr_b0202ti.p_data =
+			(uint8_t *)(&p_reg->dv_lut_tbls.tmluti[1]);
+		adl_tbl.hdr_b0202ti.used_size = DV_ADL_SIZE;
 
-			adl_tbl.path = DOVI_PATH;
-			disp_adl_cfg_client_en(DV_ADL_V_SUB, 1, 0);
-			disp_config_adl_table(&adl_tbl);
-		}
+		adl_tbl.path = DOVI_PATH;
+		disp_adl_cfg_client_en(DV_ADL_V_SUB, 1, 0);
+		disp_config_adl_table(&adl_tbl);
 	}
 
 	if (dv_gfx_fe_en[0]) {
@@ -1671,23 +2057,23 @@ int dovi_config_adl(void)
 		adl_tbl.client = DV_ADL_G_FHD;
 
 		adl_tbl.hdr_b0103.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.gop_g2l);
+			(uint8_t *)(&p_reg->dv_lut_tbls.gop_g2l[0]);
 		adl_tbl.hdr_b0103.used_size = DV_ADL_SIZE;
 
 		adl_tbl.hdr_b0202ss.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.gop_smluts);
+			(uint8_t *)(&p_reg->dv_lut_tbls.gop_smluts[0]);
 		adl_tbl.hdr_b0202ss.used_size = DV_ADL_SIZE;
 
 		adl_tbl.hdr_b0202si.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.gop_smluti);
+			(uint8_t *)(&p_reg->dv_lut_tbls.gop_smluti[0]);
 		adl_tbl.hdr_b0202si.used_size = DV_ADL_SIZE;
 
 		adl_tbl.hdr_b0202ts.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.gop_tmluts);
+			(uint8_t *)(&p_reg->dv_lut_tbls.gop_tmluts[0]);
 		adl_tbl.hdr_b0202ts.used_size = DV_ADL_SIZE;
 
 		adl_tbl.hdr_b0202ti.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.gop_tmluti);
+			(uint8_t *)(&p_reg->dv_lut_tbls.gop_tmluti[0]);
 		adl_tbl.hdr_b0202ti.used_size = DV_ADL_SIZE;
 
 		adl_tbl.path = DOVI_PATH;
@@ -1702,23 +2088,23 @@ int dovi_config_adl(void)
 		adl_tbl.client = DV_ADL_G_UHD;
 
 		adl_tbl.hdr_b0103.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.gop_g2l);
+			(uint8_t *)(&p_reg->dv_lut_tbls.gop_g2l[1]);
 		adl_tbl.hdr_b0103.used_size = DV_ADL_SIZE;
 
 		adl_tbl.hdr_b0202ss.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.gop_smluts);
+			(uint8_t *)(&p_reg->dv_lut_tbls.gop_smluts[1]);
 		adl_tbl.hdr_b0202ss.used_size = DV_ADL_SIZE;
 
 		adl_tbl.hdr_b0202si.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.gop_smluti);
+			(uint8_t *)(&p_reg->dv_lut_tbls.gop_smluti[1]);
 		adl_tbl.hdr_b0202si.used_size = DV_ADL_SIZE;
 
 		adl_tbl.hdr_b0202ts.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.gop_tmluts);
+			(uint8_t *)(&p_reg->dv_lut_tbls.gop_tmluts[1]);
 		adl_tbl.hdr_b0202ts.used_size = DV_ADL_SIZE;
 
 		adl_tbl.hdr_b0202ti.p_data =
-			(uint8_t *)(&p_reg->dv_lut_tbls.gop_tmluti);
+			(uint8_t *)(&p_reg->dv_lut_tbls.gop_tmluti[1]);
 		adl_tbl.hdr_b0202ti.used_size = DV_ADL_SIZE;
 
 		adl_tbl.path = DOVI_PATH;
@@ -1734,7 +2120,6 @@ int dovi_config_adl(void)
 			(uint8_t *)(&p_reg->dv_lut_tbls.md_pkts);
 		adl_tbl.scmb.used_size =
 			p_reg->dv_scm.reg_meta_pkt_num * DV_MD_PER_PKT_SIZE;
-
 		adl_tbl.path = DOVI_PATH;
 		if (adl_tbl.scmb.used_size > 0) {
 			disp_adl_cfg_client_en(DV_SCRM, 1, 0);
@@ -1853,124 +2238,271 @@ int dovi_config_menuload(void)
 	return 0;
 }
 
+uint32_t disp_dovi_get_rpu_info(uint32_t idx, uint32_t first_frame,
+	struct mtk_vdp_dovi_md_t *dovi_md_info)
+{
+	enum DV_RPU_TYPE rpu_type = HEVC_RPU;
+	unsigned char *rpu_addr = NULL;
+
+	if (idx >= V_G_LAYER_MAX || dovi_md_info == NULL) {
+		dovi_printf("can not get rpu info\n");
+		return -1;
+	}
+
+	if (dovi_md_info->svp) {
+		p_src_param[idx].svp = true;
+		p_src_param[idx].sec_handle =
+			dovi_md_info->sec_handle;
+		p_src_param[idx].rpu_bs_len =
+			dovi_md_info->len;
+
+		dovi_rpu("svpfrae:%d, %d rpu_len:%d, handle:%d\n", idx,
+			 p_src_param[LAYER0].src_frame_num, dovi_md_info->len,
+			 dovi_md_info->sec_handle);
+	} else {
+		p_src_param[idx].svp = false;
+		p_src_param[idx].is_rbsp = 0;
+		/* remove rpu NAL type */
+		if (!layer_info_set_by_cmd) {
+
+			rpu_type = dovi_parse_rpu_av1(
+				dovi_md_info->buff,
+				dovi_md_info->len,
+				p_src_param[idx].rpu_bs_buffer,
+				&p_src_param[idx].rpu_bs_len);
+
+			if (rpu_type == HEVC_RPU) {
+				p_src_param[idx].rpu_bs_len =
+				dovi_remove_rpu_nal_type(
+				first_frame,
+				dovi_md_info->buff,
+				p_src_param[idx].rpu_bs_buffer,
+				dovi_md_info->len);
+			} else if (rpu_type == AV1_RPU)
+				p_src_param[idx].is_rbsp = 1;
+
+			p_src_param[idx].rpu_type = rpu_type;
+
+			if (p_src_param[idx].rpu_bs_len < 0) {
+				dovi_error("layer[%d]rpu len error\n", idx);
+				return DOVI_RET_ERROR;
+			}
+		} else {
+			rpu_addr = p_src_param[idx].rpu_bs_buffer;
+
+			if (layer_info_set_by_cmd == 2) {
+				dovi_av1_parser_test();
+				p_src_param[idx].is_rbsp = 1;
+			} else {
+				dovi_md_info->len = 237;
+				p_src_param[idx].rpu_bs_len = 240;
+				memcpy(rpu_addr, rpu_test_data, 240);
+			}
+		}
+
+		dovi_info("rpu[%d] %d %d %d %d\n", idx, rpu_type,
+			dovi_md_info->len, p_src_param[idx].rpu_bs_len,
+			first_frame);
+	}
+
+	return 0;
+}
 int disp_dovi_process(uint32_t enable,
 	struct mtk_disp_hdr_md_info_t *hdr_metadata)
 {
-	enum DISP_DR_TYPE_T dovi_pre_input_dr_type =
+	enum DISP_DR_TYPE_T dv_pre_input_type =
 		DISP_DR_TYPE_DOVI;
-	enum DV_RPU_TYPE rpu_type = HEVC_RPU;
-	bool b_dolby_src = false;
+	enum DISP_DR_TYPE_T dv_pre_input_type1 =
+		DISP_DR_TYPE_DOVI;
+	uint8_t b_dovi_src = 0;
+	uint32_t old_num_input = 0;
+	struct mtk_vdp_dovi_md_t *dovi_md_info_main = NULL;
+	struct mtk_vdp_dovi_md_t *dovi_md_info_sub = NULL;
+	uint32_t first_frame[2] = { 0 };
+
+	mutex_lock(&disp_dovi_mutex);
 
 	dovi_proc_state = ((dovi_enable << 1) | enable);
-	*p_dr_type = hdr_metadata->dr_range;
 
-	dovi_info("%s %d %d\n", __func__,
-		dovi_proc_state, *p_dr_type);
+	if (enable && (vdp_start_st[0] == 0) &&
+		!((hdr_metadata->dr_range == DISP_DR_TYPE_SDR)
+		|| (hdr_metadata->dr_range == DISP_DR_TYPE_PHLP_RESVERD))) {
+		dovi_printf("ignore the call after video stop %d %d %d\n",
+			vdp_start_st[0], vdp_start_st[1], hdr_metadata->dr_range);
+		mutex_unlock(&disp_dovi_mutex);
+		return DOVI_RET_OK;
+	}
+
+	old_num_input = p_cp_param->num_input;
+	p_cp_param->num_input = 0;
+	p_cp_param->cp_init_update = 0;
+	p_cp_param->dm_md_parse_ctrl = 0;
+	p_cp_param->pri_input = 0;
+	p_cp_param->vpm_trans_timeout = 0;
+
+	p_cp_param->num_input++;
+	p_src_param[LAYER0].en = (bool) enable;
+	p_src_param[LAYER0].dr_type = hdr_metadata->dr_range;
+	p_src_param[LAYER0].input_mode = INPUT_MODE_OTT;
+	dovi_get_input_format(&dv_pre_input_type);
 
 	if (hdr_metadata->dr_range == DISP_DR_TYPE_DOVI)
-		b_dolby_src = true;
-	else
-		b_dolby_src = false;
+		b_dovi_src |= 1;
+
+	if (dv_vdo_fe_en[1] &&
+		dovi_hdr_md_info[LAYER1].dr_range == DISP_DR_TYPE_DOVI)
+		b_dovi_src |= 2;
+
+	if (enable) {
+		if (dv_vdo_fe_en[1]) {
+			p_cp_param->num_input++;
+			p_src_param[LAYER1].en = true;
+			dovi_get_input_format1(&dv_pre_input_type1);
+			//dovi_set_sub_video_info(&dovi_hdr_md_info[LAYER1]);
+		} else
+			p_src_param[LAYER1].en = false;
+
+		if ((!dovi_idk_test) && dv_gfx_fe_en[0]) {
+			p_cp_param->num_input++;
+			//dovi_set_priority_mode(G_PRIORITY);
+			dovi_set_graphic_info(1);
+		} else
+			dovi_set_graphic_info(0);
+
+		if ((!dovi_idk_test) && dv_gfx_fe_en[1]) {
+			p_cp_param->num_input++;
+			//dovi_set_priority_mode(G_PRIORITY);
+			dovi_set_graphic_info_uhd(1);
+		} else if ((idk_gfx_en == 1) && dovi_idk_test) {
+			p_cp_param->num_input++;
+			dovi_set_graphic_info(1);
+		} else if ((idk_gfx_en == 2) && dovi_idk_test) {
+			p_cp_param->num_input++;
+			dovi_set_graphic_info_uhd(1);
+
+			p_cp_param->num_input++;
+			dovi_set_graphic_info(1);
+		} else
+			dovi_set_graphic_info_uhd(0);
+	}
+
+	if ((p_cp_param->num_input > MAX_NUM_INPUT) ||
+		(old_num_input > MAX_NUM_INPUT)) {
+		dovi_printf("input layer over size %d\n",
+			p_cp_param->num_input);
+		mutex_unlock(&disp_dovi_mutex);
+		return DOVI_RET_ERROR;
+	}
+
+	dovi_dbg("%s[%d][%d] %d %d %d %d %d %d %d %d %d num[%d %d][%d %d %d %d]\n",
+		__func__, hdr_vsync_cnt, befifo_irq_cnt, dovi_proc_state,
+		b_dovi_src,
+		hdr_metadata->dr_range, hdr_metadata->enable,
+		dovi_hdr_md_info[1].dr_range, dovi_hdr_md_info[1].enable,
+		dovi_md_parser_enable, dv_pre_input_type, dv_pre_input_type1,
+		old_num_input, p_cp_param->num_input,
+		dv_vdo_fe_en[0], dv_vdo_fe_en[1],
+		dv_gfx_fe_en[0], dv_gfx_fe_en[1]);
+
 	/* enable or already enable dovi */
 	if ((dovi_proc_state & 1) == 1) {
 		if ((dovi_proc_state == 1)
-		    || (hdr_metadata->enable == DOVI_INOUT_FORMAT_CHANGE)) {
-			*p_frame_num = 0;
-			dovi_get_input_format(&dovi_pre_input_dr_type);
+		    || (hdr_metadata->enable == DOVI_INOUT_FORMAT_CHANGE)
+		    || (dovi_hdr_md_info[LAYER1].enable
+		    == DOVI_INOUT_FORMAT_CHANGE)) {
+			p_src_param[LAYER0].src_frame_num = 0;
+			p_src_param[LAYER1].src_frame_num = 0;
+			dovi_get_input_format(&dv_pre_input_type);
 			dovi_set_video_info(hdr_metadata);
+			dovi_get_input_format1(&dv_pre_input_type1);
+			dovi_set_sub_video_info(&dovi_hdr_md_info[LAYER1]);
 		}
 
 		/* hw setting generate by control path drv */
-		if (hdr_metadata->dr_range == DISP_DR_TYPE_DOVI) {
-			struct mtk_vdp_dovi_md_t *dovi_md_info;
-			uint32_t first_frame = (dovi_proc_state == 1);
-
-			dovi_md_info =
-				&(hdr_metadata->metadata_info.dovi_metadata);
+		/*main or sub is dovi src*/
+		if (b_dovi_src) {
+			first_frame[0] = (dovi_proc_state == 1);
+			first_frame[1] = (dovi_proc_state == 1);
 
 			/* do init process */
 			if (dovi_proc_state == 1) {
-				dovi_sec_md_parser_init();
-				dovi_rpu_total_len = 0;
+				//dovi_sec_md_parser_init();
+				if (dv_vdo_fe_en[0])
+					p_cp_param->dm_md_parse_ctrl |= 0x1;
+				if (dv_vdo_fe_en[1])
+					p_cp_param->dm_md_parse_ctrl |= 0x2;
 				dovi_md_parser_enable = true;
-				*p_frame_num = 0;
+				p_src_param[LAYER0].src_frame_num = 0;
+				p_src_param[LAYER1].src_frame_num = 0;
 			}
 
 			if (dovi_md_parser_enable == false) {
-				dovi_sec_md_parser_init();
+				//dovi_sec_md_parser_init();
+				if (dv_vdo_fe_en[0])
+					p_cp_param->dm_md_parse_ctrl |= 0x1;
+				if (dv_vdo_fe_en[1])
+					p_cp_param->dm_md_parse_ctrl |= 0x2;
 				dovi_md_parser_enable = true;
-				dovi_rpu_total_len = 0;
-				first_frame = 1;
-				*p_frame_num = 0;
-			} else if ((dovi_proc_state != 1)
-				   && (dovi_pre_input_dr_type !=
-				   DISP_DR_TYPE_DOVI)) {
-				dovi_sec_md_parser_uninit();
-				dovi_sec_md_parser_init();
-				dovi_md_parser_enable = true;
-				dovi_rpu_total_len = 0;
-				first_frame = 1;
-				*p_frame_num = 0;
-			}
-
-			if (dovi_md_info->svp) {
-				*p_svp = true;
-				*p_sec_handle = dovi_md_info->sec_handle;
-				*p_rpu_bs_len = dovi_md_info->len;
-
-				dovi_rpu("svpfrae:%d, rpu_len:%d, handle:%d\n",
-					 *p_frame_num, dovi_md_info->len,
-					 dovi_md_info->sec_handle);
-			} else {
-				*p_svp = false;
-				*p_is_rbsp = 0;
-				/* remove rpu NAL type */
-				if (!layer_info_set_by_cmd) {
-
-					rpu_type = dovi_parse_rpu_av1(
-						dovi_md_info->buff,
-						dovi_md_info->len,
-						rpu_bs_buffer,
-						p_rpu_bs_len);
-
-					if (rpu_type == HEVC_RPU) {
-						*p_rpu_bs_len =
-						dovi_remove_rpu_nal_type(
-						first_frame,
-						dovi_md_info->buff,
-						rpu_bs_buffer,
-						dovi_md_info->len);
-					}
-					if (*p_rpu_bs_len < 0) {
-						dovi_error("rpu len error\n");
-						return DOVI_RET_ERROR;
-					}
-				} else {
-					if (layer_info_set_by_cmd == 2) {
-						dovi_av1_parser_test();
-						*p_is_rbsp = 1;
-					} else {
-						dovi_md_info->len = 237;
-						*p_rpu_bs_len = 240;
-						memcpy(rpu_bs_buffer,
-							rpu_test_data,
-							*p_rpu_bs_len);
-					}
-
+				first_frame[0] = 1;
+				first_frame[1] = 1;
+				p_src_param[LAYER0].src_frame_num = 0;
+				p_src_param[LAYER1].src_frame_num = 0;
+			} else if (dovi_proc_state != 1) {
+				if ((b_dovi_src & 0x1) &&
+					(dv_pre_input_type != DISP_DR_TYPE_DOVI)) {
+					//dovi_sec_md_parser_uninit();
+					//dovi_sec_md_parser_init();
+					p_cp_param->dm_md_parse_ctrl |= 0x1;
+					dovi_md_parser_enable = true;
+					first_frame[0] = 1;
+					p_src_param[LAYER0].src_frame_num = 0;
 				}
-				dovi_rpu_total_len += *p_rpu_bs_len;
-
-				dovi_rpu("frm %d sz %d len %d tol %d\n",
-					 *p_frame_num,
-					 dovi_md_info->len,
-					 *p_rpu_bs_len,
-					 dovi_rpu_total_len);
+				if ((b_dovi_src & 0x2) &&
+					(dv_pre_input_type1 != DISP_DR_TYPE_DOVI)) {
+					//dovi_sec_md_parser_uninit();
+					//dovi_sec_md_parser_init();
+					p_cp_param->dm_md_parse_ctrl |= 0x2;
+					dovi_md_parser_enable = true;
+					first_frame[1] = 1;
+					p_src_param[LAYER1].src_frame_num = 0;
+				}
 			}
+
+			if (dv_vdo_fe_en[0]
+				&& (dovi_hdr_md_info[0].dr_range
+				== DISP_DR_TYPE_DOVI)) {
+				dovi_md_info_main =
+					&(hdr_metadata->metadata_info
+					.dovi_metadata);
+				disp_dovi_get_rpu_info(LAYER0, first_frame[0],
+				dovi_md_info_main);
+			}
+
+			if (dv_vdo_fe_en[1]
+				&& (dovi_hdr_md_info[1].dr_range
+				== DISP_DR_TYPE_DOVI)) {
+				dovi_md_info_sub =
+					&(dovi_hdr_md_info[1]
+					.metadata_info.dovi_metadata);
+				disp_dovi_get_rpu_info(LAYER1, first_frame[1],
+					dovi_md_info_sub);
+			}
+
+			dovi_rpu("frm num %d %d\n",
+				p_src_param[LAYER0].src_frame_num,
+				p_src_param[LAYER1].src_frame_num);
 		}
 
 		if ((hdr_metadata->dr_range == DISP_DR_TYPE_HDR10) ||
 			(hdr_metadata->dr_range == DISP_DR_TYPE_HLG))
-			disp_dovi_set_hdr10_param(p_hdr_md, hdr_metadata);
+			disp_dovi_set_hdr10_param(&p_src_param[LAYER0].hdr10_md,
+			hdr_metadata);
+
+		if (dv_vdo_fe_en[1]
+			&& ((dovi_hdr_md_info[1].dr_range == DISP_DR_TYPE_HDR10)
+			|| (dovi_hdr_md_info[1].dr_range == DISP_DR_TYPE_HLG)))
+			disp_dovi_set_hdr10_param(&p_src_param[LAYER1].hdr10_md,
+			&dovi_hdr_md_info[1]);
 
 		/* hw setting generate by control path drv */
 		if (dovi_proc_state == 1) {
@@ -1979,17 +2511,11 @@ int disp_dovi_process(uint32_t enable,
 
 			dovi_update_graphic_info();
 
-			/* graphic on before init cli_param.f_graphic_on */
-			if (!dovi_idk_test)
-				dovi_set_graphic_info(enable);
-
-			/* vdo fe enable */
-			//dovi_vdo_fe_hal_set_enable(LAYER0, enable);
-
 			/* be enable */
 			dovi_be_hal_set_enable(enable);
 
-			dovi_sec_cp_test_init();
+			//dovi_sec_cp_test_init();
+			p_cp_param->cp_init_update = 1;
 
 			if (reg_test_enable) {
 				dovi_info("set ipcore with default setting\n");
@@ -2001,27 +2527,38 @@ int disp_dovi_process(uint32_t enable,
 			}
 		}
 
-		if (hdr_metadata->enable == DOVI_INOUT_FORMAT_CHANGE
+		if (((hdr_metadata->enable == DOVI_INOUT_FORMAT_CHANGE) ||
+			(dovi_hdr_md_info[1].enable ==
+			DOVI_INOUT_FORMAT_CHANGE))
 			&& (dovi_proc_state != 1)) {
 			dovi_update_target_lum();
 			dovi_update_graphic_info();
-			dovi_sec_cp_test_init();
+			//dovi_sec_cp_test_init();
+			p_cp_param->cp_init_update = 1;
 		} else if (hdr_metadata->enable == DOVI_RESOLUTION_CHANGE) {
+			dovi_update_target_lum();
 			dovi_set_video_info(hdr_metadata);
-			dovi_sec_cp_test_init();
+			//dovi_sec_cp_test_init();
+			p_cp_param->cp_init_update = 1;
 		} else if (hdr_metadata->enable == DOVI_PRIORITY_MODE_CHANGE)
-			dovi_sec_cp_test_init();
+			//dovi_sec_cp_test_init();
+			p_cp_param->cp_init_update = 1;
+		else if ((old_num_input != 0) &&
+			(old_num_input != p_cp_param->num_input))
+			p_cp_param->cp_init_update = 1;
+			//dovi_sec_cp_test_init();
 
 		*p_profile4 = false;
-		if (time_check)
-			line_cnt[3] = Dv_ReadREG(vdout_reg_base + 0x28) & 0xFFF;
 
 		memset(p_dv_out_params, 0, sizeof(struct dv_hw_reg));
-		if (dovi_sec_cp_test_main() == DOVI_STATUS_ERROR)
+		if (dovi_sec_cp_test_main() == DOVI_STATUS_ERROR) {
+			dovi_printf("control main failed\n");
+			mutex_unlock(&disp_dovi_mutex);
 			return DOVI_RET_ERROR;
+		}
 
-		if (time_check)
-			line_cnt[4] = Dv_ReadREG(vdout_reg_base + 0x28) & 0xFFF;
+		if (dovi_get_ext_md)
+			disp_dovi_dump_ext_md();
 
 		if ((p_cp_param->output_format == SIGNAL_FORMAT_HDR10)
 		    || (p_cp_param->output_format == SIGNAL_FORMAT_HLG))
@@ -2029,40 +2566,37 @@ int disp_dovi_process(uint32_t enable,
 			hdr_metadata);
 
 		disp_dovi_md();
-		if (time_check)
-			line_cnt[5] = Dv_ReadREG(vdout_reg_base + 0x28) & 0xFFF;
+
 		//call adl to generate autodownload cmd
 		dovi_config_adl();
 
 		//add regbase
-		dovi_get_output_setting(p_dv_out_params, b_dolby_src);
-
-		if (time_check)
-			line_cnt[6] = Dv_ReadREG(vdout_reg_base + 0x28) & 0xFFF;
-
-		//call adl to generate autodownload cmd
-		//dovi_config_adl();
-		if (time_check)
-			line_cnt[7] = Dv_ReadREG(vdout_reg_base + 0x28) & 0xFFF;
+		dovi_get_output_setting(p_dv_out_params, b_dovi_src);
 
 		//call ml to generate menuload cmd
 		dovi_config_menuload();
-		if (time_check)
-			line_cnt[8] = Dv_ReadREG(vdout_reg_base + 0x28) & 0xFFF;
 
-		//call fefifi set swap for dolby gfx fe
+		//call fefifi set swap for dovi gfx fe
 		dovi_config_fefifo_swap(true);
 		/* switch display path register setting */
-		++(*p_frame_num);
+
+		if (dv_vdo_fe_en[0])
+			p_src_param[LAYER0].src_frame_num++;
+		if (dv_vdo_fe_en[1])
+			p_src_param[LAYER1].src_frame_num++;
 
 		if (dovi_proc_state == 1)
 			dovi_enable = enable;
-		if (!b_dolby_src || ((*p_frame_num) == 1))
-			dovi_printf("%s %d end\n", __func__, befifo_irq_cnt);
+
+		if (dovi_hdr_md_info[LAYER0].enable > 1)
+			dovi_hdr_md_info[LAYER0].enable = 1;
+		if (dovi_hdr_md_info[LAYER1].enable > 1)
+			dovi_hdr_md_info[LAYER1].enable = 1;
+
 		dovi_info("%s end\n", __func__);
 	} else if (dovi_proc_state == 2) {
 		/* disable dovi path */
-		dovi_default("dovi path disable vysnc %d,%d\n",
+		dovi_default("dovi path disable vysnc %d %d\n",
 		hdr_vsync_cnt, befifo_irq_cnt);
 
 		/* do uninit process */
@@ -2093,6 +2627,8 @@ int disp_dovi_process(uint32_t enable,
 
 		dovi_enable = enable;
 	}
+
+	mutex_unlock(&disp_dovi_mutex);
 
 	return DOVI_RET_OK;
 }
@@ -2171,29 +2707,21 @@ void disp_dovi_set_tz_test_info(uint32_t id)
 	memcpy(p_cp_param->vsvdb_hdmi, vsvdb_v1_15, 0x1A);
 
 	//load compose md and dm  md  to share buffer
-	memset((void *)p_dv_comp_md, 0,
-		sizeof(struct rpu_ext_config_fixpt_main_t));
-	memcpy(p_dv_comp_md, idk_5000_comp_md,
-		sizeof(struct rpu_ext_config_fixpt_main_t));
-
-	memset((void *)p_dv_dm_md, 0,
-		sizeof(struct dm_metadata_t));
-	memcpy(p_dv_dm_md, idk_5000_dm_md, 123);
-	*p_orig_md_len = 123;
+	p_src_param[LAYER0].orig_md_len = 123;
 
 	//set video info
 	p_cp_param->width = 1920;
 	p_cp_param->height = 1080;
-	p_cp_param->input_format = SIGNAL_FORMAT_DOVI;
-	p_cp_param->src_yuv_range = SIGNAL_RANGE_SMPTE;
-	p_cp_param->src_bit_depth = 10;
-	p_cp_param->src_fps = 60;
+	p_src_param[LAYER0].input_format = SIGNAL_FORMAT_DOVI;
+	p_src_param[LAYER0].src_yuv_range = SIGNAL_RANGE_SMPTE;
+	p_src_param[LAYER0].src_bit_depth = 10;
+	p_src_param[LAYER0].src_fps = 60;
 	p_cp_param->test_mode = 0;
-	p_cp_param->support_el = 0;
+	//p_cp_param->support_el = 0;
 
 	*p_profile4 = false;
-	*p_svp = 0;
-	*p_dr_type = DISP_DR_TYPE_DOVI;
+	p_src_param[LAYER0].svp = 0;
+	p_src_param[LAYER0].dr_type = DISP_DR_TYPE_DOVI;
 
 	dovi_update_target_lum();
 
@@ -2217,11 +2745,11 @@ void dovi_av1_parser_test(void)
 	src_rpu_len = 230;
 	ret = dovi_parse_rpu_av1(src_rpu,
 		src_rpu_len,
-		rpu_bs_buffer,
-		p_rpu_bs_len);
+		p_src_param[LAYER0].rpu_bs_buffer,
+		&p_src_param[LAYER0].rpu_bs_len);
 
-	dovi_info("dst_rpu[%d] 0x%p\n", *p_rpu_bs_len,
-		(uint32_t *)rpu_bs_buffer);
+	dovi_info("dst_rpu[%d] 0x%p\n", p_src_param[LAYER0].rpu_bs_len,
+		(uint32_t *)p_src_param[LAYER0].rpu_bs_buffer);
 }
 
 void disp_dovi_update_input_size(uint32_t layer_id,
@@ -2354,6 +2882,7 @@ void disp_dovi_set_internalbyass(uint8_t id)
 
 }
 
+
 void disp_dovi_set_adldelay(uint32_t layer_id)
 {
 	switch (layer_id) {
@@ -2374,17 +2903,103 @@ void disp_dovi_set_adldelay(uint32_t layer_id)
 	}
 }
 
+uint8_t *disp_dovi_get_hdmi_vsem_info(
+	uint32_t *dovi_vsem_num_pks, uint32_t *dovi_hdmi_type)
+{
+	uint8_t *dovi_hdmi_vsem_addr = NULL;
+
+	if ((dovi_hdmi_type != NULL) &&
+		(dovi_vsem_num_pks != NULL)) {
+		*dovi_hdmi_type = dovi_share_mem->hdmi_md_type;
+		*dovi_vsem_num_pks =
+			dovi_share_mem->dv_out_params.dv_scm.vsem_meta_pkt_num;
+		dovi_hdmi_vsem_addr =
+			dovi_share_mem->dv_out_params.dv_lut_tbls.md_pkts;
+	}
+
+	return dovi_hdmi_vsem_addr;
+}
+
+void disp_dovi_dump_ext_md(void)
+{
+	int size = 0;
+	int i, j = 0;
+	int md_base_len = 0;
+	int ext_len = 0;
+	uint8_t *p_md;
+
+	md_base_len = sizeof(struct dm_metadata_base_t);
+	size = md_base_len;
+	dovi_printf("dump extmdinfo %d %d\n",
+		dovi_share_mem->hdmi_md_len, md_base_len);
+	if ((dovi_share_mem->hdmi_md_len) > md_base_len) {
+		p_md = (uint8_t *)dovi_share_mem->hdmi_md;
+		for (i = 0;
+		i < (((struct dm_metadata_base_t *)p_md)->num_ext_blocks);
+		i++) {
+			size += 5;
+			ext_len =  (int) ((p_md[size - 5] << 24) +
+					  (p_md[size - 4] << 16) +
+					  (p_md[size - 3] << 8) +
+					   p_md[size - 2]);
+
+			dovi_printf("ext_md_block[%d] len[%d] lvl[%d]\n", i,
+				ext_len, p_md[size - 1]);
+
+			for (j = 0; j < ext_len; j++)
+				dovi_printf("ext_md[%d] = 0x%x\n", j, p_md[size + j]);
+
+			size += ext_len;
+		}
+	}
+
+}
+
+bool disp_dovi_get_ext_md_info(
+	uint32_t ext_blk_no, uint8_t *ext_buf, uint32_t buf_len)
+{
+	int size = 0;
+	int i = 0;
+	int md_base_len = 0;
+	int ext_len = 0;
+	uint8_t *p_md;
+
+	md_base_len = sizeof(struct dm_metadata_base_t);
+	size = md_base_len;
+	if ((ext_buf != NULL) &&
+		(dovi_share_mem->hdmi_md_len) > md_base_len) {
+		p_md = (uint8_t *)dovi_share_mem->hdmi_md;
+		for (i = 0;
+		i < (((struct dm_metadata_base_t *)p_md)->num_ext_blocks);
+		i++) {
+			size += 5;
+			ext_len =  (int) ((p_md[size - 5] << 24) +
+					  (p_md[size - 4] << 16) +
+					  (p_md[size - 3] << 8) +
+					   p_md[size - 2]);
+
+			if ((p_md[size - 1] == ext_blk_no) &&
+				(ext_len <= buf_len)) {
+				memcpy(ext_buf, &(p_md[size]), ext_len);
+				return true;
+			}
+			size += ext_len;
+		}
+	}
+
+	return false;
+}
+
 enum dovi_signal_format_t dovi_judge_out_format(
 	struct disp_hw_tv_capbility *tv_cap,
 	const struct disp_hw_resolution *resolution)
 {
 	bool is_4k60_out = dovi_check_4k60_timing(resolution->res_mode);
-	enum dovi_signal_format_t dolby_out_format_new =
+	enum dovi_signal_format_t dovi_out_format_new =
 		DOVI_FORMAT_SDR;
 
-	dolby_out_format_new =
+	dovi_out_format_new =
 	get_tv_output_format(tv_cap, is_4k60_out, resolution);
-	return dolby_out_format_new;
+	return dovi_out_format_new;
 }
-
 

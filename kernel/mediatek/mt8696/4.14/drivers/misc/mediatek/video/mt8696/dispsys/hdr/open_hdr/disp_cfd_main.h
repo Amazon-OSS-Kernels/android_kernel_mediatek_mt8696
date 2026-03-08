@@ -102,7 +102,6 @@ int disp_cfd_config_video_frame(uint32_t layer_id,
 int disp_cfd_config_graphic_frame(uint32_t layer_id,
 	struct mtk_disp_buffer *buf_info,
 	struct disp_hw_tv_capbility *tv_cap);
-int disp_cfd_set_test_case(uint32_t layer_id, uint32_t test_no);
 int disp_cfd_backup_sec_handle(
 	struct mtk_vdp_hdr10_plus_svp_handle_t *hdr10_plus_svp_handle);
 int disp_cfd_parser_vsif_in_sec(uint32_t layer_id,

@@ -17,6 +17,33 @@
 
 struct videoin_context_t videoin;
 
+//for dovi idk
+int videoin_idk_set(bool en, uint16_t height)
+{
+	if (en) {
+		vWriteVIDEOINMsk(0x4, (0x1 << 5), (0x1 << 5));
+		//enable ultra
+		vWriteVIDEOINMsk(0x60, (0x100 << 16), (0xFFFF << 16));
+		//videoin_hal_demode_enable(en);
+		vWriteVIDEOINMsk(VIDEO_IN_LINE, (0x1 << 13), (0x1 << 13));
+		//vWriteVIDEOIN(VIDEO_IN_H_PKCNT, 0x100c1);
+		if (height == 480) {
+			vWriteVIDEOIN(VIDEO_IN_H_PKCNT, 0x1007A);
+			vWriteVIDEOINMsk(0x28, 0x2D00359, 0xffffffff);
+			vWriteVIDEOINMsk(0x58, 0x0, 0xffffffff);
+		} else {
+			vWriteVIDEOIN(VIDEO_IN_H_PKCNT, 0x100C9);
+			vWriteVIDEOINMsk(0x28, 0x89808CA, 0xffffffff);
+			vWriteVIDEOINMsk(0x58, 0x0007e900, 0xffffffff);
+		}
+		vWriteVIDEOINMsk(VIDEO_IN_INPUT_CTRL,
+			(0x401 << 16), (0xffff << 16));
+		//vWriteVIDEOINMsk(VIDEO_IN_REQ_CTRL, 0x04, 0xff);
+		vWriteVIDEOINMsk(VIDEO_IN_REQ_CTRL, 0x230e2004, 0xffffffff);
+	}
+	return 0;
+}
+
 int videoin_hal_enable(bool en)
 {
 	if (en) {
@@ -141,6 +168,17 @@ int videoin_hal_demode_enable(bool en)
 		vWriteVIDEOINMsk(VIDEO_IN_REQ_OUT, 0, VIDEO_IN_ACT_SEL);
 		vWriteVIDEOINMsk(VIDEO_IN_REQ_OUT, 0, VIDEO_IN_END_SEL);
 	}
+
+	return 0;
+}
+
+int videoin_hal_fefifo_demode(bool en)
+{
+	if (en)
+		vWriteVIDEOINMsk(VIDEO_IN_CONFIG, CONFIG_DE_MODE,
+			CONFIG_DE_MODE);
+	else
+		vWriteVIDEOINMsk(VIDEO_IN_CONFIG, 0, CONFIG_DE_MODE);
 
 	return 0;
 }

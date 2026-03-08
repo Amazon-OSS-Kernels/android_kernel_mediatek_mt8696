@@ -333,10 +333,10 @@ static int _get_hdmi_cap(struct disp_hw_tv_capbility *cap)
 	else
 		cap->is_support_hlg = false;
 
-	if (edid_info.ui1_sink_support_dynamic_hdr & EDID_SUPPORT_DOLBY_HDR)
-		cap->is_support_dolby = true;
+	if (edid_info.ui1_sink_support_dynamic_hdr & EDID_SUPPORT_DOVI_HDR)
+		cap->is_support_dovi = true;
 	else
-		cap->is_support_dolby = false;
+		cap->is_support_dovi = false;
 
 	if (edid_info.ui1_sink_support_dynamic_hdr & EDID_SUPPORT_HDR10_PLUS)
 		cap->is_support_hdr10_plus = true;
@@ -344,10 +344,10 @@ static int _get_hdmi_cap(struct disp_hw_tv_capbility *cap)
 		cap->is_support_hdr10_plus = false;
 
 	if (edid_info.ui1_sink_support_dynamic_hdr &
-	    EDID_SUPPORT_DOLBY_HDR_2160P60)
-		cap->is_support_dolby_2160p60 = true;
+	    EDID_SUPPORT_DOVI_HDR_2160P60)
+		cap->is_support_dovi_2160p60 = true;
 	else
-		cap->is_support_dolby_2160p60 = false;
+		cap->is_support_dovi_2160p60 = false;
 
 	cap->is_support_601 = true;
 	cap->is_support_709 = true;
@@ -367,13 +367,15 @@ static int _get_hdmi_cap(struct disp_hw_tv_capbility *cap)
 		edid_info.ui1_sink_hdr_content_min_luminance;
 
 	memcpy((void *)cap->vsvdb_edid,
-	       (void *)edid_info.ui1_sink_dolbyvision_block, 0x1A);
-	cap->is_support_dolby_low_latency =
-		edid_info.ui4_sink_dolbyvision_vsvdb_low_latency_support;
-	cap->dolbyvision_vsvdb_version =
-		edid_info.ui4_sink_dolbyvision_vsvdb_version;
-	cap->dolbyvision_vsvdb_v2_interface =
-		edid_info.ui4_sink_dolbyvision_vsvdb_v2_interface;
+	       (void *)edid_info.ui1_sink_dovi_block, 0x1A);
+	cap->is_support_dovi_low_latency =
+		edid_info.ui4_sink_dovi_vsvdb_low_latency_support;
+	cap->dovi_vsvdb_version =
+		edid_info.ui4_sink_dovi_vsvdb_version;
+	cap->dovi_vsvdb_dm_version =
+		edid_info.ui4_sink_dovi_vsvdb_dm_version;
+	cap->dovi_vsvdb_v2_interface =
+		edid_info.ui4_sink_dovi_vsvdb_v2_interface;
 
 	cap->hdr10_plus_app_ver = edid_info.ui1_sink_hdr10plus_app_version;
 
@@ -386,9 +388,9 @@ static int _get_hdmi_cap(struct disp_hw_tv_capbility *cap)
 
 	DISP_LOG_HW(
 		"get hdmi cap, hdr low_latency 0x%X vsvdb_version 0x%X v2_interface 0x%X\n",
-		cap->is_support_dolby_low_latency,
-		cap->dolbyvision_vsvdb_version,
-		cap->dolbyvision_vsvdb_v2_interface);
+		cap->is_support_dovi_low_latency,
+		cap->dovi_vsvdb_version,
+		cap->dovi_vsvdb_v2_interface);
 
 	cap->supported_resolution = vDispGetHdmiResolution();
 	cap->screen_width = edid_info.ui1_Display_Horizontal_Size;
@@ -399,6 +401,16 @@ static int _get_hdmi_cap(struct disp_hw_tv_capbility *cap)
 	else
 		cap->max_tmds_rate = edid_info.ui1_sink_max_tmds_clock;
 
+	cap->u1_sink_allm_support = edid_info.u1_sink_allm_support;
+	cap->u1_sink_14gamemode_support = edid_info.u1_sink_14gamemode_support;
+	DISP_LOG_HW(
+		"get hdmi cap,ll:0x%X vsvdb:0x%X if:0x%X 0x%x allm:%d %d\n",
+		cap->is_support_dovi_low_latency,
+		cap->dovi_vsvdb_version,
+		cap->dovi_vsvdb_v2_interface,
+		cap->dovi_vsvdb_dm_version,
+		cap->u1_sink_allm_support,
+		cap->u1_sink_14gamemode_support);
 	return 0;
 }
 #endif
@@ -567,6 +579,9 @@ static int _disp_event_callback(enum DISP_EVENT event, void *data)
 		disp_osd_get_drv()->drv_call(DISP_CMD_HDMITX_PLUG_IN, NULL);
 		break;
 
+	case DISP_EVENT_ALLM:
+		_disp_set_cmd(DISP_CMD_ALLM_TYPE, data);
+		break;
 	default:
 		break;
 	}
@@ -1023,8 +1038,8 @@ int disp_hw_get_hdmi_cap(struct mtk_disp_hdmi_cap *hdmi_cap)
 
 	if (mgr->common_info.tv.is_support_hdr)
 		hdmi_cap->hdr_type |= MTK_HDR_TYPE_HDR10;
-	if (mgr->common_info.tv.is_support_dolby)
-		hdmi_cap->hdr_type |= MTK_HDR_TYPE_DOLBY_VISION;
+	if (mgr->common_info.tv.is_support_dovi)
+		hdmi_cap->hdr_type |= MTK_HDR_TYPE_DOVI;
 	if (mgr->common_info.tv.is_support_hlg)
 		hdmi_cap->hdr_type |= MTK_HDR_TYPE_HLG;
 
@@ -1447,18 +1462,18 @@ int disp_hw_mgr_status(void)
 	resolution = mgr->common_info.resolution;
 
 	DISP_LOG_I("disp hw mgr status:\n");
-	DISP_LOG_I("tv cap, hdr static %d dolby %d dolby_2160p60 %d\n",
-		   tv_cap->is_support_hdr, tv_cap->is_support_dolby,
-		   tv_cap->is_support_dolby_2160p60);
+	DISP_LOG_I("tv cap, hdr static %d dovi %d dovi_2160p60 %d\n",
+		   tv_cap->is_support_hdr, tv_cap->is_support_dovi,
+		   tv_cap->is_support_dovi_2160p60);
 
 	DISP_LOG_I("resolution %d\n", resolution->res_mode);
 
 #ifdef CONFIG_MTK_INTERNAL_HDMI_SUPPORT
 	_get_hdmi_cap(&tmp_tv_cap);
 #endif
-	DISP_LOG_I("tmp tv cap, hdr static %d dolby %d dolby_2160p60 %d\n",
-		   tmp_tv_cap.is_support_hdr, tmp_tv_cap.is_support_dolby,
-		   tmp_tv_cap.is_support_dolby_2160p60);
+	DISP_LOG_I("tmp tv cap, hdr static %d dovi %d dovi_2160p60 %d\n",
+		   tmp_tv_cap.is_support_hdr, tmp_tv_cap.is_support_dovi,
+		   tmp_tv_cap.is_support_dovi_2160p60);
 
 	return 0;
 }

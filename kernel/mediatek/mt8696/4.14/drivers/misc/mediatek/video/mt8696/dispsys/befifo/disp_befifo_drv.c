@@ -40,7 +40,7 @@
 #include "disp_befifo_hw.h"
 
 
-#define BEFIFO_FULL_SCREEN_IDX 2 /*0-default,  1-dolby*/
+#define BEFIFO_FULL_SCREEN_IDX 2 /*0-default,  1-dovi*/
 #define BEFIFO_DTS_MAX_ND_SIZE 50
 
 

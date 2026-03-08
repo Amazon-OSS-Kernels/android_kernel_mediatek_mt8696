@@ -16,6 +16,8 @@
 #include "disp_path.h"
 #include "disp_clk.h"
 
+int no_mix_fhd;
+int no_mix_uhd;
 
 struct disp_mix_context_t disp_mix;
 
@@ -490,7 +492,10 @@ int32_t disp_mix_hal_layer_control(struct DISP_PATH_LAYER_INFO *layer_info)
 		mix_layer_con_offset = DISP_MIX_LAYER2_CON;
 		mix_layer_src_size_offset = DISP_MIX_LAYER2_SRC_SIZE;
 		mix_layer_offset = DISP_MIX_LAYER2_OFFSET;
-		if (layer_enable)
+		if (no_mix_fhd)
+			WriteREG32Msk((DISP_MIX_BASE + DISP_MIX_SRC_CTRL),
+				0, L2_ENABLE);
+		else if (layer_enable)
 			WriteREG32Msk((DISP_MIX_BASE + DISP_MIX_SRC_CTRL),
 				L2_ENABLE, L2_ENABLE);
 		else
@@ -508,7 +513,10 @@ int32_t disp_mix_hal_layer_control(struct DISP_PATH_LAYER_INFO *layer_info)
 		mix_layer_con_offset = DISP_MIX_LAYER3_CON;
 		mix_layer_src_size_offset = DISP_MIX_LAYER3_SRC_SIZE;
 		mix_layer_offset = DISP_MIX_LAYER3_OFFSET;
-		if (layer_enable)
+		if (no_mix_uhd)
+			WriteREG32Msk((DISP_MIX_BASE + DISP_MIX_SRC_CTRL),
+				0, L3_ENABLE);
+		else if (layer_enable)
 			WriteREG32Msk((DISP_MIX_BASE + DISP_MIX_SRC_CTRL),
 				L3_ENABLE, L3_ENABLE);
 		else

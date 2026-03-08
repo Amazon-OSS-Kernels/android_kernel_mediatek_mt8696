@@ -40,15 +40,10 @@
 _Static_assert(EMI_MPU_DOMAIN_NUM <= 2048, "EMI_MPU_DOMAIN_NUM is over 2048");
 _Static_assert(EMI_MPU_REGION_NUM <= 256, "EMI_MPU_REGION_NUM is over 256");
 
-#if EMI_MPU_TEST
-char mpu_test_buf[0x20000] __aligned(PAGE_SIZE);
-#endif
-
 static void __iomem *CEN_EMI_BASE;
 
 static void (*check_violation_cb)(void);
 static const char *UNKNOWN_MASTER = "unknown";
-static unsigned int show_region;
 
 static unsigned int match_id(unsigned int axi_id, unsigned int tbl_idx,
 			     unsigned int port_id)
@@ -217,289 +212,6 @@ static irqreturn_t violation_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-int emi_mpu_set_protection(struct emi_region_info_t *region_info)
-{
-	unsigned int start = 0, end = 0;
-	int i = 0;
-	unsigned int region = region_info->region;
-	unsigned int lock_status = region_info->lock_status;
-
-
-	if (region_info->end <= region_info->start) {
-		pr_info("Invalid address! End address should larger than start address.\n");
-		return -1;
-	}
-
-	if (region >= EMI_MPU_REGION_NUM) {
-		pr_info("[MPU] can not support region %u\n", region);
-		return -1;
-	}
-
-	if (((region_info->start & 0xffff) != 0)
-	    || (((region_info->end & 0xffff) != 0)
-	    && ((region_info->end & 0xffff) != 0xffff))) {
-		pr_info("[MPU] not 16bits aligned, please check input address parameter\n");
-		return -1;
-	}
-
-	if ((region_info->end & 0xffff) == 0)
-		region_info->end = region_info->end - 1;
-
-	start =
-	    (unsigned int)(region_info->start >> EMI_MPU_ALIGN_BITS) |
-	    (region << 24);
-
-	for (i = EMI_MPU_DGROUP_NUM - 1; i >= 0; i--) {
-		end = (unsigned int)(region_info->end >> EMI_MPU_ALIGN_BITS) |
-	    (i << 24);
-		emi_mpu_smc_protect(start, end, region_info->apc[i],
-		lock_status);
-	}
-
-	return 0;
-}
-
-EXPORT_SYMBOL(emi_mpu_set_protection);
-
-int emi_mpu_set_region_protection(unsigned int start_addr,
-				  unsigned int end_addr,
-				  unsigned int region_ID,
-				  unsigned long long access_permission,
-				  unsigned int lock_status)
-{
-	struct emi_region_info_t region_info;
-
-	region_info.start   = start_addr;
-	region_info.end     = end_addr;
-
-	region_info.lock_status = lock_status;
-	region_info.region = region_ID;
-
-	region_info.apc[0] = (access_permission&0xFFFFFFFF);
-	region_info.apc[1] = (access_permission >> 32)&0xFFFFFFFF;
-
-	emi_mpu_set_protection(&region_info);
-
-	return 0;
-}
-
-
-EXPORT_SYMBOL(emi_mpu_set_region_protection);
-
-int emi_mpu_clear_protection(struct emi_region_info_t *region_info)
-{
-	if (region_info->region > EMI_MPU_REGION_NUM) {
-		pr_info("[MPU] can not support region %u\n",
-			region_info->region);
-		return -1;
-	}
-
-	emi_mpu_smc_clear(region_info->region);
-
-	return 0;
-}
-
-static ssize_t mpu_config_show(struct device_driver *driver, char *buf)
-{
-	ssize_t ret = 0;
-	unsigned int i = 0;
-	unsigned int region = 0;
-	unsigned int apc = 0;
-	unsigned long long start = 0;
-	unsigned long long end = 0;
-	static const char *permission[16] = {
-		"NO_PROTECTIO",
-		"NSEC_W_FORBIDDEN",
-		"NSEC_R_FORBIDDEN",
-		"NSEC_RW_FORBIDDEN",
-		"SEC_W_FORBIDDEN",
-		"SEC_W_NSEC_W_FORBIDDEN",
-		"SEC_W_NSEC_R_FORBIDDEN",
-		"SEC_W_NSEC_RW_FORBIDDEN",
-		"SEC_R_FORBIDDEN",
-		"SEC_R_NSEC_W_FORBIDDEN",
-		"SEC_R_NSEC_R_FORBIDDEN",
-		"SEC_R_NSEC_RW_FORBIDDEN",
-		"SEC_RW_FORBIDDEN",
-		"SEC_RW_NSEC_W_FORBIDDEN",
-		"SEC_RW_NSEC_R_FORBIDDEN",
-		"ALL_FORBIDDEN"
-	};
-
-#if EMI_MPU_TEST
-	i = (*((unsigned int *)(mpu_test_buf + 0x10000)));
-	pr_info("[MPU] trigger violation with read 0x%x\n", i);
-#endif
-
-	for (region = show_region; region < EMI_MPU_REGION_NUM; region++) {
-		start = (unsigned long long)emi_mpu_smc_read(
-		EMI_MPU_SA(region));
-		start = (start << EMI_MPU_ALIGN_BITS) + DRAM_OFFSET;
-
-		end = (unsigned long long)emi_mpu_smc_read(
-		EMI_MPU_EA(region));
-		end = (end << EMI_MPU_ALIGN_BITS) + DRAM_OFFSET;
-
-		ret += snprintf(buf + ret, PAGE_SIZE - ret,
-				"R%u-> 0x%llx to 0x%llx\n", region, start,
-				end + 0xFFFF);
-		if (ret >= PAGE_SIZE)
-			return strlen(buf);
-
-		for (i = 0; i < EMI_MPU_DGROUP_NUM; i++) {
-			apc = emi_mpu_smc_read(EMI_MPU_APC(region, i));
-			ret += snprintf(buf + ret, PAGE_SIZE - ret,
-					"%s, %s, %s, %s\n%s, %s, %s, %s\n\n",
-					permission[(apc >> 0) & 0xF],
-					permission[(apc >> 4) & 0xF],
-					permission[(apc >> 8) & 0xF],
-					permission[(apc >> 12) & 0xF],
-					permission[(apc >> 16) & 0xF],
-					permission[(apc >> 20) & 0xF],
-					permission[(apc >> 24) & 0xF],
-					permission[(apc >> 28) & 0xF]);
-			if (ret >= PAGE_SIZE)
-				return strlen(buf);
-		}
-	}
-
-	return strlen(buf);
-}
-
-static ssize_t mpu_config_store(struct device_driver *driver, const char *buf,
-				size_t count)
-{
-	char *command = NULL;
-	char *backup_command = NULL;
-	char *ptr = NULL;
-	char *token[EMI_MPU_MAX_TOKEN];
-	static struct emi_region_info_t region_info;
-	unsigned long long start = 0;
-	unsigned long long end = 0;
-	unsigned long region = 0;
-	unsigned long lock_status = 0;
-	unsigned long dgroup = 0;
-	unsigned long apc = 0;
-	int i = 0;
-	int ret = 0;
-
-	if ((strlen(buf) + 1) > EMI_MPU_MAX_CMD_LEN) {
-		pr_info("[MPU] store command overflow\n");
-		return count;
-	}
-
-	pr_info("[MPU] store: %s\n", buf);
-
-	command = kmalloc((size_t) EMI_MPU_MAX_CMD_LEN, GFP_KERNEL);
-	backup_command = command;
-	if (!command)
-		return count;
-	strncpy(command, buf, (size_t) EMI_MPU_MAX_CMD_LEN);
-
-	for (i = 0; i < EMI_MPU_MAX_TOKEN; i++) {
-		ptr = strsep(&command, " ");
-		if (ptr == NULL)
-			break;
-		token[i] = ptr;
-	}
-
-	if (!strncmp(buf, "SHOW", strlen("SHOW"))) {
-		if (i < 2)
-			goto mpu_store_end;
-
-		pr_info("[MPU] %s %s\n", token[0], token[1]);
-
-		ret = kstrtoul(token[1], 10, &region);
-		if (ret != 0)
-			pr_info("[MPU] fail to parse region\n");
-
-		if (region < EMI_MPU_REGION_NUM) {
-			show_region = (unsigned int)region;
-			pr_info("[MPU] set show_region to %u\n", show_region);
-		}
-	} else if (!strncmp(buf, "SET", strlen("SET"))) {
-		if (i < 3)
-			goto mpu_store_end;
-
-		pr_info("[MPU] %s %s %s\n", token[0], token[1], token[2]);
-
-		ret = kstrtoul(token[1], 10, &dgroup);
-		if (ret != 0)
-			pr_info("[MPU] fail to parse dgroup\n");
-		ret = kstrtoul(token[2], 16, &apc);
-		if (ret != 0)
-			pr_info("[MPU] fail to parse apc\n");
-
-		if (dgroup < EMI_MPU_DGROUP_NUM) {
-			region_info.apc[dgroup] = (unsigned int)apc;
-			pr_info("[MPU] apc[%lu]: 0x%x\n", dgroup,
-				region_info.apc[dgroup]);
-		}
-	} else if (!strncmp(buf, "ON", strlen("ON"))) {
-		if (i < 5)
-			goto mpu_store_end;
-
-		pr_info("[MPU] %s %s %s %s %s\n", token[0], token[1], token[2],
-			token[3], token[4]);
-
-		ret = kstrtoull(token[1], 16, &start);
-		if (ret != 0)
-			pr_info("[MPU] fail to parse start\n");
-		ret = kstrtoull(token[2], 16, &end);
-		if (ret != 0)
-			pr_info("[MPU] fail to parse end\n");
-		ret = kstrtoul(token[3], 10, &region);
-		if (ret != 0)
-			pr_info("[MPU] fail to parse region\n");
-		ret = kstrtoul(token[4], 10, &lock_status);
-		if (ret != 0)
-			pr_info("[MPU] fail to parse lock_status\n");
-
-		if (region < EMI_MPU_REGION_NUM) {
-			region_info.start = start;
-			region_info.end = end;
-			region_info.region = (unsigned int)region;
-			region_info.lock_status = (unsigned int)lock_status;
-			emi_mpu_set_protection(&region_info);
-		}
-	} else if (!strncmp(buf, "OFF", strlen("OFF"))) {
-		if (i < 2)
-			goto mpu_store_end;
-
-		pr_info("[MPU] %s %s\n", token[0], token[1]);
-
-		ret = kstrtoul(token[1], 10, &region);
-		if (ret != 0)
-			pr_info("[MPU] fail to parse region\n");
-
-		if (region < EMI_MPU_REGION_NUM) {
-			region_info.region = (unsigned int)region;
-			emi_mpu_clear_protection(&region_info);
-		}
-	} else
-		pr_info("[MPU] unknown store command\n");
-
-mpu_store_end:
-	kfree(backup_command);
-
-	return count;
-}
-
-static DRIVER_ATTR_RW(mpu_config);
-
-#if ENABLE_AP_REGION
-static void protect_ap_region(void)
-{
-	struct emi_region_info_t region_info;
-
-	region_info.start = (unsigned long long)memblock_start_of_DRAM();
-	region_info.end = (unsigned long long)memblock_end_of_DRAM() - 1;
-	region_info.region = AP_REGION_ID;
-	set_ap_region_permission(&region_info);
-	emi_mpu_set_protection(&region_info);
-}
-#endif
-
 #ifdef ENABLE_MPU_SLVERR
 static void enable_slverr(void)
 {
@@ -513,41 +225,11 @@ static void enable_slverr(void)
 }
 #endif
 
-static void protect_kernel_ro_region(void)
-{
-	struct emi_region_info_t region_info;
-
-	region_info.start = (unsigned long long)
-	    __virt_to_phys_nodebug((unsigned long)_stext);
-	region_info.end = (unsigned long long)
-	    __virt_to_phys_nodebug((unsigned long)_etext)
-	    - 1;
-	region_info.start = ((region_info.start) >> 16) << 16;
-	region_info.end = (((region_info.end) >> 16) << 16) + 0xFFFF;
-
-	pr_info("Protect kernel RO start: %p (%lx) end: %p (%lx)\n", _stext,
-		(unsigned long)__virt_to_phys_nodebug((unsigned long)_stext),
-		_etext,
-		(unsigned long)__virt_to_phys_nodebug((unsigned long)_etext));
-	region_info.region = AP_REGION_ID - 1;
-
-	set_ap_region_permission(&region_info);
-	emi_mpu_set_protection(&region_info);
-}
-
 void mpu_init(struct platform_driver *emi_ctrl, struct platform_device *pdev)
 {
 	struct device_node *node = pdev->dev.of_node;
 	unsigned int mpu_irq = 0;
 	int ret = 0;
-
-#if EMI_MPU_TEST
-	unsigned int *ptr_test_buf = NULL;
-
-	ptr_test_buf = (unsigned int *)__pa(mpu_test_buf);
-	pr_info("[MPU] mpu_test_buf: %p\n", ptr_test_buf);
-	*((unsigned int *)(mpu_test_buf + 0x10000)) = 0xDEADDEAD;
-#endif
 
 	pr_info("[MPU] initialize EMI MPU\n");
 
@@ -572,18 +254,9 @@ void mpu_init(struct platform_driver *emi_ctrl, struct platform_device *pdev)
 			return;
 		}
 	}
-#if ENABLE_AP_REGION
-	protect_ap_region();
-#endif
 
 #ifdef ENABLE_MPU_SLVERR
 	enable_slverr();
-#endif
-	protect_kernel_ro_region();
-#if !defined(USER_BUILD_KERNEL)
-	ret = driver_create_file(&emi_ctrl->driver, &driver_attr_mpu_config);
-	if (ret)
-		pr_info("[MPU] fail to create mpu_config\n");
 #endif
 }
 

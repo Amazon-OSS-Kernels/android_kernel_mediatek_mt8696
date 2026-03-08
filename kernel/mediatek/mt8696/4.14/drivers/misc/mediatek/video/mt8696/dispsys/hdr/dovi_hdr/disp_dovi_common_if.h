@@ -17,12 +17,20 @@
 #include "disp_info.h"
 #include "disp_hw_mgr.h"
 #include "hdmitx.h"
+#include "disp_dovi_md_parser.h"
 
 #define MAX_FILENAME_LENGTH (256)
+#define MAX_NUM_INPUT (4)
 
 #define DV_SCRAMBLE_ADL_SIZE_MAX  (2048)
 #define DV_ADL_SIZE    (1024)
 #define DV_REG_NUM (300)
+
+#define DOVI_MD_SIZE    (1024)
+#define DOVI_COMP_SIZE    (1800)
+#define DOVI_MD_DW_SIZE    (256)
+#define DOVI_COMP_DW_SIZE    (450)
+
 
 #define DV_OUT_LAYER (2)
 
@@ -46,6 +54,8 @@
 enum DV_RPU_TYPE {
 	HEVC_RPU = 0,
 	AV1_RPU = 1,
+	ATSC_RPU = 2,
+	DVB_RPU  = 3,
 };
 
 struct dv_all_reg_tab {
@@ -354,6 +364,16 @@ struct dv_dm_b0406 {
 	uint16_t reg_b0406_clp_sel;
 };
 
+struct dv_be_dm_reg {
+	struct dv_dm_b04 b04;
+	/* B04 component reg */
+	struct dv_dm_b0401 b0401;
+	struct dv_dm_b0402 b0402;
+	struct dv_dm_b0403 b0403;
+	struct dv_dm_b0404 b0404;
+	struct dv_dm_b0405 b0405;
+	struct dv_dm_b0406 b0406;
+};
 
 struct dv_dm_reg {
 	struct dv_dm_b01 b01;
@@ -368,15 +388,6 @@ struct dv_dm_reg {
 	struct dv_dm_b0106 b0106;
 
 	struct dv_dm_b02 b02;
-
-	struct dv_dm_b04 b04;
-	/* B04 component reg */
-	struct dv_dm_b0401 b0401;
-	struct dv_dm_b0402 b0402;
-	struct dv_dm_b0403 b0403;
-	struct dv_dm_b0404 b0404;
-	struct dv_dm_b0405 b0405;
-	struct dv_dm_b0406 b0406;
 };
 
 struct dv_gop_b0102 {
@@ -471,30 +482,32 @@ struct dv_scramble_reg {
 	uint32_t reg_meta_pkt_repeat_num;
 	uint32_t reg_meta_pkt_num;
 	uint32_t reg_meta_len_per_pkt;
+	uint32_t vsem_meta_pkt_num;
 };
 
 struct dv_lut_tbl {
-	uint32_t g2l[DV_B0103_ADL_SIZE];
-	uint16_t tmluti[DV_B0202_TMLUTI_ADL_SIZE];
-	uint16_t tmluts[DV_B0202_TMLUTS_ADL_SIZE];
-	uint16_t smluti[DV_B0202_SMLUTI_ADL_SIZE];
-	uint16_t smluts[DV_B0202_SMLUTS_ADL_SIZE];
-	uint32_t gop_g2l[DV_OSD_B0103_ADL_SIZE];
-	uint16_t gop_tmluti[DV_OSD_B0202_TMLUTI_ADL_SIZE];
-	uint16_t gop_tmluts[DV_OSD_B0202_TMLUTS_ADL_SIZE];
-	uint16_t gop_smluti[DV_OSD_B0202_SMLUTI_ADL_SIZE];
-	uint16_t gop_smluts[DV_OSD_B0202_SMLUTS_ADL_SIZE];
+	uint32_t g2l[DV_OUT_LAYER][DV_B0103_ADL_SIZE];
+	uint16_t tmluti[DV_OUT_LAYER][DV_B0202_TMLUTI_ADL_SIZE];
+	uint16_t tmluts[DV_OUT_LAYER][DV_B0202_TMLUTS_ADL_SIZE];
+	uint16_t smluti[DV_OUT_LAYER][DV_B0202_SMLUTI_ADL_SIZE];
+	uint16_t smluts[DV_OUT_LAYER][DV_B0202_SMLUTS_ADL_SIZE];
+	uint32_t gop_g2l[DV_OUT_LAYER][DV_OSD_B0103_ADL_SIZE];
+	uint16_t gop_tmluti[DV_OUT_LAYER][DV_OSD_B0202_TMLUTI_ADL_SIZE];
+	uint16_t gop_tmluts[DV_OUT_LAYER][DV_OSD_B0202_TMLUTS_ADL_SIZE];
+	uint16_t gop_smluti[DV_OUT_LAYER][DV_OSD_B0202_SMLUTI_ADL_SIZE];
+	uint16_t gop_smluts[DV_OUT_LAYER][DV_OSD_B0202_SMLUTS_ADL_SIZE];
 	uint8_t md_pkts[DV_SCRAMBLE_ADL_SIZE];
 };
 
 struct dv_hw_reg {
-	struct dv_comp_reg dv_comp;
-	struct dv_hdr_ctrl_reg dv_ctrl;
-	struct dv_dm_reg dv_dm;
-	struct dv_gop_reg dv_gop;
+	struct dv_comp_reg dv_comp[DV_OUT_LAYER];
+	struct dv_dm_reg dv_dm[DV_OUT_LAYER];
+	struct dv_hdr_ctrl_reg dv_ctrl[DV_OUT_LAYER];
+	struct dv_gop_reg dv_gop[DV_OUT_LAYER];
 	struct dv_dither_reg dv_dither;
 	struct dv_reorder_reg dv_reorder;
 	struct dv_scramble_reg dv_scm;
+	struct dv_be_dm_reg dv_be_dm;
 	struct dv_lut_tbl dv_lut_tbls;
 };
 
@@ -528,13 +541,20 @@ enum DOVI_TZ_CALL_DIR {
 	DOVI_TZ_CALL_DIR_MEMREF_INOUT = 9,
 };
 
+enum input_mode_t {
+	INPUT_MODE_OTT = 0,
+	INPUT_MODE_HDMI = 1,
+	INPUT_MODE_GRAPHICS = 2
+};
+
 enum signal_fmt_t {
 	SIGNAL_FORMAT_INVALID = -1,
 	SIGNAL_FORMAT_DOVI = 0,
 	SIGNAL_FORMAT_HDR10 = 1,
-	SIGNAL_FORMAT_SDR = 2,
-	SIGNAL_FORMAT_SDR_2020 = 3,
-	SIGNAL_FORMAT_HLG = 4
+	SIGNAL_FORMAT_SDR8 = 2,
+	SIGNAL_FORMAT_SDR10 = 3,
+	SIGNAL_FORMAT_HLG = 4,
+	SIGNAL_FORMAT_HDR8 = 5
 };
 
 enum signal_range_t {
@@ -550,20 +570,108 @@ enum graphic_format_t {
 	GRAPHIC_HDR_RGB = 3	/* BT.2020 RGB PQ */
 };
 
+
+enum cp_clr_t {
+	CP_CLR_YUV = 0,
+	CP_CLR_RGB = 1,
+	CP_CLR_IPT = 2
+};
+
+enum cp_eotf_t {
+	CP_EOTF_BT1886 = 0,
+	CP_EOTF_PQ = 1,
+	CP_EOTF_HLG = 2
+};
+
 enum chroma_format_t {
 	CHROMA_FORMAT_P420 = 0,
 	CHROMA_FORMAT_UYVY = 1,
-	CHROMA_FORMAT_P444 = 2
+	CHROMA_FORMAT_P444 = 2,
+	CHROMA_FORMAT_I444 = 3
 };
 
 enum pri_mode_t {
-	V_PRIORITY = 0,
-	G_PRIORITY = 1,
+	G_PRIORITY = 0,
+	V_PRIORITY = 1,
 };
 
-enum input_mode_e {
-	INPUT_MODE_OTT = 0,
-	INPUT_MODE_HDMI = 1,
+enum cp_dovi_type_t {
+	/**Input is a Dovi signal, and output is a native signal not processed by VS10,
+	 **eg. SDR, HDR10 or HLG.
+	 **/
+	DOVI_TYPE_NONDOVI = 0x0,
+	/**Input is Dovi graded content, and output is a Dovi signal. **/
+	DOVI_TYPE_DOVI    = 0x1,
+	/* 0b0010 - Reserved */
+	/* Input is HDR10, and output is a Dovi signal processed by Dovi VS10. */
+	DOVI_TYPE_HDR10   = 0x3,
+	/* 0100 - Reserved */
+	/* Input is SDR, and output is a Dovi signal processed by Dovi VS10. */
+	DOVI_TYPE_SDR     = 0x5,
+	/* 0b0110 - Reserved */
+	/* Input is HLG, and output is a Dovi signal processed by Dovi VS10. */
+	DOVI_TYPE_HLG     = 0x7
+	/* 0b1000 - 0b1111: Reserved */
+};
+
+struct vsif_param_t {
+	int low_latency;
+	int backlt_ctrl_md_present;
+	int source_dm_version;
+	int eff_tmax_pq;
+	enum cp_dovi_type_t dovi_signal_type;
+	int auxiliary_md_present;
+	int L11_md_present;
+	uint8_t auxiliary_runmode;
+	uint8_t auxiliary_runversion;
+	uint8_t auxiliary_debug0;
+	uint8_t content_type;
+	uint8_t white_point;
+	uint8_t L11_byte2;
+	uint8_t L11_byte3;
+	int bt2020_container;
+};
+
+/*idk2.6 src params*/
+struct src_params_t {
+	/* All inputs */
+	bool en;
+	int width;
+	int height;
+	int src_fps;
+	int src_frame_num;
+	enum input_mode_t input_mode;
+	enum signal_fmt_t input_format;
+	int use_primaries_for_dovi;
+	enum DISP_DR_TYPE_T dr_type;
+	int primaries[8];
+	/* Dovi LL or non Dovi */
+	int src_bit_depth;
+	enum chroma_format_t chroma_format;
+	enum cp_clr_t color_format;
+	bool svp;
+	uint32_t sec_handle;
+	uint32_t rpu_bs_len;
+	unsigned char rpu_bs_buffer[BITSTREAM_BUFFER_SIZE];
+	uint32_t sec_handle_in;
+	uint32_t sec_handle_out;
+	uint32_t len_tmp;
+	uint32_t sec_handle_len;
+	int is_rbsp;
+	enum DV_RPU_TYPE rpu_type;
+	/* Non Dovi */
+	uint32_t min;
+	uint32_t max;
+	enum cp_eotf_t eotf;
+	int gamma;
+	enum signal_range_t src_yuv_range;
+	int16_t ycc2rgb_matrix[9];
+	int ycc2rgb_offset[3];
+	int16_t ycc2rgb_scale;
+	struct mtk_disp_hdr10_md_t hdr10_md;
+	uint32_t comp_md[DOVI_COMP_DW_SIZE];
+	uint32_t orig_md[DOVI_MD_DW_SIZE];
+	uint32_t orig_md_len;
 };
 
 /*
@@ -572,6 +680,37 @@ enum input_mode_e {
  *    total 20KB
  */
 struct cp_param_t {
+	int width;
+	int height;
+	enum signal_fmt_t output_format;
+	enum chroma_format_t out_chroma_format;
+	uint32_t min;
+	uint32_t max;
+	int use_vsem;
+	int use_ll;
+	int ll_rgb_desired;
+	int num_input;
+	int pri_input;
+	int vpm_trans_timeout;
+	int dovi2hdr10_mapping;
+	enum pri_mode_t priority_mode;
+	int test_mode;
+	int always10bit;
+	int dump_hks_txt;
+	int user_l11;
+	uint8_t user_l11_buf[4];
+	int profile;
+	uint8_t cp_init_update; /*1= need update*/
+	uint8_t dm_md_parse_ctrl; /*1 init, 2 main uninit->init,3 sub uninit->init*/
+	unsigned char vsvdb_hdmi[0x1A];
+	char vsvdb_file[MAX_FILENAME_LENGTH];
+	char vsif_file[MAX_NUM_INPUT][MAX_FILENAME_LENGTH];
+	char vsem_file[MAX_NUM_INPUT][MAX_FILENAME_LENGTH];
+	char drm_file[MAX_NUM_INPUT][MAX_FILENAME_LENGTH];
+	char sdp_file[MAX_NUM_INPUT][MAX_FILENAME_LENGTH];
+};
+
+struct cp_param_t_old {
 	int width;   /**<@brief Width of the video frame   */
 	int height;  /**<@brief Height of the video frame   */
 	enum signal_fmt_t input_format;
@@ -604,7 +743,9 @@ enum dovi_signal_format_t {
 	DOVI_FORMAT_SDR = 2,
 	DOVI_FORMAT_SDR_2020 = 3,
 	DOVI_FORMAT_HLG = 4,
-	DOVI_FORMAT_DOVI_LOW_LATENCY = 5
+	DOVI_FORMAT_DOVI_LOW_LATENCY = 5,
+	DOVI_FORMAT_VSEM_DOVI = 6,
+	DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY = 7
 };
 
 enum dovi_enable_type_t {
@@ -617,6 +758,7 @@ struct dovi_out_info_t {
 	enum dovi_signal_format_t out_format;
 	bool b_gfx_mode;
 	bool is_low_latency;
+	bool is_vsem;
 	unsigned char *vsvdb_edid;
 };
 
@@ -662,6 +804,8 @@ extern uint32_t priority_mode;
 extern uint32_t dovi_idk_file_id;
 extern bool set_graphic_max_lum_enable;
 extern bool set_video_max_lum_enable;
+extern int32_t fhd_color_format;
+extern int32_t uhd_color_format;
 
 extern int graphic_max_lum;
 extern int video_max_lum;
@@ -670,7 +814,7 @@ extern bool priority_mode_change;
 extern uint32_t dv_vdo_fe_en[2];
 extern uint32_t dv_gfx_fe_en[2];
 extern uint32_t dv_vdo_be_en;
-extern struct disp_hw_common_info dovi_common_info;
+extern struct disp_hw_common_info hdr_common_info;
 extern unsigned char idk_5000_dm_md[];
 extern unsigned char idk_5000_comp_md[];
 extern unsigned char vsvdb_v1_15[];
@@ -681,14 +825,14 @@ extern unsigned char av1_obu_data[];
 extern uint32_t ui_force_hdr_type;
 extern struct dv_all_reg_tab dv_dsys_all_reg;
 extern struct dv_all_reg_tab dv_msys_all_reg;
-extern uint32_t line_cnt[15];
 extern uint32_t adl_mode;
 extern char *dovi_reg_base[5];
 extern char *vdout_reg_base;
-extern uint32_t time_check;
 extern uint32_t _subv_type;
 extern bool dovi_black_en_bycmd;
 extern uint32_t dovi_black_cnt_bycmd;
+extern bool hdr_allm_en;
+extern struct cp_param_t *p_cp_param;
 
 
 int dovi_remove_rpu_nal_type(unsigned int first_frame,
@@ -699,10 +843,15 @@ uint32_t dovi_set_out_res(uint32_t out_res, uint16_t width,
 	uint16_t height);
 uint32_t dovi_set_output_format(enum dovi_signal_format_t out_format);
 uint32_t dovi_set_video_info(struct mtk_disp_hdr_md_info_t *hdr_metadata);
+uint32_t dovi_set_sub_video_info(struct mtk_disp_hdr_md_info_t *hdr_metadata);
 uint32_t dovi_set_video_input_format(enum dovi_signal_format_t e_input_format);
 uint32_t dovi_get_input_format(enum DISP_DR_TYPE_T *dovi_input_dr);
+uint32_t dovi_get_input_format1(enum DISP_DR_TYPE_T *dovi_input_dr);
 uint32_t dovi_set_graphic_format(uint32_t g_format);
+uint32_t dovi_set_uhd_graphic_format(uint32_t g_format);
 uint32_t dovi_set_graphic_info(uint32_t ucOn);
+uint32_t dovi_set_graphic_info_uhd(uint32_t ucOn);
+uint32_t dovi_set_gfx_rpu_info(void);
 uint32_t dovi_set_composer_mode(bool fgComposerEL);
 uint32_t dovi_update_graphic_info(void);
 
@@ -713,6 +862,7 @@ uint32_t dovi_set_test_mode(int mode);
 uint32_t dovi_set_support_el(int value);
 
 uint32_t dovi_set_low_latency_mode(int use_ll, int ll_rgb_desired);
+uint32_t dovi_set_vsem_mode(int use_vsem);
 uint32_t dovi_set_dovi2hdr10_mapping(int dovi2hdr10_mapping);
 uint32_t dovi_set_vsvdb_file_name(char *vsvdb_file_name);
 uint32_t dovi_set_vsvdb_hdmi(char *vsvdb_edid, int len);
@@ -723,7 +873,7 @@ int disp_dovi_common_test(uint32_t option);
 uint32_t dovi_get_low_latency_mode(void);
 uint32_t dovi_get_output_format(void);
 bool dovi_get_profile4(void);
-void dovi_update_res_change(
+uint32_t dovi_update_res_change(
 	struct disp_hw_tv_capbility *tv_cap,
 	const struct disp_hw_resolution *resolution);
 void dovi_path_disable(void);
@@ -759,7 +909,14 @@ void disp_dovi_update_input_size(uint32_t layer_id,
 	uint32_t u4width, uint32_t u4height);
 void disp_dovi_set_internalbyass(uint8_t id);
 void disp_dovi_set_adldelay(uint32_t layer_id);
+uint8_t *disp_dovi_get_hdmi_vsem_info(
+	uint32_t *dovi_vsem_num_pks, uint32_t *dovi_hdmi_type);
+uint32_t dovi_set_be_out_css(enum chroma_format_t out_css);
+bool disp_dovi_get_ext_md_info(
+	uint32_t ext_blk_no, uint8_t *ext_buf, uint32_t buf_len);
+void disp_dovi_dump_ext_md(void);
 enum dovi_signal_format_t dovi_judge_out_format(
 	struct disp_hw_tv_capbility *tv_cap,
 	const struct disp_hw_resolution *resolution);
+
 #endif

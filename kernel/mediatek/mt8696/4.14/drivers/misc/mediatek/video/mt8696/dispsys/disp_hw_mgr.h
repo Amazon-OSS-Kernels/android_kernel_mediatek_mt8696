@@ -71,6 +71,7 @@ enum DISP_EVENT {
 	DISP_EVENT_VIDEO_VSYNC = 1 << 6,
 	DISP_EVENT_FORCE_HDR = 1 << 7,
 	DISP_EVENT_GCE = 1 << 8,
+	DISP_EVENT_ALLM = 1 << 10,
 };
 
 enum DISP_HW_MGR_STATUS {
@@ -102,25 +103,28 @@ struct disp_hw_resolution {
 struct disp_hw_tv_capbility {
 	char is_support_hdr;
 	char is_support_hlg;
-	char is_support_dolby;
-	char is_support_dolby_2160p60;
+	char is_support_dovi;
+	char is_support_dovi_2160p60;
 	char is_support_601;
 	char is_support_709;
 	char is_support_bt2020;
-	char is_support_dolby_low_latency;
+	char is_support_dovi_low_latency;
 	char is_support_hdr10_plus;
 	long long supported_resolution;
 	unsigned int hdr_content_max_luminance;
 	unsigned int hdr_content_max_frame_average_luminance;
 	unsigned int hdr_content_min_luminance;
-	unsigned int dolbyvision_vsvdb_version;
-	unsigned int dolbyvision_vsvdb_v2_interface;
+	unsigned int dovi_vsvdb_version;
+	unsigned int dovi_vsvdb_dm_version;
+	unsigned int dovi_vsvdb_v2_interface;
 	unsigned char vsvdb_edid[0x1A];
 	unsigned char hdr10_plus_app_ver;
 	unsigned int force_hdr;
 	unsigned char screen_width;
 	unsigned char screen_height;
 	unsigned short max_tmds_rate;
+	unsigned char u1_sink_allm_support;
+	unsigned char u1_sink_14gamemode_support;
 };
 
 struct cmdqNormalPath {
@@ -218,6 +222,7 @@ enum DISP_CMD {
 	DISP_CMD_CFD_FORCE_HDR,
 	DISP_CMD_CFD_CHG_OUTPUT,
 	DISP_CMD_CFD_BACKUP_HDR10PLUS_SEC_HANDLE,
+	DISP_CMD_ALLM_TYPE,
 	DISP_CMD_NUM
 };
 

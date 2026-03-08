@@ -107,8 +107,16 @@ enum HDMI_AUDIO_FORMAT {
 };
 
 #define DOVI_METADATA_MAX_LENGTH 100
+#define DOVI_VSEM_METADATA_MAX_PACKET 19
 #define PHLP_METADATA_MAX_LENGTH 100
 #define HDR10_PLUS_METADATA_MAX_LENGTH 100
+
+struct hdmi_emp_t {
+	unsigned char en;
+	unsigned int type; // 1 form1_sink lead ,2 form2_source led
+	unsigned int num;
+	unsigned char emp_data[31 * DOVI_VSEM_METADATA_MAX_PACKET];
+};
 
 enum VID_GAMMA_T {
 	GAMMA_ST2084 = 1,
@@ -125,6 +133,7 @@ enum VID_PLA_DR_TYPE_T {
 	VID_PLA_DR_TYPE_DOVI_LOWLATENCY,
 	VID_PLA_DR_TYPE_HDR10_PLUS,
 	VID_PLA_DR_TYPE_HDR10_PLUS_VSIF,
+	VID_PLA_DR_TYPE_DOVI_VSEM,
 };
 
 enum LK_HDR_TYPE_T {
@@ -180,9 +189,21 @@ struct VID_HDR10_PLUS_METADATA_INFO_T {
 	unsigned int ui4_isTrustZone;
 };
 
+struct VID_DOVI_VSEM_METADATA_INFO_T {
+	unsigned char packet_type;
+	unsigned char HB1;
+	unsigned char sequence_index;
+	unsigned char PB[28];
+};
+
 union VID_PLA_DOVI_METADATA_UNION_T {
 	char dovi_metada_buffer[DOVI_METADATA_MAX_LENGTH];
 	struct VID_PLA_DOVI_METADATA_INFO_T dovi_metadata_info;
+};
+
+struct VID_PLA_DOVI_VSEM_METADATA_T {
+	char PktNum;
+	struct VID_DOVI_VSEM_METADATA_INFO_T *dovi_vsem_md_info;
 };
 
 union VID_PLA_PHLP_METADATA_UNION_T {
@@ -206,6 +227,7 @@ union VID_PLA_HDR_METADATA_UNION_T {
 	union VID_PLA_PHLP_METADATA_UNION_T phlp_metadata;
 	struct VID_DOVI_LOWLATENCY_MD_INFO_T dovi_lowlatency_metadata;
 	union VID_HDR10_PLUS_METADATA_UNION_T hdr10_plus_metadata;
+	struct VID_PLA_DOVI_VSEM_METADATA_T dovi_vsem_metadata;
 };
 
 struct VID_PLA_HDR_METADATA_INFO_T {
@@ -413,9 +435,9 @@ union AUDIO_DEC_OUTPUT_CHANNEL_UNION_T {
 /* Dynamic hdr supported by Sink */
 enum EDID_DYNAMIC_HDR_T {
 	EDID_SUPPORT_PHILIPS_HDR = (1 << 0),
-	EDID_SUPPORT_DOLBY_HDR = (1 << 1),
+	EDID_SUPPORT_DOVI_HDR = (1 << 1),
 	EDID_SUPPORT_YUV422_12BIT = (1 << 2),
-	EDID_SUPPORT_DOLBY_HDR_2160P60 = (1 << 3),
+	EDID_SUPPORT_DOVI_HDR_2160P60 = (1 << 3),
 	EDID_SUPPORT_HDR10_PLUS = (1 << 4),
 };
 
@@ -786,27 +808,27 @@ struct HDMI_EDID_T {
 	unsigned char ui1_sink_hdr_content_max_luminance;
 	unsigned char ui1_sink_hdr_content_max_frame_average_luminance;
 	unsigned char ui1_sink_hdr_content_min_luminance;
-	unsigned int ui4_sink_dolbyvision_vsvdb_length;
-	unsigned int ui4_sink_dolbyvision_vsvdb_version;
-	unsigned int ui4_sink_dolbyvision_vsvdb_v1_low_latency;
-	unsigned int ui4_sink_dolbyvision_vsvdb_v2_interface;
-	unsigned int ui4_sink_dolbyvision_vsvdb_low_latency_support;
-	unsigned int ui4_sink_dolbyvision_vsvdb_v2_supports_10b_12b_444;
-	unsigned int ui4_sink_dolbyvision_vsvdb_support_backlight_control;
-	unsigned int ui4_sink_dolbyvision_vsvdb_backlt_min_lumal;
-	unsigned int ui4_sink_dolbyvision_vsvdb_tmin;
-	unsigned int ui4_sink_dolbyvision_vsvdb_tmax;
-	unsigned int ui4_sink_dolbyvision_vsvdb_tminPQ;
-	unsigned int ui4_sink_dolbyvision_vsvdb_tmaxPQ;
-	unsigned int ui4_sink_dolbyvision_vsvdb_Rx;
-	unsigned int ui4_sink_dolbyvision_vsvdb_Ry;
-	unsigned int ui4_sink_dolbyvision_vsvdb_Gx;
-	unsigned int ui4_sink_dolbyvision_vsvdb_Gy;
-	unsigned int ui4_sink_dolbyvision_vsvdb_Bx;
-	unsigned int ui4_sink_dolbyvision_vsvdb_By;
-	unsigned int ui4_sink_dolbyvision_vsvdb_Wx;
-	unsigned int ui4_sink_dolbyvision_vsvdb_Wy;
-	unsigned char ui1_sink_dolbyvision_block[32];
+	unsigned int ui4_sink_dovi_vsvdb_length;
+	unsigned int ui4_sink_dovi_vsvdb_version;
+	unsigned int ui4_sink_dovi_vsvdb_v1_low_latency;
+	unsigned int ui4_sink_dovi_vsvdb_v2_interface;
+	unsigned int ui4_sink_dovi_vsvdb_low_latency_support;
+	unsigned int ui4_sink_dovi_vsvdb_v2_supports_10b_12b_444;
+	unsigned int ui4_sink_dovi_vsvdb_support_backlight_control;
+	unsigned int ui4_sink_dovi_vsvdb_backlt_min_lumal;
+	unsigned int ui4_sink_dovi_vsvdb_tmin;
+	unsigned int ui4_sink_dovi_vsvdb_tmax;
+	unsigned int ui4_sink_dovi_vsvdb_tminPQ;
+	unsigned int ui4_sink_dovi_vsvdb_tmaxPQ;
+	unsigned int ui4_sink_dovi_vsvdb_Rx;
+	unsigned int ui4_sink_dovi_vsvdb_Ry;
+	unsigned int ui4_sink_dovi_vsvdb_Gx;
+	unsigned int ui4_sink_dovi_vsvdb_Gy;
+	unsigned int ui4_sink_dovi_vsvdb_Bx;
+	unsigned int ui4_sink_dovi_vsvdb_By;
+	unsigned int ui4_sink_dovi_vsvdb_Wx;
+	unsigned int ui4_sink_dovi_vsvdb_Wy;
+	unsigned char ui1_sink_dovi_block[32];
 	unsigned char ui1rawdata_edid[EDID_LENGTH];
 	unsigned char u1_sink_allm_support;
 	unsigned char u1_sink_14gamemode_support;
@@ -814,6 +836,7 @@ struct HDMI_EDID_T {
 	unsigned int  u4_sink_vrr_max;
 	unsigned char u1_sink_cinemavrr;
 	unsigned char u1_sink_mdelta;
+	unsigned int ui4_sink_dovi_vsvdb_dm_version;
 };
 
 enum EDID_HF_VSDB_INFO_T {
@@ -1174,27 +1197,27 @@ struct COMPAT_HDMI_EDID_T {
 	unsigned char ui1_sink_hdr_content_max_luminance;
 	unsigned char ui1_sink_hdr_content_max_frame_average_luminance;
 	unsigned char ui1_sink_hdr_content_min_luminance;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_length;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_version;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_v1_low_latency;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_v2_interface;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_low_latency_support;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_v2_supports_10b_12b_444;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_support_backlight_control;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_backlt_min_lumal;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_tmin;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_tmax;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_tminPQ;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_tmaxPQ;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_Rx;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_Ry;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_Gx;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_Gy;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_Bx;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_By;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_Wx;
-	compat_uint_t ui4_sink_dolbyvision_vsvdb_Wy;
-	unsigned char ui1_sink_dolbyvision_block[32];
+	compat_uint_t ui4_sink_dovi_vsvdb_length;
+	compat_uint_t ui4_sink_dovi_vsvdb_version;
+	compat_uint_t ui4_sink_dovi_vsvdb_v1_low_latency;
+	compat_uint_t ui4_sink_dovi_vsvdb_v2_interface;
+	compat_uint_t ui4_sink_dovi_vsvdb_low_latency_support;
+	compat_uint_t ui4_sink_dovi_vsvdb_v2_supports_10b_12b_444;
+	compat_uint_t ui4_sink_dovi_vsvdb_support_backlight_control;
+	compat_uint_t ui4_sink_dovi_vsvdb_backlt_min_lumal;
+	compat_uint_t ui4_sink_dovi_vsvdb_tmin;
+	compat_uint_t ui4_sink_dovi_vsvdb_tmax;
+	compat_uint_t ui4_sink_dovi_vsvdb_tminPQ;
+	compat_uint_t ui4_sink_dovi_vsvdb_tmaxPQ;
+	compat_uint_t ui4_sink_dovi_vsvdb_Rx;
+	compat_uint_t ui4_sink_dovi_vsvdb_Ry;
+	compat_uint_t ui4_sink_dovi_vsvdb_Gx;
+	compat_uint_t ui4_sink_dovi_vsvdb_Gy;
+	compat_uint_t ui4_sink_dovi_vsvdb_Bx;
+	compat_uint_t ui4_sink_dovi_vsvdb_By;
+	compat_uint_t ui4_sink_dovi_vsvdb_Wx;
+	compat_uint_t ui4_sink_dovi_vsvdb_Wy;
+	unsigned char ui1_sink_dovi_block[32];
 	unsigned char ui1rawdata_edid[EDID_LENGTH];
 };
 

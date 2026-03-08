@@ -15,7 +15,7 @@
 #define __DISP_DOVI_IO_H__
 
 #include "hdmitx.h"
-//#include "videoin_hal.h" 8696 review
+#include "videoin_hal.h" //for dovi idk
 #include "vdout_sys_hal.h"
 
 
@@ -33,7 +33,8 @@ void disp_dovi_idk_dump_frame_start(uint32_t file_id);
 void disp_dovi_alloc_graphic_buffer(void);
 void disp_dovi_free_graphic_buffer(void);
 void disp_dovi_idk_dump_frame(void);
-#if 0 // 8696 review
+void disp_dovi_idk_dump_gfx_frame(void);
+#if 1 //open for dovi idk
 void disp_dovi_idk_dump_vin(bool enable,
 	enum VIDEOIN_SRC_SEL src,
 	enum VIDEOIN_YCbCr_FORMAT fmt);
@@ -85,5 +86,14 @@ void disp_dovi_load_video_pattern(uint32_t vdp_id,
 void disp_dovi_enable_vdp(uint32_t vdp_id,
 	uint32_t pattern);
 extern int ll_rgb_desired;
+extern int dump_crycb;
+extern int dump_bit_depth;
+extern int idk_dump_sub;
+extern int dump_format;
+extern int idk_dump_fefifo;
+extern int dump_big_file;
+extern int dump_times;
 extern int ll_format;
+void disp_dovi_alloc_graphic2_buffer(void);
+void disp_dovi_free_graphic2_buffer(void);
 #endif

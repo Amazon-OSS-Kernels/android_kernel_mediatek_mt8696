@@ -40,6 +40,6 @@ int dovi_be_hal_set_out_fix_pattern_enable(bool enable);
 
 extern uint32_t dovi_idk_test;
 extern bool be_bypass_dither;
-extern uint32_t g_force_dolby;
+extern uint32_t g_force_dovi;
 
 #endif

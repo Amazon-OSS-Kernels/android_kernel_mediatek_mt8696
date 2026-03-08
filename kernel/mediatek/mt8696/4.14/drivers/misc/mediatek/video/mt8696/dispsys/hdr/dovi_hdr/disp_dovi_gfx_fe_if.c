@@ -71,7 +71,7 @@ int dovi_gfx_fe_config_lut(uint32_t id, uint32_t *p_gfx_fe_lut)
 
 	memcpy(lut_addr, (uint8_t *)p_gfx_fe_lut, DOVI_FE_LUT_SIZE);
 
-	dovi_info("%s 0x%p 0x%x\n", __func__, lut_addr, lut_addr_pa);
+	dovi_printf("%s 0x%p 0x%x\n", __func__, lut_addr, lut_addr_pa);
 	disp_adl_cfg_client_en(adl_client, 1, 0);
 	disp_adl_cfg_client(adl_client, lut_addr_pa, DOVI_MD_SIZE);
 

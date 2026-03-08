@@ -23,7 +23,7 @@
 #define HDR_CTRL_HW_VERSION   0x0 // dual layer
 
 
-extern unsigned int g_force_dolby;
+extern unsigned int g_force_dovi;
 extern uint32_t hdr_input_width[4];
 extern uint32_t hdr_input_height[4];
 
