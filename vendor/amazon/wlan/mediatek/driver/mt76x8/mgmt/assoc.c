@@ -1301,7 +1301,7 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 	P_BSS_INFO_T prBssInfo;
 	P_IE_SSID_T prIeSsid = (P_IE_SSID_T) NULL;
 	P_RSN_INFO_ELEM_T prIeRsn = (P_RSN_INFO_ELEM_T) NULL;
-	P_IE_SUPPORTED_RATE_T prIeSupportedRate = (P_IE_SUPPORTED_RATE_T) NULL;
+	P_IE_SUPPORTED_RATE_IOT_T prIeSupportedRate = (P_IE_SUPPORTED_RATE_IOT_T) NULL;
 	P_IE_EXT_SUPPORTED_RATE_T prIeExtSupportedRate = (P_IE_EXT_SUPPORTED_RATE_T) NULL;
 	PUINT_8 pucIE, pucIEStart;
 	UINT_16 u2IELength;
@@ -1395,7 +1395,7 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 
 		case ELEM_ID_SUP_RATES:
 			if ((!prIeSupportedRate) && (IE_LEN(pucIE) <= RATE_NUM_SW))
-				prIeSupportedRate = SUP_RATES_IE(pucIE);
+				prIeSupportedRate = SUP_RATES_IOT_IE(pucIE);
 
 			break;
 		case ELEM_ID_PWR_CAP:

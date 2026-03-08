@@ -134,6 +134,7 @@ VOID p2pGenerate_IEForAssocReq(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsdu
 #if CFG_SUPPORT_802_11AC
 		/* Add VHT IE */
 		rlmReqGenerateVhtCapIE(prAdapter, prMsduInfo);
+		rlmReqGenerateVhtOpNotificationIE(prAdapter, prMsduInfo);
 #endif
 
 #if CFG_SUPPORT_MTK_SYNERGY

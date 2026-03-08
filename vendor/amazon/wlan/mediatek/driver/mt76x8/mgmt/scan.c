@@ -1187,7 +1187,7 @@ P_BSS_DESC_T scanAddToBssDesc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 
 	P_WLAN_BEACON_FRAME_T prWlanBeaconFrame = (P_WLAN_BEACON_FRAME_T) NULL;
 	P_IE_SSID_T prIeSsid = (P_IE_SSID_T) NULL;
-	P_IE_SUPPORTED_RATE_T prIeSupportedRate = (P_IE_SUPPORTED_RATE_T) NULL;
+	P_IE_SUPPORTED_RATE_IOT_T prIeSupportedRate = (P_IE_SUPPORTED_RATE_IOT_T) NULL;
 	P_IE_EXT_SUPPORTED_RATE_T prIeExtSupportedRate = (P_IE_EXT_SUPPORTED_RATE_T) NULL;
 	UINT_8 ucHwChannelNum = 0;
 	UINT_8 ucIeDsChannelNum = 0;
@@ -1491,7 +1491,7 @@ P_BSS_DESC_T scanAddToBssDesc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 			 */
 			/* TP-LINK will set extra and incorrect ie with ELEM_ID_SUP_RATES */
 			if ((!prIeSupportedRate) && (IE_LEN(pucIE) <= RATE_NUM_SW))
-				prIeSupportedRate = SUP_RATES_IE(pucIE);
+				prIeSupportedRate = SUP_RATES_IOT_IE(pucIE);
 			break;
 
 		case ELEM_ID_DS_PARAM_SET:

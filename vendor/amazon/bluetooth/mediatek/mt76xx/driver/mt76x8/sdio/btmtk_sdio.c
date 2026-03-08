@@ -5136,7 +5136,6 @@ ssize_t btmtk_fops_write(struct file *filp, const char __user *buf,
 	memcpy(&skb->data[0], pkt_data, copy_size-1);
 
 	skb->len = copy_size-1;
-	skb_queue_tail(&g_priv->adapter->tx_queue, skb);
 
 	if (bt_cb(skb)->pkt_type == HCI_COMMAND_PKT) {
 		u8 fw_assert_cmd[] = { 0x6F, 0xFC, 0x05, 0x01, 0x02, 0x01, 0x00, 0x08 };
@@ -5156,6 +5155,7 @@ ssize_t btmtk_fops_write(struct file *filp, const char __user *buf,
 			pr_info("%s: got command: 0x01 10 00 (READ_LOCAL_VERSION)\n", __func__);
 	}
 
+	skb_queue_tail(&g_priv->adapter->tx_queue, skb);
 	wake_up_interruptible(&g_priv->main_thread.wait_q);
 
 	retval = copy_size;

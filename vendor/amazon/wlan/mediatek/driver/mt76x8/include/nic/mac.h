@@ -861,6 +861,8 @@
 /* 7.3.2.2 Supported Rates */
 #define ELEM_MAX_LEN_SUP_RATES                      8
 
+#define ELEM_MAX_LEN_SUP_RATES_IOT                  16
+
 /* 7.3.2.4 DS Parameter Set */
 #define ELEM_MAX_LEN_DS_PARAMETER_SET               1
 
@@ -1745,6 +1747,13 @@ typedef struct _IE_SUPPORTED_RATE_T {
 	UINT_8 ucLength;
 	UINT_8 aucSupportedRates[ELEM_MAX_LEN_SUP_RATES];
 } __KAL_ATTRIB_PACKED__ IE_SUPPORTED_RATE_T, *P_IE_SUPPORTED_RATE_T;
+
+/* Some IOT AP will carry Rates > 8*/
+typedef struct IE_SUPPORTED_RATE_IOT {
+	UINT_8 ucId;
+	UINT_8 ucLength;
+	UINT_8 aucSupportedRates[ELEM_MAX_LEN_SUP_RATES_IOT];
+} __KAL_ATTRIB_PACKED__ IE_SUPPORTED_RATE_IOT_T, *P_IE_SUPPORTED_RATE_IOT_T;
 
 /* 7.3.2.4 DS Parameter Set element */
 typedef struct _IE_DS_PARAM_SET_T {
@@ -2761,6 +2770,8 @@ typedef struct _SUB_IE_BSS_TERM_DURATION_T {
 #define SSID_IE(fp)             ((P_IE_SSID_T) fp)
 
 #define SUP_RATES_IE(fp)        ((P_IE_SUPPORTED_RATE_T) fp)
+
+#define SUP_RATES_IOT_IE(fp)    ((struct IE_SUPPORTED_RATE_IOT *) fp)
 
 #define DS_PARAM_IE(fp)         ((P_IE_DS_PARAM_SET_T) fp)
 

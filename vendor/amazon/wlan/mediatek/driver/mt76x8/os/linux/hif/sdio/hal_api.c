@@ -180,6 +180,32 @@ halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 puc
 	u4Time = (UINT_32) kalGetTimeTick();
 
 	do {
+		HAL_MCR_RD(prAdapter, MCR_WHISR, &u4Value);
+		if (!(u4Value & (WHISR_RX0_DONE_INT | WHISR_RX1_DONE_INT))) {
+			/* timeout exceeding check */
+			u4Current = (UINT_32) kalGetTimeTick();
+
+			if ((u4Current > u4Time) && ((u4Current - u4Time)
+				> RX_RESPONSE_TIMEOUT)) {
+
+				DBGLOG(RX, ERROR, "Timeout! %d - %d = %d\n",
+				u4Current, u4Time, (u4Current-u4Time));
+				return WLAN_STATUS_FAILURE;
+			} else if (u4Current < u4Time &&
+				((u4Current + (0xFFFFFFFF - u4Time))
+				> RX_RESPONSE_TIMEOUT)) {
+
+				DBGLOG(RX, ERROR, "Timeout! %d - %d = %d\n",
+					u4Current, u4Time,
+					(u4Current + (0xFFFFFFFF - u4Time)));
+				return WLAN_STATUS_FAILURE;
+			}
+			/* Response packet is not ready */
+			kalUdelay(50);
+
+			continue;
+		}
+
 		/* Read the packet length */
 		HAL_MCR_RD(prAdapter, MCR_WRPLR, &u4Value);
 
@@ -192,16 +218,8 @@ halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 puc
 		}
 
 		if (u4PktLen == 0) {
-			/* timeout exceeding check */
-			u4Current = (UINT_32) kalGetTimeTick();
-
-			if ((u4Current > u4Time) && ((u4Current - u4Time) > RX_RESPONSE_TIMEOUT))
-				return WLAN_STATUS_FAILURE;
-			else if (u4Current < u4Time && ((u4Current + (0xFFFFFFFF - u4Time)) > RX_RESPONSE_TIMEOUT))
-				return WLAN_STATUS_FAILURE;
-
-			/* Response packet is not ready */
-			kalUdelay(50);
+			DBGLOG(RX, ERROR, "Packet length is 0!!\n");
+			return WLAN_STATUS_FAILURE;
 		} else {
 
 #if (CFG_ENABLE_READ_EXTRA_4_BYTES == 1)

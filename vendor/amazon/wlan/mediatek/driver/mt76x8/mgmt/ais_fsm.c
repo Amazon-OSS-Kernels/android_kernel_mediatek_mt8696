@@ -543,8 +543,13 @@ VOID aisFsmStateInit_JOIN(IN P_ADAPTER_T prAdapter, P_BSS_DESC_T prBssDesc)
 
 		prStaRec->fgIsReAssoc = TRUE;	/* We do roaming while the medium is connected */
 
+#if CFG_SUPPORT_CFG80211_AUTH
+		prAisFsmInfo->ucAvailableAuthTypes = (UINT_8) prAdapter->prGlueInfo->rWpaInfo.u4AuthAlg;
+#else
 		/* TODO(Kevin): We may call a sub function to acquire the Roaming Auth Type */
 		prAisFsmInfo->ucAvailableAuthTypes = prAisSpecificBssInfo->ucRoamingAuthTypes;
+#endif
+		DBGLOG(AIS, INFO, "JOIN INIT: Auth Algorithm for Roaming:%d\n", prAisFsmInfo->ucAvailableAuthTypes);
 
 		prStaRec->ucTxAuthAssocRetryLimit = TX_AUTH_ASSOCI_RETRY_LIMIT_FOR_ROAMING;
 	}

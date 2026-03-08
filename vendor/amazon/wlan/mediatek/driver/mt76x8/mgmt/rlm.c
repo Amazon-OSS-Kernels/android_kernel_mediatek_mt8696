@@ -1077,6 +1077,14 @@ VOID rlmReqGenerateVhtOpNotificationIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMs
 	if (!prBssInfo)
 		return;
 
+	/* [TGac 5.2.46 STBC Receive Test with UCC 9.2.x]
+	 * Operating Notification IE of Nss=2 will make Ralink testbed send data
+	 * frames without STBC
+	 * Enable the Operating Notification IE only for DBDC enable case.
+	 */
+	if (!prAdapter->rWifiVar.fgDbDcModeEn)
+		return;
+
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
 	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AC) &&
