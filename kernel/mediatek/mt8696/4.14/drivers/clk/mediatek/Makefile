@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: GPL-2.0
+obj-$(CONFIG_COMMON_CLK_MEDIATEK) += clk-mtk.o clk-pll.o clk-gate.o clk-apmixed.o clk-cpumux.o clk-mux.o clk-fixup-div.o
+obj-$(CONFIG_RESET_CONTROLLER) += reset.o
+obj-$(CONFIG_COMMON_CLK_MT6797) += clk-mt6797.o
+obj-$(CONFIG_COMMON_CLK_MT6797_IMGSYS) += clk-mt6797-img.o
+obj-$(CONFIG_COMMON_CLK_MT6797_MMSYS) += clk-mt6797-mm.o
+obj-$(CONFIG_COMMON_CLK_MT6797_VDECSYS) += clk-mt6797-vdec.o
+obj-$(CONFIG_COMMON_CLK_MT6797_VENCSYS) += clk-mt6797-venc.o
+obj-$(CONFIG_COMMON_CLK_MT2701) += clk-mt2701.o
+obj-$(CONFIG_COMMON_CLK_MT2701_BDPSYS) += clk-mt2701-bdp.o
+obj-$(CONFIG_COMMON_CLK_MT2701_ETHSYS) += clk-mt2701-eth.o
+obj-$(CONFIG_COMMON_CLK_MT2701_HIFSYS) += clk-mt2701-hif.o
+obj-$(CONFIG_COMMON_CLK_MT2701_IMGSYS) += clk-mt2701-img.o
+obj-$(CONFIG_COMMON_CLK_MT2701_MMSYS) += clk-mt2701-mm.o
+obj-$(CONFIG_COMMON_CLK_MT2701_VDECSYS) += clk-mt2701-vdec.o
+obj-$(CONFIG_COMMON_CLK_MT6771) += clk-mt6771.o clk-mt6771-pg.o clk-mtk-v1.o clkdbg.o
+obj-$(CONFIG_COMMON_CLK_MT8135) += clk-mt8135.o
+obj-$(CONFIG_COMMON_CLK_MT8168) += clk-mt8168.o clk-fixup-div.o clk-bringup.o clkdbg.o clkdbg-mt8168.o clkchk-mt8168.o
+obj-$(CONFIG_COMMON_CLK_MT8168_APU) += clk-mt8168-apu.o
+obj-$(CONFIG_COMMON_CLK_MT8168_CAMSYS) += clk-mt8168-cam.o
+obj-$(CONFIG_COMMON_CLK_MT8168_MFGCFG) += clk-mt8168-mfg.o
+obj-$(CONFIG_COMMON_CLK_MT8168_MMSYS) += clk-mt8168-mm.o
+obj-$(CONFIG_COMMON_CLK_MT8168_VDECSYS) += clk-mt8168-vdec.o
+obj-$(CONFIG_COMMON_CLK_MT8168_VENCSYS) += clk-mt8168-venc.o
+obj-$(CONFIG_COMMON_CLK_MT8173) += clk-mt8173.o
+obj-$(CONFIG_COMMON_CLK_MT8183) += clk-mt8183.o clk-bringup.o clkdbg.o clkdbg-mt8183.o
+obj-$(CONFIG_COMMON_CLK_MT8183_AUDIOSYS) += clk-mt8183-audio.o
+obj-$(CONFIG_COMMON_CLK_MT8183_CAMSYS) += clk-mt8183-cam.o
+obj-$(CONFIG_COMMON_CLK_MT8183_IMGSYS) += clk-mt8183-img.o
+obj-$(CONFIG_COMMON_CLK_MT8183_IPU_CORE0) += clk-mt8183-ipu0.o
+obj-$(CONFIG_COMMON_CLK_MT8183_IPU_CORE1) += clk-mt8183-ipu1.o
+obj-$(CONFIG_COMMON_CLK_MT8183_IPU_ADL) += clk-mt8183-ipu_adl.o
+obj-$(CONFIG_COMMON_CLK_MT8183_IPU_CONN) += clk-mt8183-ipu_conn.o
+obj-$(CONFIG_COMMON_CLK_MT8183_MFGCFG) += clk-mt8183-mfgcfg.o
+obj-$(CONFIG_COMMON_CLK_MT8183_MMSYS) += clk-mt8183-mm.o
+obj-$(CONFIG_COMMON_CLK_MT8183_VDECSYS) += clk-mt8183-vdec.o
+obj-$(CONFIG_COMMON_CLK_MT8183_VENCSYS) += clk-mt8183-venc.o
+obj-$(CONFIG_COMMON_CLK_MT8696) += clk-mt8696.o clk-bringup.o clkchk-mt8696.o
+obj-$(CONFIG_COMMON_CLK_MT8696_ETHER) += clk-mt8696-ether.o
+obj-$(CONFIG_COMMON_CLK_MT8696_IMGSYS) += clk-mt8696-img.o
+obj-$(CONFIG_COMMON_CLK_MT8696_MFGCFG) += clk-mt8696-mfg.o
+obj-$(CONFIG_COMMON_CLK_MT8696_MMSYS) += clk-mt8696-mm.o
+obj-$(CONFIG_COMMON_CLK_MT8696_NNA) += clk-mt8696-nna.o
+obj-$(CONFIG_COMMON_CLK_MT8696_VDEC) += clk-mt8696-vdec.o
+obj-$(CONFIG_COMMON_CLK_MT8696_VDEC_SOC) += clk-mt8696-vdsoc.o
+obj-$(CONFIG_COMMON_CLK_MT8696_VENC) += clk-mt8696-venc.o
+
+ifeq ($(CONFIG_DEBUG_FS), y)
+obj-$(CONFIG_COMMON_CLK_MEDIATEK) += clkdbg.o
+obj-$(CONFIG_COMMON_CLK_MT8696) += clkdbg-mt8696.o
+endif

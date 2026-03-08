@@ -1,0 +1,594 @@
+/*
+ * MediaTek xHCI Host Controller Driver
+ *
+ * Copyright (c) 2015 MediaTek Inc.
+ * Author:
+ *  Chunfeng Yun <chunfeng.yun@mediatek.com>
+ *
+ * This software is licensed under the terms of the GNU General Public
+ * License version 2, as published by the Free Software Foundation, and
+ * may be copied, distributed, and modified under those terms.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ */
+
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/init.h>
+#include <linux/debugfs.h>
+#include <linux/seq_file.h>
+#include <linux/uaccess.h>
+#include "xhci.h"
+#include "xhci-mtk.h"
+
+struct xhci_usbxx_set {
+	unsigned int offset;
+	const char *name;
+	unsigned int width;
+	const char *comment;
+};
+
+#define XHCI_INIT_VALUE 0x0
+
+/*
+ * Module name: ssusb_sifslv_ippc Base address: (+11203E00h)
+ * Address	Name	Width		Register Function
+ */
+static struct xhci_usbxx_set ssusb_sifslv_ippc[] = {
+	{ 0x00, "SSUSB_IP_PW_CTRL0", 32, "SSUSB IP Power/Clock Control Reg0" },
+	{ 0x04, "SSUSB_IP_PW_CTRL1", 32, "SSUSB IP Power/Clock Control Reg1" },
+	{ 0x08, "SSUSB_IP_PW_CTRL2", 32, "SSUSB IP Power/Clock Control Reg2" },
+	{ 0x0c, "SSUSB_IP_PW_CTRL3", 32, "SSUSB IP Power/Clock Control Reg3" },
+	{ 0x10, "SSUSB_IP_PW_STS1", 32, "SSUSB IP Power/Clock Status Reg1" },
+	{ 0x14, "SSUSB_IP_PW_STS2", 32, "SSUSB IP Power/Clock Status Reg2" },
+	{ 0x18, "SSUSB_OTG_STS", 32, "SSUSB OTG STATUS" },
+	{ 0x1c, "SSUSB_OTG_STS_CLR", 32, "SSUSB OTG STATUS CLEAR" },
+	{ 0x20, "SSUSB_IP_MAC_CAP", 32, "SSUSB IP MAC Capability Register" },
+	{ 0x24, "SSUSB_IP_XHCI_CAP", 32, "SSUSB IP xHCI Capability Register" },
+	{ 0x28, "SSUSB_IP_DEV_CAP", 32, "SSUSB IP Device Capability Reg" },
+	{ 0x2c, "SSUSB_OTG_INT_EN", 32, "SSUSB OTG INTERRUPT Enable" },
+	{ 0x30, "SSUSB_U3_CTRL_0P", 32, "SSUSB IP U3 Port 0 Control Reg" },
+	{ 0x38, "SSUSB_U3_CTRL_1P", 32, "SSUSB IP U3 Port 1 Control Reg" },
+	{ 0x40, "SSUSB_U3_CTRL_2P", 32, "SSUSB IP U3 Port 2 Control Reg" },
+	{ 0x48, "SSUSB_U3_CTRL_3P", 32, "SSUSB IP U3 Port 3 Control Reg" },
+	{ 0x50, "SSUSB_U2_CTRL_0P", 32, "SSUSB IP U2 Port 0 Control Reg" },
+	{ 0x58, "SSUSB_U2_CTRL_1P", 32, "SSUSB IP U2 Port 1 Control Reg" },
+	{ 0x60, "SSUSB_U2_CTRL_2P", 32, "SSUSB IP U2 Port 2 Control Reg" },
+	{ 0x68, "SSUSB_U2_CTRL_3P", 32, "SSUSB IP U2 Port 3 Control Reg" },
+	{ 0x70, "SSUSB_U2_CTRL_4P", 32, "SSUSB IP U2 Port 4 Control Reg" },
+	{ 0x78, "SSUSB_U2_CTRL_5P", 32, "SSUSB IP U2 Port 5 Control Reg" },
+	{ 0x7c, "SSUSB_U2_PHY_PLL", 32, "SSUSB U2 PHY PLL Control Register" },
+	{ 0x80, "SSUSB_DMA_CTRL", 32, "SSUSB DMA Control Register" },
+	{ 0x84, "SSUSB_MAC_CK_CTRL", 32, "SSUSB MAC Clock Control Register" },
+	{ 0x88, "SSUSB_CSR_CK_CTRL", 32, "" },
+	{ 0x8c, "SSUSB_REF_CK_CTRL", 32, "SSUSB Ref Clock Control Register" },
+	{ 0x90, "SSUSB_XHCI_CK_CTRL", 32, "SSUSB XHCI Clock Control Reg" },
+	{ 0x94, "SSUSB_XHCI_RST_CTRL", 32, "SSUSB XHCI Reset Control Reg" },
+	{ 0x98, "SSUSB_DEV_RST_CTRL", 32, "SSUSB Device Reset Control Reg" },
+	{ 0x9c, "SSUSB_SYS_CK_CTRL", 32, "SSUSB System Clock Control Reg" },
+	{ 0xa0, "SSUSB_HW_ID", 32, "SSUSB HW ID" },
+	{ 0xa4, "SSUSB_HW_SUB_ID", 32, "SSUSB HW SUB ID" },
+	{ 0xb0, "SSUSB_PRB_CTRL0", 32, "Probe Control Register 0" },
+	{ 0xb4, "SSUSB_PRB_CTRL1", 32, "Probe Control Register 1" },
+	{ 0xb8, "SSUSB_PRB_CTRL2", 32, "Probe Control Register 2" },
+	{ 0xbc, "SSUSB_PRB_CTRL3", 32, "Probe Control Register 3" },
+	{ 0xc0, "SSUSB_PRB_CTRL4", 32, "Probe Control Register 4" },
+	{ 0xc4, "SSUSB_PRB_CTRL5", 32, "Probe Control Register 5" },
+	{ 0xc8, "SSUSB_IP_SPARE0", 32, "SSUSB IP Spare Register0" },
+	{ 0xcc, "SSUSB_IP_SPARE1", 32, "SSUSB IP Spare Register1" },
+	{ 0xf8, "SSUSB_IP_SLV_TMOUT", 32, "SSUSB IP SLAVE TIMEOUT" },
+	{ 0, NULL, 0, NULL }
+};
+
+
+/*
+ * Module name: ssusb2_xhci_exclude_port_csr Base address: (+11200000h)
+ * Address		Name	Width		Register Function
+ */
+static struct xhci_usbxx_set ssusb2_xhci_exclude_port_csr[] = {
+	{ 0x0000, "CAPLENGTH",	32, "Capability Register Length" },
+	{ 0x0004, "HCSPARAMS1",	32, "Structural Parameters 1" },
+	{ 0x0008, "HCSPARAMS2",	32, "Structural Parameters 2" },
+	{ 0x000c, "HCSPARAMS3",	32, "Structural Parameters 3" },
+	{ 0x0010, "HCCPARAMS",	32, "Capability Parameters" },
+	{ 0x0014, "DBSOFF",	32, "Doorbell Offset" },
+	{ 0x0018, "RTSOFF",	32, "Runtime Register Space Offset" },
+	{ 0x0020, "USBCMD",	32, "USB Command" },
+	{ 0x0024, "USBSTS",	32, "USB Status" },
+	{ 0x0028, "PAGESIZE",	32, "Page Size" },
+	{ 0x0034, "DNCTRL",	32, "Device Notification Control" },
+	{ 0x0038, "CRCR1",	32, "Command Ring Control 1" },
+	{ 0x003c, "CRCR2",	32, "Command Ring Control 2" },
+	{ 0x0050, "DCBAAP_LO",	32, "DCBA Array Pointer Lo" },
+	{ 0x0054, "DCBAAP_HI",	32, "DCBA Array Pointer High" },
+	{ 0x0058, "CONFIG",	32, "Configure" },
+	{ 0x0500, "SUPP_PTCL_REG1", 32,
+			"xHCI Supported Protocol Capability 1 Register" },
+	{ 0x0504, "SUPP_PTCL_REG2", 32,
+			"xHCI Supported Protocol Capability 2 Register" },
+	{ 0x0508, "SUPP_PTCL_REG3", 32,
+			"xHCI Supported Protocol Capability 3 Register" },
+	{ 0x0510, "SUPP_PTCL_REG4", 32,
+			"xHCI Supported Protocol Capability 4 Register" },
+	{ 0x0514, "SUPP_PTCL_REG5", 32,
+			"xHCI Supported Protocol Capability 5 Register" },
+	{ 0x0518, "SUPP_PTCL_REG6", 32,
+			"xHCI Supported Protocol Capability 6 Register" },
+	{ 0x0600, "MFINDEX",	32, "Microframe Index" },
+	{ 0x0620, "IMAN",	32, "Interrupter Management" },
+	{ 0x0624, "IMOD",	32, "Interrupter Moderation" },
+	{ 0x0628, "ERSTSZ",	32, "Event Ring Segment Table Size" },
+	{ 0x0630, "ERSTBA_LO",	32, "Event Ring Segment Table Base Addr Lo" },
+	{ 0x0634, "ERSTBA_HI",	32, "Event Ring Segment Table Base Addr Hi" },
+	{ 0x0638, "ERDP_LO",	32, "Event Ring Segment Table Base Addr Lo" },
+	{ 0x063c, "ERDP_HI",	32, "Event Ring Segment Table Base Addr Hi" },
+	{ 0x0800, "HOST_CMD_DB", 32, "Host Controller Doorbell Registers" },
+	{ 0x0804, "DEVICE1_DB",	32, "Device 1 Doorbell Registers" },
+	{ 0x0808, "DEVICE2_DB",	32, "Device 2 Doorbell Registers" },
+	{ 0x080c, "DEVICE3_DB",	32, "Device 3 Doorbell Registers" },
+	{ 0x0810, "DEVICE4_DB",	32, "Device 4 Doorbell Registers" },
+	{ 0x0814, "DEVICE5_DB",	32, "Device 5 Doorbell Registers" },
+	{ 0x0818, "DEVICE6_DB",	32, "Device 6 Doorbell Registers" },
+	{ 0x081c, "DEVICE7_DB",	32, "Device 7 Doorbell Registers" },
+	{ 0x0820, "DEVICE8_DB",	32, "Device 8 Doorbell Registers" },
+	{ 0x0824, "DEVICE9_DB",	32, "Device 9 Doorbell Registers" },
+	{ 0x0828, "DEVICE10_DB", 32, "Device 10 Doorbell Registers" },
+	{ 0x082c, "DEVICE11_DB", 32, "Device 11 Doorbell Registers" },
+	{ 0x0830, "DEVICE12_DB", 32, "Device 12 Doorbell Registers" },
+	{ 0x0834, "DEVICE13_DB", 32, "Device 13 Doorbell Registers" },
+	{ 0x0838, "DEVICE14_DB", 32, "Device 14 Doorbell Registers" },
+	{ 0x083c, "DEVICE15_DB", 32, "Device 15 Doorbell Registers" },
+	{ 0x0900, "HSRAM_DBGCTL", 32, "Host SRAM Debug Control Register" },
+	{ 0x0904, "HSRAM_DBGMODE", 32, "Host SRAM Debug Mode Register" },
+	{ 0x0908, "HSRAM_DBGSEL", 32, "Host SRAM Debug Select Register" },
+	{ 0x090c, "HSRAM_DBGADR", 32, "Host SRAM Debug Address Register" },
+	{ 0x0910, "HSRAM_DBGDR", 32, "Host SRAM Debug Data Register" },
+	{ 0x0920, "HSRAM_DELSEL_0", 32, "Host SRAM  Delay Select 0" },
+	{ 0x0924, "HSRAM_DELSEL_1", 32, "Host SRAM  Delay Select 1" },
+	{ 0x0930, "LS_EOF",	32, "Low Speed EOF Start Offset" },
+	{ 0x0934, "FS_EOF",	32, "Full Speed EOF Start Offset" },
+	{ 0x0938, "SYNC_HS_EOF", 32, "Sync High Speed EOF Start Offset" },
+	{ 0x093c, "SS_EOF",	32, "Super Speed EOF Start Offset" },
+	{ 0x0940, "SOF_OFFSET",	32, "SOF Offset" },
+	{ 0x0944, "HFCNTR_CFG",	32, "Host Frame Counter Configuration" },
+	{ 0x0948, "XACT3_CFG",	32, "Super Speed Transaction Configuration" },
+	{ 0x094c, "XACT2_CFG",	32, "USB2 Transaction Configuration" },
+	{ 0x0950, "HDMA_CFG",	32, "Host DMA Configuration" },
+	{ 0x0954, "ASYNC_HS_EOF", 32, "Async High Speed EOF Start Offset" },
+	{ 0x0958, "AXI_WR_DMA_CFG", 32, "AXI WR DMA configuration Reg." },
+	{ 0x095c, "AXI_RD_DMA_CFG", 32, "AXI RD DMA configuration Reg." },
+	{ 0x0960, "HSCH_CFG1",	32, "Host Scheduler Configuration Reg1" },
+	{ 0x0964, "CMD_CFG",	32, "Command Configuration" },
+	{ 0x0968, "EP_CFG",	32, "Endpoint Status Configuration" },
+	{ 0x096c, "EVT_CFG",	32, "Event Configuration" },
+	{ 0x0970, "TRBQ_CFG",	32, "TRBQ Configuration" },
+	{ 0x0974, "U3PORT_CFG",	32, "USB3 Port Configuration" },
+	{ 0x0978, "U2PORT_CFG",	32, "USB2 Port Configuration" },
+	{ 0x097c, "HSCH_CFG2",	32, "Host Scheduler Configuration Reg2" },
+	{ 0x0980, "SW_ERDY",	32, "Software ERDY" },
+	{ 0x09a0, "SLOT_EP_STS0", 32, "Slot and EP Resource Status0" },
+	{ 0x09a4, "SLOT_EP_STS1", 32, "Slot and EP Resource Status1" },
+	{ 0x09a8, "SLOT_EP_STS2", 32, "Slot and EP Resource Status2" },
+	{ 0x09b0, "RST_CTRL0",	32, "Host reset control Register 2" },
+	{ 0x09b4, "RST_CTRL1",	32, "Host reset control Register 3" },
+	{ 0x09f0, "SPARE0",	32, "Spare Register 0" },
+	{ 0x09f4, "SPARE1",	32, "Spare Register 1" },
+	{ 0, NULL, 0, NULL }
+};
+/*
+ * Module name: ssusb_xhci_u3_port_csr Base address: (+11200420h)
+ * Address		Name	Width		Register Function
+ */
+static struct xhci_usbxx_set ssusb_xhci_u3_port_csr[] = {
+	{ 0x0420, "USB3_PORT_SC", 32, "USB3_PORT Port Status and Control" },
+	{ 0x0424, "USB3_PORT_PMSC", 32, "USB3_PORT PM Status and Control" },
+	{ 0x0428, "USB3_PORT_LI", 32, "USB3_PORT Link Info" },
+	{ 0, NULL, 0, NULL }
+};
+
+/*
+ * Module name: ssusb_xhci_u2_port_csr Base address: (+11200430h)
+ * Address	Name	Width		Register Function
+ */
+static struct xhci_usbxx_set ssusb_xhci_u2_port_csr[] = {
+	{ 0x0430, "USB2_PORT_SC", 32, "USB2_PORT Port Status and Control" },
+	{ 0x0434, "USB2_PORT_PMSC", 32, "USB2_PORT PM Status and Control" },
+	{ 0x0438, "USB2_PORT_LI", 32, "USB2_PORT Link Info" },
+	{ 0x043c, "USB2_PORT_HLPMC", 32, "USB2_PORT HW LPM Control Reg" },
+	{ 0, NULL, 0, NULL }
+};
+
+static inline unsigned int uffs(unsigned int x)
+{
+	unsigned int r = 1;
+
+	if (!x)
+		return 0;
+
+	if (!(x & 0xffff)) {
+		x >>= 16;
+		r += 16;
+	}
+	if (!(x & 0xff)) {
+		x >>= 8;
+		r += 8;
+	}
+	if (!(x & 0xf)) {
+		x >>= 4;
+		r += 4;
+	}
+	if (!(x & 3)) {
+		x >>= 2;
+		 r += 2;
+	}
+	if (!(x & 1)) {
+		x >>= 1;
+		r += 1;
+	}
+
+	return r;
+}
+
+#define IO_SET_FIELD(reg, field, val)  \
+	do { \
+		unsigned int sb = uffs((unsigned int)field); \
+		unsigned int tv = readl(reg); \
+		if (sb) { \
+			tv &= ~(field); \
+			tv |= ((val) << (sb - 1)); \
+			writel(tv, reg); \
+		} \
+	} while (0)
+
+#define IO_GET_FIELD(reg, field, val) \
+	do { \
+		unsigned int sb = uffs((unsigned int)field); \
+		unsigned int tv = readl(reg); \
+		if (sb) { \
+			val = ((tv & (field)) >> (sb - 1)); \
+		} else \
+			val = tv; \
+	} while (0)
+
+static void register_set_field(void __iomem *addr, unsigned int start_bit,
+					unsigned int len, unsigned int value)
+{
+	unsigned long field;
+
+	if (start_bit > 31 || len > 31 || (start_bit + len > 31))
+		pr_err("[xhci][RMW] Invalid Register field range or length\n");
+	else {
+		field = ((1 << len) - 1) << start_bit;
+		value &= (1 << len) - 1;
+		pr_err("[xhci][RMW]Original:0x%p (0x%x)\n", addr, readl(addr));
+		IO_SET_FIELD(addr, field, value);
+		pr_err("[xhci][RMW]Modified:0x%p (0x%x)\n", addr, readl(addr));
+	}
+}
+
+static void register_get_field(void __iomem *address, unsigned int start_bit,
+					unsigned int len, unsigned int value)
+{
+	unsigned long field;
+
+	if (start_bit > 31 || len > 31 || (start_bit + len > 31))
+		pr_err("[xhci][RMW]Invalid reg field range or length\n");
+	else {
+		field = ((1 << len) - 1) << start_bit;
+		IO_GET_FIELD(address, field, value);
+		pr_err("[xhci][RMW]Reg:0x%p start_bit(%d)len(%d)(0x%x)\n",
+					address, start_bit, len, value);
+	}
+}
+
+static int mtk_xhci_regdump_show(struct seq_file *s, void *unused)
+{
+	int i;
+	int port;
+	int num_u3_ports = 1;
+	int num_u2_ports = 3;
+	struct xhci_usbxx_set *usbxxreg;
+	struct xhci_hcd *xhci = s->private;
+	struct usb_hcd *hcd = xhci_to_hcd(xhci);
+	struct xhci_hcd_mtk *mtk = hcd_to_mtk(hcd);
+	void __iomem *iobase = xhci->main_hcd->regs;
+	void __iomem *ibase = mtk->ippc_regs;
+	struct mu3c_ippc_regs __iomem *ippc;
+	void __iomem *portbase;
+
+	if (!mtk->has_ippc) {
+		ibase = ioremap_nocache(0x11203E00, 0x100);
+		ippc = ibase;
+
+#if 0
+		num_u3_ports   = readl(&ippc->ip_xhci_cap);
+		num_u3_ports  &= 0xFF;
+
+		num_u2_ports   = readl(&ippc->ip_xhci_cap);
+		num_u2_ports  &= 0xFF00;
+		num_u2_ports >>= 16;
+#endif
+	}
+
+	seq_printf(s,
+	 "\nMTK xHCI:(version:0x%X) (ippc_base: 0x%p, mac_base: 0x%p)\n",
+		HC_VERSION(readl(&xhci->cap_regs->hc_capbase)), ibase, iobase);
+
+	if (!PTR_ERR(ibase))
+		return 0;
+
+	seq_puts(s,
+	 "ssusb_sifslv_ippc Register Dump range [0x11203E00 ~ 0x11203F00)\n");
+	for (i = 0; i < ARRAY_SIZE(ssusb_sifslv_ippc); i++) {
+		usbxxreg = &ssusb_sifslv_ippc[i];
+		switch (usbxxreg->width) {
+		case 8:
+			seq_printf(s, "%-15s(0x%p): %02x\n",
+				   usbxxreg->name,
+				   ibase + usbxxreg->offset,
+				   readb(ibase + usbxxreg->offset));
+			break;
+		case 16:
+			seq_printf(s, "%-15s(0x%p): %04x\n",
+				   usbxxreg->name,
+				   ibase + usbxxreg->offset,
+				   readw(ibase + usbxxreg->offset));
+			break;
+		case 32:
+			seq_printf(s, "%-15s(0x%p): %08x\n",
+				   usbxxreg->name,
+				   ibase + usbxxreg->offset,
+				   readl(ibase + usbxxreg->offset));
+			break;
+		}
+	}
+
+
+	if (!mtk->has_ippc)
+		iounmap(ibase);
+
+	if (!PTR_ERR(iobase))
+		return 0;
+
+	seq_puts(s,
+	 "\nssusb_xhci_exclude_port_csr Reg range [0x11200000~0x11201000)\n");
+	for (i = 0; i < ARRAY_SIZE(ssusb2_xhci_exclude_port_csr); i++) {
+		usbxxreg = &ssusb2_xhci_exclude_port_csr[i];
+		switch (usbxxreg->width) {
+		case 8:
+			seq_printf(s, "%-15s(0x%p): 0x%02X\n",
+				   usbxxreg->name,
+				   iobase + usbxxreg->offset,
+				   readb(iobase + usbxxreg->offset));
+			break;
+		case 16:
+			seq_printf(s, "%-15s(0x%p): 0x%04X\n",
+				   usbxxreg->name,
+				   iobase + usbxxreg->offset,
+				   readw(iobase + usbxxreg->offset));
+			break;
+		case 32:
+			seq_printf(s, "%-15s(0x%p): 0x%08X\n",
+				   usbxxreg->name,
+				   iobase + usbxxreg->offset,
+				   readl(iobase + usbxxreg->offset));
+			break;
+		}
+	}
+
+	seq_puts(s,
+	 "\nssusb_xhci_u3_port_csr Regrange [0x11200420 ~ 0x11200430)\n");
+	for (port = 0; port < num_u3_ports; port++) {
+		for (i = 0; i < ARRAY_SIZE(ssusb_xhci_u3_port_csr); i++) {
+			usbxxreg = &ssusb_xhci_u3_port_csr[i];
+			portbase = iobase + usbxxreg->offset + 0x10*port;
+			switch (usbxxreg->width) {
+			case 8:
+				seq_printf(s, "%-15s(0x%p): 0x%02X\n",
+					   usbxxreg->name,
+					   portbase,
+					   readb(portbase));
+				break;
+			case 16:
+				seq_printf(s, "%-15s(0x%p): 0x%04X\n",
+					   usbxxreg->name,
+					   portbase,
+					   readw(portbase));
+				break;
+			case 32:
+				seq_printf(s, "%-15s(0x%p): 0x%08X\n",
+					   usbxxreg->name,
+					   portbase,
+					   readl(portbase));
+				break;
+			}
+		}
+	}
+
+	seq_puts(s,
+	 "\nssusb_xhci_u2_port_csr Regrange [0x11200430 ~ 0x11200440)\n");
+	for (port = 0; port < num_u2_ports; port++) {
+		for (i = 0; i < ARRAY_SIZE(ssusb_xhci_u2_port_csr); i++) {
+			usbxxreg = &ssusb_xhci_u2_port_csr[i];
+			portbase = iobase + usbxxreg->offset + 0x10*port;
+			switch (usbxxreg->width) {
+			case 8:
+				seq_printf(s, "%-15s(0x%p): 0x%02X\n",
+					   usbxxreg->name,
+					   portbase,
+					   readb(portbase));
+				break;
+			case 16:
+				seq_printf(s, "%-15s(0x%p): 0x%04X\n",
+					   usbxxreg->name,
+					   portbase,
+					   readw(portbase));
+				break;
+			case 32:
+				seq_printf(s, "%-15s(0x%p): 0x%08X\n",
+					   usbxxreg->name,
+					   portbase,
+					   readl(portbase));
+				break;
+			}
+		}
+	}
+
+
+	return 0;
+}
+
+
+static int mtk_xhci_regdump(struct inode *inode, struct file *file)
+{
+	return single_open(file, mtk_xhci_regdump_show, inode->i_private);
+}
+
+static const struct file_operations mtk_xhci_regdump_fops = {
+	.open	= mtk_xhci_regdump,
+	.read	= seq_read,
+	.llseek	= seq_lseek,
+	.release	= single_release,
+};
+
+static int mtk_xhci_debug_proc_show(struct seq_file *m, void *v)
+{
+	seq_puts(m, "\n===mtk_xhci_debug help===\n");
+
+	seq_puts(m, "\n REGISTER control usage:\n");
+	seq_puts(m, "  write register: echo 1 0 [io] [val] > debug\n");
+	seq_puts(m, "  read  register: echo 1 1 [io] > debug\n");
+	seq_puts(m, "  write mask: echo 1 2 [io] [bit] [len] [val] > debug\n");
+	seq_puts(m, "  read  mask: echo 1 3 [io] [bit] [len] > debug\n");
+	seq_puts(m, "  dump all regiters echo 1 4 > debug\n");
+	seq_puts(m, "=========================================\n\n");
+
+	return 0;
+}
+
+static ssize_t mtk_xhci_debug_proc_write(struct file *file,
+				const char *buf, size_t count, loff_t *data)
+{
+	int ret;
+	int cmd, p1, p3, p4, p5;
+	unsigned int reg_value;
+	int sscanf_num;
+	struct seq_file	*s = file->private_data;
+	struct xhci_hcd *xhci = s->private;
+	struct usb_hcd *hcd = xhci_to_hcd(xhci);
+	struct xhci_hcd_mtk *mtk = hcd_to_mtk(hcd);
+	void __iomem *iomem = NULL;
+
+	unsigned int long long p2;
+
+	p1 = p2 = p3 = p4 = p5 = -1;
+
+	if (count == 0)
+		return -1;
+
+	if (count > 255)
+		count = 255;
+
+	ret = copy_from_user(mtk->cmd_buf, buf, count);
+	if (ret < 0)
+		return -1;
+
+	mtk->cmd_buf[count] = '\0';
+	pr_err("[xhci]debug received:%s\n", mtk->cmd_buf);
+
+	sscanf_num = sscanf(mtk->cmd_buf,
+			"%x %x %llx %x %x %x", &cmd, &p1, &p2, &p3, &p4, &p5);
+	if (sscanf_num < 1)
+		return count;
+
+	if (cmd == 0)
+		pr_err("[xhci] zone <0x%.8x> yet\n", p1);
+	else if (cmd == 1) {
+		iomem += p2;
+		if (p1 == 0) {
+			reg_value = p3;
+			pr_err("[xhci][Write]Original:0x%p (0x%08X)\n",
+							iomem, readl(iomem));
+
+			writel(reg_value, iomem);
+
+			pr_err("[xhci][Write]Writed:0x%p (0x%08X)\n",
+							iomem, readl(iomem));
+		} else if (p1 == 1)
+			pr_err("[xhci][Read]Register:0x%p (0x%08X)\n",
+							iomem, readl(iomem));
+		else if (p1 == 2)
+			register_set_field(iomem, p3, p4, p5);
+		else if (p1 == 3)
+			register_get_field(iomem, p3, p4, p5);
+		else
+			pr_err("[xhci] todo\n");
+	}
+
+	return count;
+}
+
+static int mtk_xhci_debug_proc_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, mtk_xhci_debug_proc_show, inode->i_private);
+}
+
+static const struct file_operations mtk_xhci_debug_proc_fops = {
+	.open   = mtk_xhci_debug_proc_open,
+	.write  = mtk_xhci_debug_proc_write,
+	.read   = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
+int mtk_xhci_init_debugfs(struct xhci_hcd *xhci)
+{
+	int	ret;
+	struct dentry *file;
+	struct dentry *root;
+	struct usb_hcd *hcd = xhci_to_hcd(xhci);
+	struct xhci_hcd_mtk *mtk = hcd_to_mtk(hcd);
+
+	root = debugfs_create_dir(
+		dev_driver_string(xhci_to_hcd(xhci)->self.controller), NULL);
+	if (!root) {
+		ret = -ENOMEM;
+		goto err0;
+	}
+
+	file = debugfs_create_file("regdump",
+			 0444, root, xhci, &mtk_xhci_regdump_fops);
+	if (!file) {
+		ret = -ENOMEM;
+		goto err1;
+	}
+
+	file = debugfs_create_file("debug",
+			0644, root, xhci, &mtk_xhci_debug_proc_fops);
+	if (!file) {
+		ret = -ENOMEM;
+		goto err1;
+	}
+
+	mtk->debugfs_root = root;
+
+	return 0;
+
+err1:
+	debugfs_remove_recursive(root);
+
+err0:
+	return ret;
+}
+
+void mtk_xhci_exit_debugfs(struct xhci_hcd *xhci)
+{
+	struct usb_hcd *hcd = xhci_to_hcd(xhci);
+	struct xhci_hcd_mtk *mtk = hcd_to_mtk(hcd);
+
+	debugfs_remove_recursive(mtk->debugfs_root);
+}

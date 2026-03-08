@@ -1,0 +1,11 @@
+#
+# Amazon Devices
+#
+
+config ACENNA
+	tristate "ACENNA"
+	default n
+	help
+	  This option enables support
+	  the ACENNA accelerator.
+	  If you are not sure, say N here.

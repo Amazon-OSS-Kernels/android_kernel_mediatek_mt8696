@@ -1,0 +1,62 @@
+#
+# Phy drivers for Mediatek devices
+#
+config PHY_MTK_TPHY
+    tristate "MediaTek T-PHY Driver"
+    depends on ARCH_MEDIATEK && OF
+    select GENERIC_PHY
+    help
+      Say 'Y' here to add support for MediaTek T-PHY driver,
+      it supports multiple usb2.0, usb3.0 ports, PCIe and
+	  SATA, and meanwhile supports two version T-PHY which have
+	  different banks layout, the T-PHY with shared banks between
+	  multi-ports is first version, otherwise is second veriosn,
+	  so you can easily distinguish them by banks layout.
+
+config PHY_MTK_USB3_I2C_FPGA
+	tristate "Mediatek FPGA USB I2C Driver"
+	depends on ARCH_MEDIATEK && OF
+	select GENERIC_PHY
+	help
+	  Enable this to support for Mediatek USB 3.0 PHY I2c Interface driver,
+	  MTK MD1122, MS0796 and so on.
+
+	  It supports multiple usb 2.0 and usb 3.0 ports.
+	  This i2c interface is internal bus special for Medaitek USB 3.0
+	  PHY transceiver. In general, these daughter card is used
+	  to develop or verify usb feature in FPGA environment.
+
+config PHY_MTK_A60810
+	tristate "Mediatek FPGA USB 2.0 PHY Driver"
+	depends on ARCH_MEDIATEK && OF
+	select PHY_MTK_USB3_I2C_FPGA
+	help
+	  Enable this to add support the transceiver that is Mediatek USB 2.0
+	  MD1122 PHY daughter board driver with chip AT60810AG.
+
+	  This driver controls the entire PHY block usb 2.0 PHYs.
+	  And we use xHCI IP MAC module that MTK customered.
+
+config PHY_MTK_A60931
+	tristate "Mediatek FPGA USB 3.0 PHY Driver"
+	depends on ARCH_MEDIATEK && OF
+	select PHY_MTK_USB3_I2C_FPGA
+	help
+	  Enable this to add support the transceiver that is Mediatek USB 3.0
+	  MS0796 PHY daughter board driver with chip A60931.
+
+	  This driver controls the entire PHY block usb 3.0/2.0 PHYs.
+	  And we use xHCI IP MAC module that MTK customered.
+
+config PHY_MTK_A60XXX
+	tristate "Mediatek FPGA USB 3.0 multi-PHY Driver"
+	depends on ARCH_MEDIATEK && OF
+	select PHY_MTK_USB3_I2C_FPGA
+	help
+	  Enable this to add support the transceiver that is Mediatek USB 3.0
+	  MS0796 PHY daughter board driver with chip AT60810AG.
+	  MD1122 PHY daughter board driver with chip A60931.
+
+	  This driver controls the entire PHY block usb 3.0/2.0 PHYs.
+	  And we use xHCI IP MAC module that MTK customered.
+

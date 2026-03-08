@@ -1,0 +1,626 @@
+/*
+ * Copyright (c) 2020 MediaTek Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/dts-v1/;
+#include "mt8696.dtsi"
+#include "kara_thermal_zones.dtsi"
+/ {
+	model = "MediaTek MT8696 P1V1 board";
+	compatible = "mediatek,mt8696p1v1", "mediatek,mt8696";
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0 0x40000000 0 0x20000000>;
+	};
+
+	chosen {
+		bootargs = "console=tty0 console=ttyS1,921600n1 \
+earlycon=uart8250,mmio32,0x11002400 \
+root=/dev/ram initrd=0x44000000,0x600000 \
+loglevel=8 initcall_debug=1 \
+androidboot.hardware=mt8696 androidboot.selinux=permissive";
+	};
+
+	extcon_usb: extcon_iddig {
+		compatible = "linux,extcon-usb-gpio";
+		status = "disabled";
+	};
+
+	/* WOW IRQ : GPIO0 => EINT0 */
+	mediatek,mt7921-wifi {
+		compatible = "mediatek,mt7921_wifi_ctrl";
+		interrupt-parent = <&pio>;
+		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
+		status = "okay";
+	};
+
+	/* WOBLE IRQ  EINT1 => GPIO12*/
+	mediatek,mt7921-bt {
+		compatible = "mediatek,woble_eint";
+		interrupt-parent = <&pio>;
+		interrupts = <12 IRQ_TYPE_LEVEL_LOW 1 0x0>;
+		status = "okay";
+	};
+
+	mmc_fixed_3v3: fixedregulator@0 {
+		compatible = "regulator-fixed";
+		regulator-name = "mmc_power";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		enable-active-high;
+	};
+
+	mmc_fixed_1v8_io: fixedregulator@1 {
+		compatible = "regulator-fixed";
+		regulator-name = "mmc_io";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		enable-active-high;
+	};
+
+	mmc2_fixed_pwr: fixedregulator@2 {
+		compatible = "regulator-fixed";
+		regulator-name = "sdio_power";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		enable-active-high;
+		regulator-always-on;
+	};
+
+	mmc2_fixed_pmu: fixedregulator@3 {
+		compatible = "regulator-fixed";
+		regulator-name = "sdio_pmu";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		startup-delay-us = <200000>;
+		gpio = <&pio 26 0>;
+		enable-active-high;
+	};
+
+	mp2152_vgpu: gpio-regulator {
+		compatible = "regulator-gpio";
+		regulator-name = "mp2152_vgpu";
+		regulator-min-microvolt = <800000>;
+		regulator-max-microvolt = <900000>;
+		enable-gpio = <&pio 2 GPIO_ACTIVE_HIGH>;
+		gpios = <&pio 28 GPIO_ACTIVE_HIGH>;
+		states = <800000 0x0
+			  900000 0x1>;
+		startup-delay-us = <5000>;
+		enable-active-high;
+	};
+
+	sound: sound {
+		compatible = "mediatek,mt8696-evb";
+		mediatek,platform = <&afe>;
+		status = "okay";
+	};
+
+	sound1: sound1 {
+		compatible = "mediatek,mt8696-card1";
+		mediatek,platform = <&afe32>;
+		mediatek,multi-in-audio-codec = <&earc_rx_codec>;
+		mediatek,multi-in-codec-dai-name = "mtk-earc-rx-codec-dai";
+		status = "okay";
+	};
+
+	usb_vbus_5v0: fixedregulator@4 {
+		compatible = "regulator-fixed";
+		regulator-name = "vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-type = "voltage";
+		regulator-always-on;
+	};
+
+	usb_vbus_3v3: fixedregulator@5 {
+		compatible = "regulator-fixed";
+		regulator-name = "usb vbus";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+	};
+
+	/* board sensor: thermistors */
+	thermistor0: thermistor0 {
+		compatible = "mtk,thermistor";
+		status = "okay";
+		device_name = "thermistor0";
+		pull_up_resistor  = <10000>;  /* 10K,pull up resister, was 33k before HVT */
+		over_critical_low = <195652>; /* base on 100K NTC temp default value -40 deg */
+		pull_up_voltage   = <1800>;   /* 1.8V ,pull up voltage */
+		ntc_table         = <7>;      /* need to be same for all thermistors */
+		adc_channel       = <0>;
+	};
+	thermistor1: thermistor1 {
+		compatible = "mtk,thermistor";
+		status = "okay";
+		device_name = "thermistor1";
+		pull_up_resistor  = <10000>;  /* 10K,pull up resister, was 33k before HVT */
+		over_critical_low = <195652>; /* base on 100K NTC temp default value -40 deg */
+		pull_up_voltage   = <1800>;   /* 1.8V ,pull up voltage */
+		ntc_table         = <7>;
+		adc_channel       = <1>;
+	};
+	//top sesnor
+	virtual_sensor0: virtual-sensor0 {
+		compatible = "amazon,virtual_sensor";
+		#thermal-sensor-cells = <0>;
+		vs_components {
+			vs_thermistor0 {
+				vs_name = "thermistor0";
+				offset = <(-33100)>;
+				alpha = <895>;
+				weight = <439>;
+			};
+			vs_thermistor1 {
+				vs_name = "thermistor1";
+				offset = <24500>;
+				alpha = <895>;
+				weight = <161>;
+			};
+		};
+		cooling_devices {
+		};
+	};
+        // bottom sensor
+	virtual_sensor1: virtual-sensor1 {
+		compatible = "amazon,virtual_sensor";
+		#thermal-sensor-cells = <0>;
+		vs_components {
+			/*vs_soc_thermal {
+				vs_name = "1100b800.thermal";
+				offset = <104050>;
+				alpha = <101>;
+				weight = <(-338)>;
+			};*/
+			vs_thermistor0 {
+				vs_name = "thermistor0";
+				offset = <73400>;
+				alpha = <744>;
+				weight = <55>;
+			};
+			vs_thermistor1 {
+				vs_name = "thermistor1";
+				offset = <(-12400)>;
+				alpha = <407>;
+				weight = <627>;
+			};
+		};
+		cooling_devices {
+		};
+	};
+	// side sensor
+	virtual_sensor2: virtual-sensor2 {
+		compatible = "amazon,virtual_sensor";
+		#thermal-sensor-cells = <0>;
+		vs_components {
+			vs_thermistor0 {
+				vs_name = "thermistor0";
+				offset = <(-24000)>;
+				alpha = <850>;
+				weight = <544>;
+			};
+			vs_thermistor1 {
+				vs_name = "thermistor1";
+				offset = <51600>;
+				alpha = <850>;
+				weight = <84>;
+			};
+		};
+		cooling_devices {
+		};
+	};
+
+	amzn_thermal: amzn_thermal@0 {
+		compatible = "amazon,amzn-thermal";
+		cooling_devices{
+			cpufreq_cool_cluster0 {
+				min_state = <1000000>; /* no effect now */
+				dyn_coeff = <140>; /* no effect now */
+				cluster_id = <0>; /* no effect now */
+				node_name = "cpus";
+				device_type = "cpufreq";
+			};
+			cpucore_cool_cluster0 {
+				min_state = <1>;
+				dyn_coeff = <0>;
+				cluster_id = <0>;
+				node_name = "cpu_core_cluster0";
+				device_type = "cpucore";
+			};
+			gpufreq_cool {
+				min_state = <400>;
+				dyn_coeff = <437>;
+				cluster_id = <0>;
+				node_name = "gpu";
+				device_type = "gpufreq";
+			};
+			wifi_cool_device {
+				min_state = <0>;
+				node_name = "wifi_cool";
+				device_type = "wifi";
+			};
+		};
+		cpu_cluster0:cpu_core_cluster0 {
+			#cooling-cells = <2>; /* min followed by max */
+		};
+		wifi_cool:wifi_cool {
+			#cooling-cells = <2>; /* min followed by max */
+		};
+	};
+};
+
+&afe {
+	mediatek,etdm-clock-modes = <0 1>;
+	mediatek,etdm-out-data-modes = <1 1>;
+	mediatek,etdm-in-data-modes = <1 1>;
+	mediatek,hdmi-clk-force-on = <1>;
+	status = "okay";
+};
+
+&afe32 {
+	mediatek,etdm-in-data-modes = <0 1 0>;
+	mediatek,etdm-out-data-modes = <1 1 1>;
+	mediatek,spdif-in-arc-mux = <2>;
+	status = "okay";
+};
+
+&auxadc {
+	status = "okay";
+};
+
+&dvfsp {
+	vsram = <1>;
+	brd-gpios = <&pio 21 0>,
+		<&pio 20 0>,
+		<&pio 19 0>;
+};
+
+&fstab {
+	vendor {
+		compatible = "android,vendor";
+		dev = "/dev/block/platform/soc/11230000.mmc/by-name/vendor";
+		type = "ext4";
+		mnt_flags = "ro";
+		fsmgr_flags = "wait,verify";
+	};
+};
+
+&hdmitx {
+	pinctrl-names = "default";
+	pinctrl-0 = <&hdmi_default>;
+};
+
+&i2c3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c3_pins>;
+	status = "okay";
+	clock-frequency = <400000>;
+
+	ma5721_vsram_reg: rt5738_buck@55 {
+		compatible = "richtek,rt5738l";
+		status = "okay";
+		reg = <0x55>;
+		regulator-name = "VSRAM";
+		regulator-min-microvolt = <300000>;
+		regulator-max-microvolt = <1300000>;
+		regulator-always-on;
+		regulator-boot-on;
+		ramp_up = <1>; /* 1 : 12mV/us */
+		ramp_down = <3>; /* 3 : 3mV/us */
+	};
+
+	mt6395: mt6395@62 {
+		compatible = "mediatek,mt6395-regulator";
+		mt6395,irq-gpios = <&pio 4 0x0>;
+		reg = <0x62>;
+		status = "okay";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pmic_pins_eint>;
+	};
+};
+
+&i2c5 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c5_pins>;
+	status = "okay";
+	tmp103a: tmp103@70 {
+		compatible = "ti,tmp103";
+		device_name = "tmp103a";
+		reg = <0x70>;
+	};
+
+	tmp103c: tmp103@72 {
+		compatible = "ti,tmp103";
+		device_name = "tmp103c";
+		reg = <0x72>;
+	};
+};
+
+
+
+&irrx {
+	pinctrl-names = "default";
+	pinctrl-0 = <&irrx_pins_ir_input>;
+	status = "disabled";
+};
+
+&mfg {
+	reg-vgpu-supply = <&mp2152_vgpu>;
+};
+
+&mmc0 {
+	status = "okay";
+	pinctrl-names = "default", "state_uhs";
+	pinctrl-0 = <&mmc0_pins_default>;
+	pinctrl-1 = <&mmc0_pins_uhs>;
+	bus-width = <8>;
+	max-frequency = <200000000>;
+	cap-mmc-highspeed;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	cap-cqe;
+	cap-cqe_dcmd;
+	hs400-ds-delay = <0x13014>;
+	vmmc-supply = <&mmc_fixed_3v3>;
+	vqmmc-supply = <&mmc_fixed_1v8_io>;
+	non-removable;
+	no-sd;
+	no-sdio;
+};
+
+&mmc2 {
+	status = "okay";
+	pinctrl-names = "default", "state_uhs", "state_eint",
+					"state_dat1", "state_low";
+	pinctrl-0 = <&mmc2_pins_default>;
+	pinctrl-1 = <&mmc2_pins_uhs>;
+	pinctrl-2 = <&mmc2_pins_eint>;
+	pinctrl-3 = <&mmc2_pins_dat1>;
+	pinctrl-4 = <&mmc2_pins_low>;
+	eint-gpios = <&pio 44 0>;
+	bus-width = <4>;
+	max-frequency = <200000000>;
+	cap-sd-highspeed;
+	/*sd-uhs-ddr208;*/
+	sd-uhs-sdr104;
+	sd-uhs-sdr50;
+	sd-uhs-sdr25;
+	keep-power-in-suspend;
+	enable-sdio-wakeup;
+	cap-sdio-irq;
+	no-mmc;
+	no-sd;
+	non-removable;
+	vmmc-supply = <&mmc2_fixed_pwr>;
+	vqmmc-supply = <&mmc2_fixed_pmu>;
+};
+
+&pio {
+	hdmi_default: hdmi {
+		hdmi_cec {
+			pinmux = <PINMUX_GPIO110__FUNC_HDMITX20_CEC>;
+			bias-disable;
+		};
+		hdmi_pins {
+			pinmux = <PINMUX_GPIO112__FUNC_HDMITX20_SCL>,
+				<PINMUX_GPIO113__FUNC_HDMITX20_SDA>;
+			bias-disable;
+		};
+		hdmi_hotplug {
+			pinmux = <PINMUX_GPIO111__FUNC_HDMITX20_HTPLG>;
+			bias-pull-down;
+		};
+		hdmi_5vctl {
+			pinmux = <PINMUX_GPIO2__FUNC_GPIO2>;
+		};
+	};
+
+	irrx_pins_ir_input: irrx_pin_ir {
+		pins_cmd_dat {
+			pinmux = <PINMUX_GPIO63__FUNC_IR_IN>;
+			bias-disable;
+		};
+	};
+
+	mmc0_pins_default: mmc0default {
+		pins_cmd_dat {
+			pinmux = <PINMUX_GPIO56__FUNC_MSDC0_DAT0>,
+				 <PINMUX_GPIO55__FUNC_MSDC0_DAT1>,
+				 <PINMUX_GPIO54__FUNC_MSDC0_DAT2>,
+				 <PINMUX_GPIO53__FUNC_MSDC0_DAT3>,
+				 <PINMUX_GPIO52__FUNC_MSDC0_DAT4>,
+				 <PINMUX_GPIO51__FUNC_MSDC0_DAT5>,
+				 <PINMUX_GPIO50__FUNC_MSDC0_DAT6>,
+				 <PINMUX_GPIO49__FUNC_MSDC0_DAT7>,
+				 <PINMUX_GPIO57__FUNC_MSDC0_CMD>;
+			input-enable;
+			bias-pull-up;
+		};
+
+		pins_clk {
+			pinmux = <PINMUX_GPIO48__FUNC_MSDC0_CLK>;
+			bias-pull-down;
+		};
+
+		pins_rst {
+			pinmux = <PINMUX_GPIO58__FUNC_MSDC0_RSTB>;
+			bias-pull-up;
+		};
+	};
+
+	mmc0_pins_uhs: mmc0 {
+		pins_cmd_dat {
+			pinmux = <PINMUX_GPIO56__FUNC_MSDC0_DAT0>,
+				 <PINMUX_GPIO55__FUNC_MSDC0_DAT1>,
+				 <PINMUX_GPIO54__FUNC_MSDC0_DAT2>,
+				 <PINMUX_GPIO53__FUNC_MSDC0_DAT3>,
+				 <PINMUX_GPIO52__FUNC_MSDC0_DAT4>,
+				 <PINMUX_GPIO51__FUNC_MSDC0_DAT5>,
+				 <PINMUX_GPIO50__FUNC_MSDC0_DAT6>,
+				 <PINMUX_GPIO49__FUNC_MSDC0_DAT7>,
+				 <PINMUX_GPIO57__FUNC_MSDC0_CMD>;
+			input-enable;
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
+		};
+
+		pins_clk {
+			pinmux = <PINMUX_GPIO48__FUNC_MSDC0_CLK>;
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;
+		};
+
+		pins_ds {
+			pinmux = <PINMUX_GPIO47__FUNC_MSDC0_DSL>;
+			drive-strength = <MTK_DRIVE_6mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;
+		};
+
+		pins_rst {
+			pinmux = <PINMUX_GPIO58__FUNC_MSDC0_RSTB>;
+			bias-pull-up;
+		};
+	};
+
+	mmc2_pins_default: mmc2default {
+		pins_clk {
+			pinmux = <PINMUX_GPIO40__FUNC_MSDC2_CLK>;
+			drive-strength = <MTK_DRIVE_6mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;
+		};
+
+		pins_cmd_dat {
+			pinmux = <PINMUX_GPIO45__FUNC_MSDC2_DAT0>,
+				 <PINMUX_GPIO44__FUNC_MSDC2_DAT1>,
+				 <PINMUX_GPIO43__FUNC_MSDC2_DAT2>,
+				 <PINMUX_GPIO42__FUNC_MSDC2_DAT3>,
+				 <PINMUX_GPIO46__FUNC_MSDC2_CMD>;
+			input-enable;
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
+		};
+	};
+
+	mmc2_pins_uhs: mmc2 {
+		pins_clk {
+			pinmux = <PINMUX_GPIO40__FUNC_MSDC2_CLK>;
+			drive-strength = <MTK_DRIVE_6mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;
+		};
+
+		pins_cmd_dat {
+			pinmux = <PINMUX_GPIO45__FUNC_MSDC2_DAT0>,
+				 <PINMUX_GPIO44__FUNC_MSDC2_DAT1>,
+				 <PINMUX_GPIO43__FUNC_MSDC2_DAT2>,
+				 <PINMUX_GPIO42__FUNC_MSDC2_DAT3>,
+				 <PINMUX_GPIO46__FUNC_MSDC2_CMD>;
+			input-enable;
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
+		};
+
+		pins_ds {
+			pinmux = <PINMUX_GPIO41__FUNC_MSDC2_DSL>;
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;
+		};
+	};
+
+	mmc2_pins_eint: dat1_eint {
+		pins_dat1 {
+			pinmux = <PINMUX_GPIO44__FUNC_GPIO44>;
+			input-enable;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
+		};
+	};
+
+	mmc2_pins_dat1: sdio_dat1 {
+		pins_dat1 {
+			pinmux = <PINMUX_GPIO44__FUNC_MSDC2_DAT1>;
+			input-enable;
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
+		};
+	};
+
+	mmc2_pins_low: sdio_low {
+		pins_low {
+			pinmux = <PINMUX_GPIO45__FUNC_GPIO45>,
+				 <PINMUX_GPIO43__FUNC_GPIO43>,
+				 <PINMUX_GPIO42__FUNC_GPIO42>,
+				 <PINMUX_GPIO46__FUNC_GPIO46>,
+				 <PINMUX_GPIO41__FUNC_GPIO41>;
+			input-disable;
+			bias-disable;
+		};
+	};
+
+	pmic_pins_eint: pmic_pins_eint{
+		pmic_pins {
+			pinmux = <PINMUX_GPIO4__FUNC_GPIO4>;
+			bias-disable;
+		};
+	};
+
+	i2c3_pins: i2c3{
+		pins_bus {
+			pinmux = <PINMUX_GPIO74__FUNC_SDA3>,
+				 <PINMUX_GPIO73__FUNC_SCL3>;
+			drive-strength = <MTK_I2C_DRIVE_001>;
+			bias-pull-up = <MTK_RSEL_SET_R1R0_10>;
+			input-enable;
+		};
+	};
+
+	i2c5_pins: i2c5{
+		pins_bus {
+			pinmux = <PINMUX_GPIO115__FUNC_SDA5>,
+				 <PINMUX_GPIO114__FUNC_SCL5>;
+			drive-strength = <MTK_I2C_DRIVE_001>;
+			bias-disable;
+			input-enable;
+		};
+	};
+};
+
+&ssusb {
+	vusb33-supply = <&usb_vbus_3v3>;
+	vbus-supply = <&usb_vbus_5v0>;
+	/* valid string: "", "host", "peripheral", "otg" */
+	dr_mode = "otg";
+
+	/*usb3-lpm-capable;*/
+	/* wakeup-source; */
+	maximum-speed = "high-speed";
+	enable-manual-drd;
+
+	default_mode = "peripheral";
+	u3-should-port = <0>;
+
+	status = "okay";
+};
+
+&scpsys {
+	mfg-supply = <&mp2152_vgpu>;
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+};
+
+#include "mt6395.dtsi"

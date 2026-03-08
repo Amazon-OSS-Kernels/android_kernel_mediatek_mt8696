@@ -1,0 +1,240 @@
+/*
+ * Copyright (C) 2015 MediaTek Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
+#ifndef CMDQ_EVENT_COMMON
+#define CMDQ_EVENT_COMMON
+
+/* Define CMDQ events
+ *
+ * For hardware event must define in device tree.
+ * For SW event assign event ID here directly.
+ *
+ * Note: event name must sync to cmdq_events table in cmdq_event_common.c
+ */
+enum cmdq_event {
+	/* start frame */
+	CMDQ_EVENT_M_VDO_MAIN_SOF,			/* 0 */
+	CMDQ_EVENT_M_VDO_AUX_SOF,			/* 1 */
+	CMDQ_EVENT_M_FE_FIFO_SOF,			/* 2 */
+	CMDQ_EVENT_M_FILM_GRAIN_SOF_0,		/* 3 */
+	CMDQ_EVENT_M_FILM_GRAIN_SOF_1,		/* 4 */
+	CMDQ_EVENT_M_FILM_GRAIN_SOF_2,		/* 5 */
+	CMDQ_EVENT_M_DOLBY_FE_SOF,			/* 6 */
+	CMDQ_EVENT_S_VDO_MAIN_SOF,			/* 7 */
+	CMDQ_EVENT_S_VDO_AUX_SOF,			/* 8 */
+	CMDQ_EVENT_S_FE_FIFO_SOF,			/* 9 */
+	CMDQ_EVENT_S_FILM_GRAIN_SOF_0,		/* 10 */
+	CMDQ_EVENT_S_FILM_GRAIN_SOF_1,		/* 11 */
+	CMDQ_EVENT_S_FILM_GRAIN_SOF_2,		/* 12 */
+	CMDQ_EVENT_S_DOLBY_FE_SOF,			/* 13 */
+	CMDQ_EVENT_UHD_OSD_SOF,				/* 14 */
+	CMDQ_EVENT_UHD_FE_FIFO_SOF,			/* 15 */
+	CMDQ_EVENT_UHD_DOLBY_FE_SOF,		/* 16 */
+	CMDQ_EVENT_FHD_OSD_SOF,				/* 17 */
+	CMDQ_EVENT_FHD_FE_FIFO_SOF,			/* 18 */
+	CMDQ_EVENT_FHD_DOLBY_FE_SOF,		/* 19 */
+	CMDQ_EVENT_DISP_MIX_SOF,			/* 20 */
+	CMDQ_EVENT_DOLBY_BE_SOF,			/* 21 */
+	CMDQ_EVENT_BE_FIFO_SOF,				/* 22 */
+	CMDQ_EVENT_DISP_MENU_LOAD_SOF,		/* 23 */
+	CMDQ_EVENT_MMSYS_MENU_LOAD_SOF,		/* 24 */
+	CMDQ_EVENT_VM_SOF,					/* 25 */
+	CMDQ_EVENT_M_R2R_SOF,				/* 26 */
+	CMDQ_EVENT_M_FILM_GRAIN_SOF_3,		/* 27 */
+	CMDQ_EVENT_M_FILM_GRAIN_SOF_4,		/* 28 */
+	CMDQ_EVENT_S_FILM_GRAIN_SOF_3,		/* 29 */
+	CMDQ_EVENT_S_FILM_GRAIN_SOF_4,		/* 30 */
+	/* 31 reserved*/
+	CMDQ_EVENT_FMT_AUX0_IRQ = 32,		/* 32 */
+	CMDQ_EVENT_FMT_AUX1_IRQ,			/* 33 */
+	CMDQ_EVENT_FMT_AUX2_IRQ,			/* 34 */
+	CMDQ_EVENT_FMT_AUX3_IRQ,				/* 35 */
+	CMDQ_EVENT_SCRAMBLE_CLIENT_TRIG,		/* 36 */
+	CMDQ_EVENT_FHD_HDR_GFX_DM_AUTOD_TRIG,	/* 37 */
+	CMDQ_EVENT_FHD_HDR_GFX_THDR_AUTOD_TRIG,	/* 38 */
+	CMDQ_EVENT_UHD_HDR_GFX_THDR_AUTOD_TRIG,	/* 39 */
+	CMDQ_EVENT_UHD_HDR_GFX_DM_AUTOD_TRIG,	/* 40 */
+	/* 41 reserved*/
+	/* 42 reserved*/
+	/* 43 reserved*/
+	/* 44 reserved*/
+
+	/* mmsys_top_irq_b */
+	CMDQ_EVENT_HDMI_METADATA_IRQ_B = 45,	/* 45 */
+	CMDQ_EVENT_VIDEO_IN_IRQ_B,				/* 46 */
+	CMDQ_EVENT_W2D_IRQ_B,					/* 47 */
+	CMDQ_EVENT_VIDEO_MARK_IRQ_B,			/* 48 */
+	CMDQ_EVENT_FHD_OSD_UNDER_RUN_IRQ_B,		/* 49 */
+	CMDQ_EVENT_FHD_OSD_FRAME_START_IRQ_B,	/* 50 */
+	CMDQ_EVENT_FHD_OSD_FRAME_END_IRQ_B,		/* 51 */
+	CMDQ_EVENT_FHD_OSD_IRQ_B,				/* 52 */
+	CMDQ_EVENT_FHD_OSD_DIV_OVFL_IRQ_B,		/* 53 */
+	CMDQ_EVENT_UHD_GFX_FE_FIFO_IRQ_B,		/* 54 */
+	CMDQ_EVENT_UHD_HDR_GFX_FE_IRQ_B,		/* 55 */
+	CMDQ_EVENT_FHD_OSD_FBDC_IRQ_B,			/* 56 */
+	CMDQ_EVENT_LARB0_IRQ_B,					/* 57 */
+	CMDQ_EVENT_OSD_UHD_DUMMY_IRQ_B,			/* 58 (RESEVED) */
+	CMDQ_EVENT_OSD2_UNDER_RUN_IRQ_B,		/* 59 */
+	CMDQ_EVENT_OSD2_FRAME_START_IRQ_B,		/* 60 */
+	CMDQ_EVENT_OSD2_FRAME_END_IRQ_B,		/* 61 */
+	CMDQ_EVENT_OSD2_IRQ_B,					/* 62 */
+	CMDQ_EVENT_OSD2_DIV_OVFL_IRQ_B,			/* 63 */
+	CMDQ_EVENT_FHD_GFX_FE_FIFO_IRQ_B,		/* 64 */
+	CMDQ_EVENT_FHD_HDR_GFX_FE_IRQ_B,		/* 65 */
+	CMDQ_EVENT_OSD2_FBDC_IRQ_B,				/* 66 */
+	CMDQ_EVENT_LARB4_IRQ_B,					/* 67 */
+	CMDQ_EVENT_VDO_BE_IRQ_B,				/* 68 RESERVED*/
+	CMDQ_EVENT_VDO_BE_FIFO_FRAME_DONE_IRQ,	/* 69 */
+	CMDQ_EVENT_VSYNC_IRQ_B,					/* 70 */
+	CMDQ_EVENT_VSYNC_ACT_STA_IRQ_B,			/* 71 */
+	CMDQ_EVENT_VSYNC_ACT_END_IRQ_B,			/* 72 */
+	CMDQ_EVENT_FMT_INT0_IRQ_B,				/* 73 */
+	CMDQ_EVENT_FMT_INT1_IRQ_B,				/* 74 */
+	CMDQ_EVENT_FMT_INT2_IRQ_B,				/* 75 */
+	CMDQ_EVENT_FMT_INT3_IRQ_B,				/* 76 */
+	CMDQ_EVENT_FMT_SOF_MERGE_IRQ_B,			/* 77 */
+	CMDQ_EVENT_DISP_MIX_IRQ_B,				/* 78 */
+	CMDQ_EVENT_FMT_DUMMY0_IRQ_B,			/* 79 RESERVED*/
+	CMDQ_EVENT_VDO_BE_FIFO_RDY2DE_IRQ_B,	/* 80 */
+	CMDQ_EVENT_XIU_TIMEOUT_INT_B,			/* 81 RESERVED*/
+	CMDQ_EVENT_SC_ERROR_RESP_INT_B,			/* 82 RESERVED*/
+	CMDQ_EVENT_DYN_SCL_INT_B,				/* 83 RESERVED*/
+	CMDQ_EVENT_MMSYS_DUMMY2_IRQ_B,			/* 84 RESERVED*/
+	CMDQ_EVENT_MMSYS_DUMMY1_IRQ_B,			/* 85 RESERVED*/
+	CMDQ_EVENT_MMSYS_DUMMY0_IRQ_B,			/* 86 RESERVED*/
+	CMDQ_EVENT_HDMI_TX_EVENT,				/* 87 RESERVED*/
+
+	CMDQ_EVENT_DISP_MIX_FRAME_DONE = 100,	/* 100 */
+
+	/* Keep this at the end of HW events */
+	CMDQ_MAX_HW_EVENT_COUNT = 512,
+
+	/* token 512 to 639 may set secure */
+
+	/* SW Sync Tokens (User-defined) */
+	CMDQ_SYNC_TOKEN_USER_0 = 649,			/* 649 */
+	CMDQ_SYNC_TOKEN_USER_1,					/* 650 */
+	CMDQ_SYNC_TOKEN_POLL_MONITOR,			/* 651 */
+	/* SW Sync Tokens (Pre-defined) */
+	/* Config thread notify trigger thread */
+	CMDQ_SYNC_TOKEN_CONFIG_DIRTY = 640,
+
+	/* Event for CMDQ to block executing command when append command
+	 * Plz sync CMDQ_SYNC_TOKEN_APPEND_THR(id) in cmdq_core source file.
+	 */
+	CMDQ_SYNC_TOKEN_APPEND_THR0 = 670,
+	CMDQ_SYNC_TOKEN_APPEND_THR1,			/* 671 */
+	CMDQ_SYNC_TOKEN_APPEND_THR2,			/* 672 */
+	CMDQ_SYNC_TOKEN_APPEND_THR3,			/* 673 */
+	CMDQ_SYNC_TOKEN_APPEND_THR4,			/* 674 */
+	CMDQ_SYNC_TOKEN_APPEND_THR5,			/* 675 */
+	CMDQ_SYNC_TOKEN_APPEND_THR6,			/* 676 */
+	CMDQ_SYNC_TOKEN_APPEND_THR7,			/* 677 */
+	CMDQ_SYNC_TOKEN_APPEND_THR8,			/* 678 */
+	CMDQ_SYNC_TOKEN_APPEND_THR9,			/* 679 */
+	CMDQ_SYNC_TOKEN_APPEND_THR10,			/* 680 */
+	CMDQ_SYNC_TOKEN_APPEND_THR11,			/* 681 */
+	CMDQ_SYNC_TOKEN_APPEND_THR12,			/* 682 */
+	CMDQ_SYNC_TOKEN_APPEND_THR13,			/* 683 */
+	CMDQ_SYNC_TOKEN_APPEND_THR14,			/* 684 */
+	CMDQ_SYNC_TOKEN_APPEND_THR15,			/* 685 */
+	CMDQ_SYNC_TOKEN_APPEND_THR16,			/* 686 */
+	CMDQ_SYNC_TOKEN_APPEND_THR17,			/* 687 */
+	CMDQ_SYNC_TOKEN_APPEND_THR18,			/* 688 */
+	CMDQ_SYNC_TOKEN_APPEND_THR19,			/* 689 */
+	CMDQ_SYNC_TOKEN_APPEND_THR20,			/* 690 */
+	CMDQ_SYNC_TOKEN_APPEND_THR21,			/* 691 */
+	CMDQ_SYNC_TOKEN_APPEND_THR22,			/* 692 */
+	CMDQ_SYNC_TOKEN_APPEND_THR23,			/* 693 */
+
+	/* secure world notify normal world task done */
+	CMDQ_SYNC_TOKEN_SEC_DONE,			/* 694 */
+
+	/* token after 700 sync user space header */
+
+	/* GPR access tokens (for HW register backup)
+	 * There are 15 32-bit GPR, 3 GPR form a set
+	 * (64-bit for address, 32-bit for value)
+	 */
+	CMDQ_SYNC_TOKEN_GPR_SET_0 = 700,
+	CMDQ_SYNC_TOKEN_GPR_SET_1,			/* 701 */
+	CMDQ_SYNC_TOKEN_GPR_SET_2,			/* 702 */
+	CMDQ_SYNC_TOKEN_GPR_SET_3,			/* 703 */
+	CMDQ_SYNC_TOKEN_GPR_SET_4,			/* 704 */
+
+	/* Resource lock event to control resource in GCE thread */
+	CMDQ_SYNC_RESOURCE_WROT0 = 710,
+	CMDQ_SYNC_RESOURCE_WROT1 = 711,
+
+	/**
+	 * Event for CMDQ delay implement
+	 * Plz sync CMDQ_SYNC_TOKEN_DELAY_THR(id) in cmdq_core source file.
+	 */
+	CMDQ_SYNC_TOKEN_TIMER = 720,
+	CMDQ_SYNC_TOKEN_DELAY_SET0 = 721,
+	CMDQ_SYNC_TOKEN_DELAY_SET1 = 722,
+	CMDQ_SYNC_TOKEN_DELAY_SET2 = 723,
+
+	/* GCE reserved hw event */
+	CMDQ_OUT_EVENT = 898,
+
+	/* GCE HW TPR Event*/
+	CMDQ_EVENT_TIMER_00 = 962,
+	CMDQ_EVENT_TIMER_01 = 963,
+	CMDQ_EVENT_TIMER_02 = 964,
+	CMDQ_EVENT_TIMER_03 = 965,
+	CMDQ_EVENT_TIMER_04 = 966,
+	/* 5: 1us */
+	CMDQ_EVENT_TIMER_05 = 967,
+	CMDQ_EVENT_TIMER_06 = 968,
+	CMDQ_EVENT_TIMER_07 = 969,
+	/* 8: 10us */
+	CMDQ_EVENT_TIMER_08 = 970,
+	CMDQ_EVENT_TIMER_09 = 971,
+	CMDQ_EVENT_TIMER_10 = 972,
+	/* 11: 100us */
+	CMDQ_EVENT_TIMER_11 = 973,
+	CMDQ_EVENT_TIMER_12 = 974,
+	CMDQ_EVENT_TIMER_13 = 975,
+	CMDQ_EVENT_TIMER_14 = 976,
+	/* 15: 1ms */
+	CMDQ_EVENT_TIMER_15 = 977,
+	CMDQ_EVENT_TIMER_16 = 978,
+	CMDQ_EVENT_TIMER_17 = 979,
+	/* 18: 10ms */
+	CMDQ_EVENT_TIMER_18 = 980,
+	CMDQ_EVENT_TIMER_19 = 981,
+	CMDQ_EVENT_TIMER_20 = 982,
+	/* 21: 100ms */
+	CMDQ_EVENT_TIMER_21 = 983,
+	CMDQ_EVENT_TIMER_22 = 984,
+	CMDQ_EVENT_TIMER_23 = 985,
+	CMDQ_EVENT_TIMER_24 = 986,
+	CMDQ_EVENT_TIMER_25 = 987,
+	CMDQ_EVENT_TIMER_26 = 988,
+	CMDQ_EVENT_TIMER_27 = 989,
+	CMDQ_EVENT_TIMER_28 = 990,
+	CMDQ_EVENT_TIMER_29 = 991,
+	CMDQ_EVENT_TIMER_30 = 992,
+	CMDQ_EVENT_TIMER_31 = 993,
+
+	/* GPR timer token, 994 to 994+23 */
+	CMDQ_EVENT_TIMER_GPR = 994,
+
+	/* event id is 9 bit */
+	CMDQ_SYNC_TOKEN_MAX = 0x3FF,
+	CMDQ_SYNC_TOKEN_INVALID = -1,
+};
+
+
+#endif

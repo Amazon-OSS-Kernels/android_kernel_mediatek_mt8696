@@ -1,0 +1,395 @@
+/*
+ * Copyright (c) 2020 MediaTek Inc.
+ *
+ * SPDX-License-Identifier: (GPL-2.0 OR MIT)
+ */
+
+&clkao {
+	status = "disabled";
+
+	bring-up {
+		compatible = "mediatek,clk-bring-up";
+		clocks =
+			<&apmixedsys CLK_APMIXED_MAINPLL>,
+			<&apmixedsys CLK_APMIXED_UNIVPLL>,
+			<&apmixedsys CLK_APMIXED_VDECPLL>,
+			<&apmixedsys CLK_APMIXED_ETHERPLL>,
+			<&apmixedsys CLK_APMIXED_OSDPLL>,
+			<&apmixedsys CLK_APMIXED_APLL1>,
+			<&apmixedsys CLK_APMIXED_APLL2>,
+			<&apmixedsys CLK_APMIXED_APLL3>,
+			<&apmixedsys CLK_APMIXED_APLL4>,
+			<&apmixedsys CLK_APMIXED_APLL5>,
+			<&apmixedsys CLK_APMIXED_HDMIRX_APLL>,
+			<&apmixedsys CLK_APMIXED_MSDCPLL>,
+			<&apmixedsys CLK_APMIXED_TVDPLL>,
+			<&apmixedsys CLK_APMIXED_MMPLL>,
+			<&apmixedsys CLK_APMIXED_ARMPLL>,
+			<&apmixedsys CLK_APMIXED_CCIPLL>,
+			<&apmixedsys CLK_APMIXED_VDECPLL_27M>,
+			<&topckgen CLK_TOP_MEMREF_104_SEL>,
+			<&topckgen CLK_TOP_MEM52M_SEL>,
+			<&topckgen CLK_TOP_SD_SEL>,
+			<&topckgen CLK_TOP_MMSEL>,
+			<&topckgen CLK_TOP_VDEC_SEL>,
+			<&topckgen CLK_TOP_VDEC_SLOW_SEL>,
+			<&topckgen CLK_TOP_VENC_SEL>,
+			<&topckgen CLK_TOP_MFG_SEL>,
+			<&topckgen CLK_TOP_RSZ_SEL>,
+			<&topckgen CLK_TOP_UART_SEL>,
+			<&topckgen CLK_TOP_SPI_SEL>,
+			<&topckgen CLK_TOP_USB20_SEL>,
+			<&topckgen CLK_TOP_USB30_SEL>,
+			<&topckgen CLK_TOP_MSDC50_0_HC_SEL>,
+			<&topckgen CLK_TOP_MSDC50_0_SEL>,
+			<&topckgen CLK_TOP_MSDC30_1_SEL>,
+			<&topckgen CLK_TOP_MSDC30_2_SEL>,
+			<&topckgen CLK_TOP_MSDC50_2_HC_SEL>,
+			<&topckgen CLK_TOP_MSDC0P_AESSEL>,
+			<&topckgen CLK_TOP_INTDIR_SEL>,
+			<&topckgen CLK_TOP_AUDIO_SEL>,
+			<&topckgen CLK_TOP_AUDIO_26MSEL>,
+			<&topckgen CLK_TOP_AUD_INTBUSSEL>,
+			<&topckgen CLK_TOP_APLL_SEL>,
+			<&topckgen CLK_TOP_APLL2_SEL>,
+			<&topckgen CLK_TOP_APLL3_SEL>,
+			<&topckgen CLK_TOP_APLL4_SEL>,
+			<&topckgen CLK_TOP_APLL5_SEL>,
+			<&topckgen CLK_TOP_APLL6_SEL>,
+			<&topckgen CLK_TOP_A1SYSHP_SEL>,
+			<&topckgen CLK_TOP_A2SYSHP_SEL>,
+			<&topckgen CLK_TOP_A3SYSHP_SEL>,
+			<&topckgen CLK_TOP_A4SYSHP_SEL>,
+			<&topckgen CLK_TOP_ASML_SEL>,
+			<&topckgen CLK_TOP_ASMM_SEL>,
+			<&topckgen CLK_TOP_ASMH_SEL>,
+			<&topckgen CLK_TOP_AUD_IEC_SEL>,
+			<&topckgen CLK_TOP_I2SO1_SEL>,
+			<&topckgen CLK_TOP_I2SO2_SEL>,
+			<&topckgen CLK_TOP_I2SI1_SEL>,
+			<&topckgen CLK_TOP_I2SI2_SEL>,
+			<&topckgen CLK_TOP_RV33_SEL>,
+			<&topckgen CLK_TOP_STC_TOP_27MSEL>,
+			<&topckgen CLK_TOP_OSD_SEL>,
+			<&topckgen CLK_TOP_VDO3_SEL>,
+			<&topckgen CLK_TOP_VDO4_SEL>,
+			<&topckgen CLK_TOP_HD_SEL>,
+			<&topckgen CLK_TOP_NR_SEL>,
+			<&topckgen CLK_TOP_PE2_MAC_P0_SEL>,
+			<&topckgen CLK_TOP_HDCP_SEL>,
+			<&topckgen CLK_TOP_HDCP_24MSEL>,
+			<&topckgen CLK_TOP_RTC_SEL>,
+			<&topckgen CLK_TOP_SPINOR_SEL>,
+			<&topckgen CLK_TOP_ETH_250MSEL>,
+			<&topckgen CLK_TOP_ETH_125MSEL>,
+			<&topckgen CLK_TOP_ETH_50MRMSEL>,
+			<&topckgen CLK_TOP_I2C_SEL>,
+			<&topckgen CLK_TOP_PWMINFRA_SEL>,
+			<&topckgen CLK_TOP_GCPU_SEL>,
+			<&topckgen CLK_TOP_ECC_SEL>,
+			<&topckgen CLK_TOP_DI_SEL>,
+			<&topckgen CLK_TOP_NFI2X_SEL>,
+			<&topckgen CLK_TOP_SPINFI_SEL>,
+			<&topckgen CLK_TOP_HD20_DACR_SEL>,
+			<&topckgen CLK_TOP_HD20_HDCP_SEL>,
+			<&topckgen CLK_TOP_HDMI_SEL>,
+			<&topckgen CLK_TOP_NNA0_SEL>,
+			<&topckgen CLK_TOP_HDMI_APB_SEL>,
+			<&topckgen CLK_TOP_CUPMSEL>,
+			<&topckgen CLK_TOP_APLL1_REF_SEL>,
+			<&topckgen CLK_TOP_APLL2_REF_SEL>,
+			<&topckgen CLK_TOP_APLL3_REF_SEL>,
+			<&topckgen CLK_TOP_APLL4_REF_SEL>,
+			<&topckgen CLK_TOP_APLL5_REF_SEL>,
+			<&topckgen CLK_TOP_HDMIRX_APLL_SEL>,
+			<&topckgen CLK_TOP_I2SI1_M>,
+			<&topckgen CLK_TOP_I2SI2_M>,
+			<&topckgen CLK_TOP_I2SO1_M>,
+			<&topckgen CLK_TOP_I2SO2_M>,
+			<&topckgen CLK_TOP_AUD_IEC>,
+			<&topckgen CLK_TOP_APLL12_DIV0>,
+			<&topckgen CLK_TOP_APLL12_DIV1>,
+			<&topckgen CLK_TOP_APLL12_DIV2>,
+			<&topckgen CLK_TOP_APLL12_DIV3>,
+			<&topckgen CLK_TOP_APLL12_DIV4>,
+			<&topckgen CLK_TOP_APLL1_D3AB>,
+			<&topckgen CLK_TOP_APLL2_D3AB>,
+			<&topckgen CLK_TOP_APLL3_D3AB>,
+			<&topckgen CLK_TOP_APLL4_D3AB>,
+			<&topckgen CLK_TOP_APLL5_D3AB>,
+			<&topckgen CLK_TOP_HMR_APPD3AB>,
+			<&topckgen CLK_TOP_OSDPLL_D3AB>,
+			<&topckgen CLK_TOP_EPLLD10>,
+			<&topckgen CLK_TOP_HMT_PX_D3>,
+			<&topckgen CLK_TOP_TVDPLL_D3AB>,
+			<&topckgen CLK_TOP_HMR_AXI>,
+			<&topckgen CLK_TOP_SSUSB_TOP>,
+			<&topckgen CLK_TOP_SSUSB_PHY>,
+			<&topckgen CLK_TOP_SSUSB_U2_PHY>,
+			<&infrasys CLK_INFRA_DBGCLK>,
+			<&infrasys CLK_INFRA_AUDIO>,
+			<&infrasys CLK_INFRA_GCE>,
+			<&infrasys CLK_INFRA_M4U>,
+			<&infrasys CLK_INFRA_CQ_DMA>,
+			<&infrasys CLK_INFRA_KP>,
+			<&infrasys CLK_INFRA_IIC_AO>,
+			<&infrasys CLK_INFRA_CEC>,
+			<&infrasys CLK_INFRA_IIC>,
+			<&infrasys CLK_INFRA_PWM0_AO>,
+			<&infrasys CLK_INFRA_PWM1_AO>,
+			<&infrasys CLK_INFRA_UART_AO>,
+			<&infrasys CLK_INFRA_PWMAO>,
+			<&infrasys CLK_INFRA_IPSYS>,
+			<&infrasys CLK_INFRA_TRNG>,
+			<&perisys CLK_PERI_NFI>,
+			<&perisys CLK_PERI_THERM>,
+			<&perisys CLK_PERI_PWM0>,
+			<&perisys CLK_PERI_PWM1>,
+			<&perisys CLK_PERI_PWM2>,
+			<&perisys CLK_PERI_PWM3>,
+			<&perisys CLK_PERI_PWM4>,
+			<&perisys CLK_PERI_PWM5>,
+			<&perisys CLK_PERI_PWM>,
+			<&perisys CLK_PERI_USB0>,
+			<&perisys CLK_PERI_AP_DMA>,
+			<&perisys CLK_PERI_MSDC30_0>,
+			<&perisys CLK_PERI_MSDC30_1>,
+			<&perisys CLK_PERI_MSDC30_2>,
+			<&perisys CLK_PERI_UART0>,
+			<&perisys CLK_PERI_UART1>,
+			<&perisys CLK_PERI_I2C0>,
+			<&perisys CLK_PERI_I2C1>,
+			<&perisys CLK_PERI_AUXADC>,
+			<&perisys CLK_PERI_SPI0>,
+			<&perisys CLK_PERI_FLASH>,
+			<&perisys CLK_PERI_SPI2>,
+			<&perisys CLK_PERI_SFLASH>,
+			<&perisys CLK_PERI_GMAC>,
+			<&perisys CLK_PERI_PCIE0>,
+			<&perisys CLK_PERI_GMAC_PCLK>,
+			<&perisys CLK_PERI_PTP_THERM>,
+			<&perisys CLK_PERI_MM_APB>,
+			<&perisys CLK_PERI_MSDC0_EN>,
+			<&perisys CLK_PERI_MSDC1_EN>,
+			<&perisys CLK_PERI_MSDC2_EN>,
+			<&perisys CLK_PERI_MSDC0_H_EN>,
+			<&perisys CLK_PERI_MSDC2_H_EN>,
+			<&ipsys CLK_NNA0>,
+			<&ipsys CLK_NNA0_26MEN>,
+			<&ipsys CLK_NNA0_PWR>,
+			<&ether CLK_ETH_APB_PCLKEN>,
+			<&ether CLK_ETH_AXI_MCLKEN>,
+			<&ether CLK_ETH_RX_I_RMIIEN>,
+			<&ether CLK_ETH_TX_I_RMIIEN>,
+			<&ether CLK_ETH_RX_IEN>,
+			<&ether CLK_ETH_TX_IEN>,
+			<&ether CLK_ETH_MAC_EXTEN>,
+			<&ether CLK_ETH_NCLK_IEN>,
+			<&mmsys CLK_MMCG0_SMI_COM>,
+			<&mmsys CLK_MMCG1_SMI_L0>,
+			<&mmsys CLK_MMCG2_DRAM_L>,
+			<&mmsys CLK_MMCG3_FAKEG>,
+			<&mmsys CLK_MMCG4_SMI_L4>,
+			<&mmsys CLK_MMCG5_SMI_L1>,
+			<&mmsys CLK_MMCG6_SMI_L5>,
+			<&mmsys CLK_MMCG7_SMI_L6>,
+			<&mmsys CLK_MMCG8_SMI_L7>,
+			<&mmsys CLK_MMCG9_VDEC2IMG>,
+			<&mmsys CLK_MMCG10_VDOUT_MM>,
+			<&mmsys CLK_MMCG11_SMI_L3>,
+			<&mmsys CLK_MMCG13_FMTTER>,
+			<&mmsys CLK_MMCG14_DISP_MIX>,
+			<&mmsys CLK_MMCG15_OSD_FBDC>,
+			<&mmsys CLK_MMCG16_OF>,
+			<&mmsys CLK_MMCG17_OF_FIFO>,
+			<&mmsys CLK_MMCG18_OF_HDR>,
+			<&mmsys CLK_MMCG19_OF_SI2MI>,
+			<&mmsys CLK_MMCG20_HDR_ADL>,
+			<&mmsys CLK_MMCG21_HDR_FIFO>,
+			<&mmsys CLK_MMCG22_HDR_VDO>,
+			<&mmsys CLK_MMCG23_RGB2HDMI>,
+			<&mmsys CLK_MMCG25_DGI>,
+			<&mmsys CLK_MMCG0_SD_PPF>,
+			<&mmsys CLK_MMCG1_P2I>,
+			<&mmsys CLK_MMCG2_VM_TOP>,
+			<&mmsys CLK_MMCG3_HDMI_MD>,
+			<&mmsys CLK_MMCG4_VIDEO_IN>,
+			<&mmsys CLK_MMCG5_W2D>,
+			<&mmsys CLK_MMCG7_OU>,
+			<&mmsys CLK_MMCG8_OU_FIFO>,
+			<&mmsys CLK_MMCG9_OU_HDR>,
+			<&mmsys CLK_MMCG12_SMI_L0>,
+			<&dispsys CLK_IMG_VDO3>,
+			<&dispsys CLK_IMG_DISPFMT3>,
+			<&dispsys CLK_IMG_R2R>,
+			<&dispsys CLK_IMG_SMI_L5>,
+			<&dispsys CLK_IMG_SMI_L6>,
+			<&dispsys CLK_IMG_DRAMC_L8>,
+			<&dispsys CLK_IMG_VDO4>,
+			<&dispsys CLK_IMG_DISPFMT4>,
+			<&dispsys CLK_IMG_IRT_DMA>,
+			<&dispsys CLK_IMGRSZ>,
+			<&dispsys CLK_IMG_VDO_DI>,
+			<&dispsys CLK_IMG_DISPFMT_DI>,
+			<&dispsys CLK_IMG_NR>,
+			<&dispsys CLK_IMG_WR_CHANNEL>,
+			<&dispsys CLK_IMG_MVDO_FIFO>,
+			<&dispsys CLK_IMG_MFILM_GRAIN>,
+			<&dispsys CLK_IMG_MHDR_VDO_FE>,
+			<&dispsys CLK_IMG_MVDO_FE_ADL>,
+			<&dispsys CLK_IMG_SVDO_FIFO>,
+			<&dispsys CLK_IMG_SFILMGRAIN>,
+			<&dispsys CLK_IMG_SHDR_VDO_FE>,
+			<&vdec_gcon CLK_VDEC_L1EN>,
+			<&vdec_gcon CLK_VDEC_LATEN>,
+			<&vdec_gcon CLK_VDEC_LAT_ATIV>,
+			<&vdec_gcon CLK_VDECEN>,
+			<&vdec_gcon CLK_VDEC_ATIV>,
+			<&vdec_soc_gcon CLK_VDSOC_L1_SOCEN>,
+			<&vdec_soc_gcon CLK_VDSOC_LSEN>,
+			<&vdec_soc_gcon CLK_VDSOC_LS_ATIV>,
+			<&vdec_soc_gcon CLK_VDSOC_VSEN>,
+			<&vdec_soc_gcon CLK_VDSOC_VS_ATIV>,
+			<&venc CLK_VENC_SMI_CON>,
+			<&venc CLK_VENC_CON>;
+
+		clock-names =
+			"0","1","2","3","4","5","6","7","8","9",
+			"10","11","12","13","14","15","16","17","18",
+			"19","20","21","22","23","24","25","26","27",
+			"28","29","30","31","32","33","34","35","36",
+			"37","38","39","40","41","42","43","44","45",
+			"46","47","48","49","50","51","52","53","54",
+			"55","56","57","58","59","60","61","62","63",
+			"64","65","66","67","68","69","70","71","72",
+			"73","74","75","76","77","78","79","80","81",
+			"82","83","84","85","86","87","88","89","90",
+			"91","92","93","94","95","96","97","98","99",
+			"100","101","102","103","104","105","106","107",
+			"108","109","110","111","112","113","114","115",
+			"116","117","118","119","120","121","122","123",
+			"124","125","126","127","128","129","130","131",
+			"132","133","134","135","136","137","138","139",
+			"140","141","142","143","144","145","146","147",
+			"148","149","150","151","152","153","154","155",
+			"156","157","158","159","160","161","162","163",
+			"164","165","166","167","168","169","170","171",
+			"172","173","174","175","176","177","178","179",
+			"180","181","182","183","184","185","186","187",
+			"188","189","190","191","192","193","194","195",
+			"196","197","198","199","200","201","202","203",
+			"204","205","206","207","208","209","210","211",
+			"212","213","214","215","216","217","218","219",
+			"220","221","222","223","224","225","226","227",
+			"228","229","230","231","232","233","234","235",
+			"236","237","238","239","240","241","242";
+	};
+
+	bring-up-pd-vdecore0 {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_VDEC_CORE0>;
+	};
+
+	bring-up-pd-venc {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_VENC>;
+	};
+
+	bring-up-pd-mmtop {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_MMSYS_TOP>;
+	};
+
+	bring-up-pd-mmcommon {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_MMSYS_COMMON>;
+	};
+
+	bring-up-pd-osd {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_OSD_UHD>;
+	};
+
+	bring-up-pd-hdmitx {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_HDMITX>;
+	};
+
+	bring-up-pd-hdmirx {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_HDMIRX>;
+	};
+
+	bring-up-pd-dispmain {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_DISP_MAIN>;
+	};
+
+	bring-up-pd-dispsub {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_DISP_SUB>;
+	};
+
+	bring-up-pd-dispcommon {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_DISP_COMMON>;
+	};
+	bring-up-pd-mmcu {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_MMCU>;
+	};
+
+	bring-up-pd-audio {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_AUDIO>;
+	};
+
+	bring-up-pd-audasrc {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_AUDIO_ASRC>;
+	};
+
+	bring-up-pd-dispmain {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_DISP_MAIN>;
+	};
+
+	bring-up-pd-ssusb {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_SSUSB>;
+	};
+
+	bring-up-pd-ether {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_ETHER_PCIE>;
+	};
+	bring-up-pd-nna0 {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_NNA0>;
+	};
+
+	bring-up-pd-mfg {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_MFG>;
+	};
+
+	bring-up-pd-mfg2 {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_MFG2>;
+	};
+
+	bring-up-pd-mfg3 {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_MFG3>;
+	};
+
+	bring-up-pd-hdmirxphy {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_HDMIRX_PHY>;
+	};
+
+	bring-up-pd-vdecsoc {
+		compatible = "mediatek,scpsys-bring-up";
+		power-domains = <&scpsys MT8696_POWER_DOMAIN_VDEC_SOC>;
+	};
+};

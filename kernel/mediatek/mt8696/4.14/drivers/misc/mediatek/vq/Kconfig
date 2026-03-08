@@ -1,0 +1,15 @@
+config MTK_VQ
+	tristate "use di for deinterlace"
+	bool "use di for deinterlace"
+	select MTK_NR
+	help
+		This enable use DI HW for video deinterlace
+		Choose this option if you have a Mediatek SoCs.
+	  	The module will be called mtk_vq_mgr
+	  	This driver provides deinterlace function
+	  	to userspace
+
+config MTK_NR
+	bool "use nr for noise reduction"
+	help
+		This enable use NR HW for video noise reduction

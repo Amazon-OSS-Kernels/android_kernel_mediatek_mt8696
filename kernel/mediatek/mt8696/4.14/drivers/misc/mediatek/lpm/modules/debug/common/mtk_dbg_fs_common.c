@@ -1,0 +1,154 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (c) 2019 MediaTek Inc.
+ */
+
+#include <linux/console.h>
+#include <linux/fs.h>
+#include <linux/module.h>
+#include <linux/of_device.h>
+#include <linux/proc_fs.h>
+#include <linux/spinlock.h>
+#include <linux/syscore_ops.h>
+
+#include <mtk_dbg_common_v1.h>
+#include <mtk_lpm_module.h>
+#include <mtk_resource_constraint_v1.h>
+#include <mtk_spm_sysfs.h>
+
+#define MTK_DGB_SUSP_NODE	"/sys/kernel/debug/suspend/suspend_state"
+
+#undef mtk_dbg_log
+#define mtk_dbg_log(fmt, args...) \
+	do { \
+		int l = scnprintf(p, sz, fmt, ##args); \
+		p += l; \
+		sz -= l; \
+	} while (0)
+
+
+static struct wakeup_source *mtk_suspend_lock;
+
+/* debugfs for blocking syscore callback */
+static int spm_syscore_block_suspend(void) { return -EINVAL; }
+static void spm_syscore_block_resume(void) {}
+
+static struct syscore_ops spm_block_syscore_ops = {
+	.suspend = spm_syscore_block_suspend,
+	.resume = spm_syscore_block_resume,
+};
+
+static ssize_t mtk_dbg_get_spm_last_wakeup_src(char *ToUserBuf,
+				size_t sz, void *priv)
+{
+	int bLen = snprintf(ToUserBuf, sz, "0x%lx\n",
+		mtk_lpm_smc_spm_dbg(MT_SPM_DBG_SMC_UID_FS,
+				    MT_LPM_SMC_ACT_GET,
+				    WAKE_STA_R12, 0));
+	return (bLen > sz) ? sz : bLen;
+}
+
+static const struct mtk_lp_sysfs_op mtk_dbg_spm_last_wakesrc_fops = {
+	.fs_read = mtk_dbg_get_spm_last_wakeup_src,
+};
+
+static ssize_t mtk_dbg_get_spm_last_debug_flag(char *ToUserBuf,
+				size_t sz, void *priv)
+{
+	int bLen = snprintf(ToUserBuf, sz, "0x%lx\n",
+		mtk_lpm_smc_spm_dbg(MT_SPM_DBG_SMC_UID_FS,
+				    MT_LPM_SMC_ACT_GET,
+				    WAKE_STA_DEBUG_FLAG, 0));
+	return (bLen > sz) ? sz : bLen;
+}
+
+static const struct mtk_lp_sysfs_op mtk_dbg_spm_last_debugflag_fops = {
+	.fs_read = mtk_dbg_get_spm_last_debug_flag,
+};
+
+static ssize_t mtk_dbg_get_spmfw_version(char *ToUserBuf,
+			  size_t sz, void *priv)
+{
+	int index = 0;
+	const char *version;
+	char *p = ToUserBuf;
+
+	struct device_node *node =
+		of_find_compatible_node(NULL, NULL, "mediatek,sleep");
+
+	if (node == NULL) {
+		mtk_dbg_log("No Found mediatek,mediatek,sleep\n");
+		goto return_size;
+	}
+
+	while (!of_property_read_string_index(node,
+		"spmfw_version", index, &version)) {
+		mtk_dbg_log("%d: %s\n", index, version);
+		index++;
+	}
+
+	mtk_dbg_log("spmfw index: %lu\n",
+		mtk_lpm_smc_spm(MT_SPM_SMC_UID_FW_TYPE,
+				MT_LPM_SMC_ACT_GET, 0, 0));
+	mtk_dbg_log("spmfw ready: %d\n",
+		(mtk_lpm_smc_spm_dbg(MT_SPM_DBG_SMC_UID_RC_SWITCH,
+				    MT_LPM_SMC_ACT_GET,
+				    MT_RM_CONSTRAINT_ID_DRAM, -1)
+		& MT_SPM_RC_VALID_FW) ? 1 : 0);
+
+	if (node)
+		of_node_put(node);
+return_size:
+	return p - ToUserBuf;
+}
+
+static const struct mtk_lp_sysfs_op mtk_dbg_spm_spmfw_ver_fops = {
+	.fs_read = mtk_dbg_get_spmfw_version,
+};
+
+static void mtk_dbg_spm_fs_init(void)
+{
+	mtk_spm_sysfs_root_entry_create();
+
+	mtk_spm_sysfs_entry_node_add("spm_last_wakeup_src", 0444
+			, &mtk_dbg_spm_last_wakesrc_fops, NULL);
+	mtk_spm_sysfs_entry_node_add("spm_last_debug_flag", 0444
+			, &mtk_dbg_spm_last_debugflag_fops, NULL);
+	mtk_spm_sysfs_entry_node_add("spmfw_version", 0444
+			, &mtk_dbg_spm_spmfw_ver_fops, NULL);
+}
+
+static bool mtk_system_console_suspend;
+
+static void __exit mtk_dbg_common_fs_exit(void)
+{
+	/* restore suspend console */
+	console_suspend_enabled = mtk_system_console_suspend;
+
+	/* wakeup source deinit */
+	wakeup_source_unregister(mtk_suspend_lock);
+	/* remove syscore callback */
+	unregister_syscore_ops(&spm_block_syscore_ops);
+}
+
+static int __init mtk_dbg_common_fs_init(void)
+{
+	/* wakeup source init for suspend enable and disable */
+	mtk_suspend_lock = wakeup_source_register("mtk_suspend_wakelock");
+	if (!mtk_suspend_lock) {
+		pr_info("%s %d: init wakeup source fail!", __func__, __LINE__);
+		return -1;
+	}
+
+	mtk_dbg_spm_fs_init();
+
+	pr_info("%s %d: finish", __func__, __LINE__);
+	return 0;
+}
+
+module_init(mtk_dbg_common_fs_init);
+module_exit(mtk_dbg_common_fs_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("MediaTek Low Power FileSystem");
+MODULE_AUTHOR("MediaTek Inc.");
