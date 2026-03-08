@@ -847,6 +847,7 @@ wlanoidSetP2PMulticastList(IN P_ADAPTER_T prAdapter,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
+	memset(&rCmdMacMcastAddr, 0, sizeof(CMD_MAC_MCAST_ADDR));
 	rCmdMacMcastAddr.u4NumOfGroupAddr = u4SetBufferLen / MAC_ADDR_LEN;
 	rCmdMacMcastAddr.ucBssIndex = P2P_DEV_BSS_INDEX;	/* TODO: */
 	kalMemCopy(rCmdMacMcastAddr.arAddress, pvSetBuffer, u4SetBufferLen);

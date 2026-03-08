@@ -1321,7 +1321,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 	PUINT_8 pucBuffer = (PUINT_8) NULL;
 	UINT_8 ucRoleIdx = 0;
 	struct cfg80211_chan_def *chandef;
-	RF_CHANNEL_INFO_T rRfChnlInfo;
+	RF_CHANNEL_INFO_T rRfChnlInfo = {0};
 
 	/* RF_CHANNEL_INFO_T rRfChnlInfo; */
 /* P_IE_SSID_T prSsidIE = (P_IE_SSID_T)NULL; */
@@ -1525,7 +1525,7 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy, stru
 	INT_32 i4Rslt = -EINVAL;
 	P_MSG_P2P_DFS_CAC_T prP2pDfsCacMsg = (P_MSG_P2P_DFS_CAC_T) NULL;
 	UINT_8 ucRoleIdx = 0;
-	RF_CHANNEL_INFO_T rRfChnlInfo;
+	RF_CHANNEL_INFO_T rRfChnlInfo = {0};
 
 	do {
 		if ((wiphy == NULL) || (chandef == NULL))
@@ -1633,7 +1633,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 	P_MSG_P2P_SET_NEW_CHANNEL_T prP2pSetNewChannelMsg = (P_MSG_P2P_SET_NEW_CHANNEL_T) NULL;
 	PUINT_8 pucBuffer = (PUINT_8) NULL;
 	UINT_8 ucRoleIdx = 0;
-	RF_CHANNEL_INFO_T rRfChnlInfo;
+	RF_CHANNEL_INFO_T rRfChnlInfo = {0};
 	P_BSS_INFO_T prBssInfo;
 	UINT_8 ucBssIndex;
 	UINT_32 u4Len;
@@ -2799,7 +2799,7 @@ int mtk_p2p_cfg80211_set_channel(IN struct wiphy *wiphy, struct cfg80211_chan_de
 	INT_32 i4Rslt = -EINVAL;
 	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T) NULL;
 	struct net_device *dev = (struct net_device *) NULL;
-	RF_CHANNEL_INFO_T rRfChnlInfo;
+	RF_CHANNEL_INFO_T rRfChnlInfo = {0};
 	UINT_8 ucRoleIdx = 0;
 
 	if ((wiphy == NULL) || (chandef == NULL))

@@ -428,6 +428,8 @@
 /* TODO: it should be 4096 under emulation mode */
 #define CFG_RX_MAX_PKT_SIZE                     (28 + 2312 + 12 /*HIF_RX_HEADER_T*/)
 
+#define CFG_RX_MAX_MPDU_SIZE                    CFG_RX_MAX_PKT_SIZE
+
 /*! Minimum RX packet size, if lower than this value, drop incoming packet */
 #define CFG_RX_MIN_PKT_SIZE                     10	/*!< 802.11 Control Frame is 10 bytes */
 

@@ -828,9 +828,10 @@ UINT_32 halRxUSBEnqueueRFB(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_
 			}
 			RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);
 		} else {
-			DBGLOG(RX, WARN, "Rx byte count:%u exceeds SW_RFB max length:%u\n!",
-				u2RxByteCount, CFG_RX_MAX_PKT_SIZE);
+			DBGLOG(RX, WARN, "Rx byte count:%u exceeds SW_RFB max length:%u return length:%d\n!",
+				u2RxByteCount, CFG_RX_MAX_PKT_SIZE, (u4Length - u4RemainCount));
 			DBGLOG_MEM32(RX, WARN, pucRxFrame, sizeof(HW_MAC_RX_DESC_T));
+			u4Length = u4Length - u4RemainCount;
 			break;
 		}
 

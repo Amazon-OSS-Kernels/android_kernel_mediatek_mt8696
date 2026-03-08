@@ -960,6 +960,7 @@ struct mt66xx_chip_info {
 	PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx);/* load firmware bin priority */
 
 	const UINT_32 features;	/* feature bits */
+        const unsigned int rxd_size;	/* hw mac rxd size */
 };
 
 struct mt66xx_hif_driver_data {

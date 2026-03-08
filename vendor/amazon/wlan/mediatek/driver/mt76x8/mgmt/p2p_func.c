@@ -2595,6 +2595,7 @@ p2pFuncParseBeaconContent(IN P_ADAPTER_T prAdapter,
 	P_P2P_SPECIFIC_BSS_INFO_T prP2pSpecificBssInfo = (P_P2P_SPECIFIC_BSS_INFO_T) NULL;
 	UINT_8 i = 0;
 	RSN_INFO_T rRsnIe;
+	kalMemZero(&rRsnIe, sizeof(RSN_INFO_T));
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));

@@ -1068,7 +1068,7 @@ static ssize_t procMCRRead(struct file *filp, char __user *buf, size_t count, lo
 {
 	uint8_t *pucProcBuf = kalMemZAlloc(PROC_MAX_BUF_SIZE, VIR_MEM_TYPE);
 	P_GLUE_INFO_T prGlueInfo;
-	PARAM_CUSTOM_MCR_RW_STRUCT_T rMcrInfo;
+	PARAM_CUSTOM_MCR_RW_STRUCT_T rMcrInfo = {0};
 	UINT_32 u4BufLen;
 	uint32_t u4CopySize = 0;
 	UINT_8 *temp = NULL;

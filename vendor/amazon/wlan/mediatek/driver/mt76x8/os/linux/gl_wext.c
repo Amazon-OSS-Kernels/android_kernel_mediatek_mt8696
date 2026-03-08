@@ -874,7 +874,7 @@ wextSrchDesiredWPSIE(IN PUINT_8 pucIEStart,
 static int
 wext_get_name(IN struct net_device *prNetDev, IN struct iw_request_info *prIwrInfo, OUT char *pcName, IN char *pcExtra)
 {
-	ENUM_PARAM_NETWORK_TYPE_T eNetWorkType;
+	ENUM_PARAM_NETWORK_TYPE_T eNetWorkType = PARAM_NETWORK_TYPE_NUM;
 
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
@@ -891,6 +891,11 @@ wext_get_name(IN struct net_device *prNetDev, IN struct iw_request_info *prIwrIn
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidQueryNetworkTypeInUse,
 				   &eNetWorkType, sizeof(eNetWorkType), TRUE, FALSE, FALSE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, ERROR, "wext get name error: %x\n", rStatus);
+			return -EFAULT;
+		}
 
 		switch (eNetWorkType) {
 		case PARAM_NETWORK_TYPE_DS:
@@ -1119,7 +1124,7 @@ static int
 wext_get_mode(IN struct net_device *prNetDev,
 	      IN struct iw_request_info *prIwReqInfo, OUT unsigned int *pu4Mode, IN char *pcExtra)
 {
-	ENUM_PARAM_OP_MODE_T eOpMode;
+	ENUM_PARAM_OP_MODE_T eOpMode = NET_TYPE_NUM;
 
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
@@ -1133,6 +1138,11 @@ wext_get_mode(IN struct net_device *prNetDev,
 
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidQueryInfrastructureMode, &eOpMode, sizeof(eOpMode), TRUE, FALSE, FALSE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "wext get mode error: %x\n", rStatus);
+		return -EFAULT;
+	}
 
 	switch (eOpMode) {
 	case NET_TYPE_IBSS:
@@ -2294,7 +2304,7 @@ static int
 wext_get_rts(IN struct net_device *prNetDev,
 	     IN struct iw_request_info *prIwrInfo, OUT struct iw_param *prRts, IN char *pcExtra)
 {
-	PARAM_RTS_THRESHOLD u4RtsThresh;
+	PARAM_RTS_THRESHOLD u4RtsThresh = 0;
 
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
@@ -2308,6 +2318,11 @@ wext_get_rts(IN struct net_device *prNetDev,
 
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidQueryRtsThreshold, &u4RtsThresh, sizeof(u4RtsThresh), TRUE, FALSE, FALSE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "wext get rts error: %x\n", rStatus);
+		return -EFAULT;
+	}
 
 	prRts->value = (typeof(prRts->value)) u4RtsThresh;
 	prRts->disabled = (prRts->value > 2347 || prRts->value < 0) ? 1 : 0;
@@ -2471,7 +2486,7 @@ wext_get_encode(IN struct net_device *prNetDev,
 {
 #if 1
 	/* ENUM_ENCRYPTION_STATUS_T eEncMode; */
-	ENUM_PARAM_ENCRYPTION_STATUS_T eEncMode;
+	ENUM_PARAM_ENCRYPTION_STATUS_T eEncMode = ENUM_ENCRYPTION_NUM;
 
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
@@ -2485,6 +2500,11 @@ wext_get_encode(IN struct net_device *prNetDev,
 
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidQueryEncryptionStatus, &eEncMode, sizeof(eEncMode), TRUE, FALSE, FALSE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "wext get encode error: %x\n", rStatus);
+		return -EFAULT;
+	}
 
 	switch (eEncMode) {
 	case ENUM_WEP_DISABLED:
@@ -4028,7 +4048,7 @@ wext_indicate_wext_event(IN P_GLUE_INFO_T prGlueInfo,
 #if WIRELESS_EXT >= 18
 			P_PARAM_PMKID_CANDIDATE_T prPmkidCand = (P_PARAM_PMKID_CANDIDATE_T) pucData;
 
-			struct iw_pmkid_cand rPmkidCand;
+			struct iw_pmkid_cand rPmkidCand = {0};
 
 			pucExtraInfo = aucExtraInfoBuf;
 
@@ -4090,7 +4110,7 @@ struct iw_statistics *wext_get_wireless_stats(struct net_device *prDev)
 	WLAN_STATUS rStatus = WLAN_STATUS_FAILURE;
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	struct iw_statistics *pStats = NULL;
-	INT_32 i4Rssi;
+	INT_32 i4Rssi = 0;
 	UINT_32 bufLen = 0;
 
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prDev));
@@ -4106,6 +4126,11 @@ struct iw_statistics *wext_get_wireless_stats(struct net_device *prDev)
 	}
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidQueryRssi, &i4Rssi, sizeof(i4Rssi), TRUE, TRUE, TRUE, &bufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "wext get wireless stat error: %x\n", rStatus);
+		goto stat_out;
+	}
 
 stat_out:
 	return pStats;

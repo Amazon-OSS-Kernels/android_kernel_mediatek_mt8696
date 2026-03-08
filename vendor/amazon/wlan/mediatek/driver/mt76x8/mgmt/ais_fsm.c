@@ -2824,6 +2824,7 @@ VOID aisUpdateBssInfoForJOIN(IN P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, 
 	prAisBssInfo->fgIsQBSS = prStaRec->fgIsQoS;
 
 	/* 3 <4> Update BSS_INFO_T from BSS_DESC_T */
+	memset(&rParamSsid, 0, sizeof(PARAM_SSID_T));
 	if (prAisBssInfo->ucSSIDLen) {
 		rParamSsid.u4SsidLen = prAisBssInfo->ucSSIDLen;
 		COPY_SSID(rParamSsid.aucSsid, rParamSsid.u4SsidLen,

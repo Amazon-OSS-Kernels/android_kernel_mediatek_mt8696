@@ -225,13 +225,16 @@ void saaSendAuthAssoc(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
 						prStaRec->aucMacAddr,
 						TRUE,
 						&rParamSsid);
-				DBGLOG(RSN, INFO, "[RSN]saaSendAuthAssoc,"
-					"prBssDesc["MACSTR" ,%s] Searched by"
-					" BSSID["MACSTR"] & SSID %s.\n",
-					MAC2STR(prBssDesc->aucBSSID),
-					prBssDesc->aucSSID,
-					MAC2STR(prStaRec->aucMacAddr),
-					prConnSettings->aucSSID);
+				if (prBssDesc != NULL)
+					DBGLOG(RSN, INFO, "[RSN]saaSendAuthAssoc,"
+						"prBssDesc["MACSTR" ,%s] Searched by"
+						" BSSID["MACSTR"] & SSID %s.\n",
+						MAC2STR(prBssDesc->aucBSSID),
+						prBssDesc->aucSSID,
+						MAC2STR(prStaRec->aucMacAddr),
+						prConnSettings->aucSSID);
+				else
+					DBGLOG(RSN, WARN, "prBssDesc = NULL\n");
 			} else {
 				prBssDesc = scanSearchBssDescByBssidAndChanNum(
 					prAdapter,
@@ -1478,6 +1481,11 @@ WLAN_STATUS saaFsmRunEventRxDeauth(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwR
 			P_BSS_INFO_T prAisBssInfo;
 
 			if (!IS_AP_STA(prStaRec))
+				break;
+
+			/* if state != CONNECTED, don't do disconnect again */
+			if (prAdapter->prGlueInfo->eParamMediaStateIndicated !=
+				PARAM_MEDIA_STATE_CONNECTED)
 				break;
 
 			prAisBssInfo = prAdapter->prAisBssInfo;

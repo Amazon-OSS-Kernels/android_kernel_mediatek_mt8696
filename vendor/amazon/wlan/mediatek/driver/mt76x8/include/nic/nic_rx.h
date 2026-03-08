@@ -829,6 +829,9 @@ typedef struct _EMU_MAC_RATE_INFO_T {
 #define RX_RESET_ALL_CNTS(prRxCtrl)                 \
 	{kalMemZero(&prRxCtrl->au8Statistics[0], sizeof(prRxCtrl->au8Statistics)); }
 
+#define RX_GET_PACKET_MAX_SIZE(prAdapter) \
+	(CFG_RX_MAX_MPDU_SIZE - prAdapter->chip_info->rxd_size)
+
 #define RX_STATUS_TEST_MORE_FLAG(flag)	\
 	((BOOL)((flag & RX_STATUS_FLAG_MORE_PACKET) ? TRUE : FALSE))
 

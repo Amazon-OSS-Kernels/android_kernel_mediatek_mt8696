@@ -905,6 +905,8 @@ VOID testPsCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 	DBGLOG(SW4, LOUD, "Read %u Index %u\n", ucRead, ucIndex);
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, 0);
+	if (prStaRec == NULL)
+		return;
 
 	if (ucIndex >= TEST_PS_CATA0_INDEX_NUM)
 		return;

@@ -79,6 +79,7 @@
 #define MT7668_SW_SYNC0_RDY_OFFSET		WIFI_RGU_SYNC0_RDY_OFFSET
 #define MT7668_PATCH_START_ADDR			(0x000C8000)
 #define MT7668_IS_PCIE_32DW_READ		(0)
+#define MT7668_RX_DESC_LENGTH                   16
 
 /*******************************************************************************
 *                         D A T A   T Y P E S

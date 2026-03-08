@@ -136,6 +136,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.eco_info = mt7668_eco_table,
 	.constructFirmwarePrio = mt7668ConstructFirmwarePrio,
 	.features = 0,
+	.rxd_size = MT7668_RX_DESC_LENGTH,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7668 = {

@@ -2148,7 +2148,7 @@ int SetTxTargetPower(struct net_device *prNetDev, UINT_8 *prInBuf)
 {
 	INT_32 i4Status;
 	INT_32 rv;
-	int addr;
+	int addr = 0;
 	UINT_8 addr2;
 
 	if (prInBuf == NULL)
@@ -2189,7 +2189,7 @@ int SetRddReport(struct net_device *prNetDev, UINT_8 *prInBuf)
 {
 	INT_32 i4Status;
 	INT_32 rv;
-	int dbdcIdx;
+	int dbdcIdx = 0;
 	UINT_8 ucDbdcIdx;
 
 	if (prInBuf == NULL)
@@ -2240,7 +2240,7 @@ int SetByPassCac(struct net_device *prNetDev, UINT_8 *prInBuf)
 {
 	INT_32 i4Status;
 	INT_32 rv;
-	INT_32 i4ByPassCacTime;
+	INT_32 i4ByPassCacTime = 0;
 	UINT_32 u4ByPassCacTime;
 
 	if (prInBuf == NULL)
@@ -2286,7 +2286,7 @@ int SetRadarDetectMode(struct net_device *prNetDev, UINT_8 *prInBuf)
 {
 	INT_32 i4Status;
 	INT_32 rv;
-	int radarDetectMode;
+	int radarDetectMode = 0;
 	UINT_8 ucRadarDetectMode;
 
 	if (prInBuf == NULL)

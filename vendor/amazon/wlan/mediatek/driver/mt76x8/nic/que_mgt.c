@@ -1246,16 +1246,18 @@ VOID qmDetermineStaRecIndex(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInf
 			/* 4 <2> Check if an AP STA is present */
 			prTempStaRec = prBssInfo->prStaRecOfAP;
 
-			DBGLOG(QM, LOUD,
-			       "StaOfAp Idx[%u] WIDX[%u] Valid[%u] TxAllowed[%u] InUse[%u] Type[%u]\n",
-			       prTempStaRec->ucIndex, prTempStaRec->ucWlanIndex,
-			       prTempStaRec->fgIsValid, prTempStaRec->fgIsTxAllowed,
-			       prTempStaRec->fgIsInUse, prTempStaRec->eStaType);
+			if (prTempStaRec) {
+				DBGLOG(QM, LOUD,
+					"StaOfAp Idx[%u] WIDX[%u] Valid[%u] TxAllowed[%u] InUse[%u] Type[%u]\n",
+					prTempStaRec->ucIndex, prTempStaRec->ucWlanIndex,
+					prTempStaRec->fgIsValid, prTempStaRec->fgIsTxAllowed,
+					prTempStaRec->fgIsInUse, prTempStaRec->eStaType);
 
-			if (prTempStaRec->fgIsInUse) {
-				prMsduInfo->ucStaRecIndex = prTempStaRec->ucIndex;
-				DBGLOG(QM, LOUD, "TX with AP_STA[%u]\n", prTempStaRec->ucIndex);
-				return;
+				if (prTempStaRec->fgIsInUse) {
+					prMsduInfo->ucStaRecIndex = prTempStaRec->ucIndex;
+					DBGLOG(QM, LOUD, "TX with AP_STA[%u]\n", prTempStaRec->ucIndex);
+					return;
+				}
 			}
 		}
 		break;
@@ -5399,6 +5401,11 @@ VOID mqmGenerateWmmInfoIE(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
 	DEBUGFUNC("mqmGenerateWmmInfoIE");
 
 	ASSERT(prMsduInfo);
+	/* in case assert didn't take effect */
+	if (prMsduInfo == NULL) {
+		DBGLOG(QM, ERROR, "prMsduInfo is NULL\n");
+		return;
+	}
 
 	/* In case QoS is not turned off, exit directly */
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucQoS))

@@ -2177,6 +2177,7 @@ VOID nicCmdEventQueryMemDump(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 	static UINT_8 aucPath[256] = { 0 }; // initialized all zeros
 /*	static UINT_8 aucPath_done[300]; */
 	static UINT_32 u4CurTimeTick;
+	int32_t i4Ret = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
@@ -2216,10 +2217,18 @@ VOID nicCmdEventQueryMemDump(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 				g_u2DumpIndex = 0;
 
 			/*if blbist mkdir undre /data/blbist, the dump files wouls put on it */
-			snprintf(aucPath, sizeof(aucPath), "/dump_%05ld.hex", g_u2DumpIndex);
+			i4Ret = snprintf(aucPath, sizeof(aucPath), "/dump_%05ld.hex", g_u2DumpIndex);
+                	if (i4Ret < 0) {
+				DBGLOG(INIT, WARN, "snprintf failed:%d\n", i4Ret);
+				return;
+			}
 			if (kalCheckPath(aucPath) == -1) {
 				kalMemSet(aucPath, 0x00, 256);
-				snprintf(aucPath, sizeof(aucPath), "/data/dump_%05ld.hex", g_u2DumpIndex);
+				i4Ret = snprintf(aucPath, sizeof(aucPath), "/data/dump_%05ld.hex", g_u2DumpIndex);
+                        	if (i4Ret < 0) {
+					DBGLOG(INIT, WARN, "snprintf failed:%d\n", i4Ret);
+					return;
+				}
 			} else
 				kalTrunkPath(aucPath);
 
