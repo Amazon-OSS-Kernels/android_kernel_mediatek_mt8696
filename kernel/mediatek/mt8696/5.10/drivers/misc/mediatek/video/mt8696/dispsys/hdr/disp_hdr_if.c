@@ -960,8 +960,8 @@ void disp_hdr_handle_allm_change(void *data)
 		return;
 	}
 
-	disp_hw_mgr_get_info(&hdr_common_info);
-	tv_cap = &(hdr_common_info.tv);
+	disp_hw_mgr_get_info(&disp_common_info);
+	tv_cap = &(disp_common_info.tv);
 
 	ui_allm_type = (enum ALLM_UI)(*((uint32_t *)data));
 

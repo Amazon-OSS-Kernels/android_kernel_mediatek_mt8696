@@ -375,6 +375,47 @@ void vcu_io_buffer_cache_sync(struct device *dev,
 	dma_buf_detach(dbuf, buf_att);
 }
 
+void vcu_io_buffer_cache_sync_partial(struct device *dev,
+	struct dma_buf *dbuf, unsigned int offset, size_t size,
+	enum dma_data_direction direction)
+{
+	struct dma_buf_attachment *buf_att;
+	struct sg_table *sgt;
+	struct sg_table *sgt_tmp;
+
+	buf_att = dma_buf_attach(dbuf, dev);
+	if (IS_ERR(buf_att)) {
+		pr_info("failed to attach dmabuf\n");
+		return;
+	}
+	buf_att->dma_map_attrs |=  DMA_ATTR_SKIP_CPU_SYNC;
+	sgt = dma_buf_map_attachment(buf_att, direction);
+	if (IS_ERR_OR_NULL(sgt)) {
+		pr_info("%s Error getting dmabuf scatterlist %lx\n", __func__, (unsigned long)sgt);
+		dma_buf_detach(dbuf, buf_att);
+		return;
+	}
+
+	sgt_tmp = mtk_dma_dup_sg_table_by_range(sgt, offset, size);
+	if (IS_ERR(sgt_tmp)) {
+		pr_info("%s: dup sg_table failed!\n", __func__);
+		dma_buf_unmap_attachment(buf_att, sgt, direction);
+		dma_buf_detach(dbuf, buf_att);
+		return;
+	}
+	if (direction == DMA_TO_DEVICE)
+		dma_sync_sg_for_device(dev, sgt_tmp->sgl, sgt_tmp->nents, direction);
+	else if (direction == DMA_FROM_DEVICE)
+		dma_sync_sg_for_cpu(dev, sgt_tmp->sgl, sgt_tmp->nents, direction);
+	else
+		pr_info("direction %d not correct\n", direction);
+
+	sg_free_table(sgt_tmp);
+	kfree(sgt_tmp);
+	dma_buf_unmap_attachment(buf_att, sgt, direction);
+	dma_buf_detach(dbuf, buf_att);
+}
+
 int vcu_buffer_flush_all(struct device *dev, struct mtk_vcu_queue *vcu_queue)
 {
 	struct mtk_vcu_mem *vcu_buffer;
@@ -440,7 +481,8 @@ int vcu_buffer_cache_sync(struct device *dev, struct mtk_vcu_queue *vcu_queue,
 			else
 				dbuf = vcu_buffer->dbuf;
 
-			vcu_io_buffer_cache_sync(dev, dbuf, op);
+			vcu_io_buffer_cache_sync_partial(dev, dbuf,
+				dma_addr - vcu_buffer->iova, size, op);
 
 			if (vcu_buffer->dbuf == NULL)
 				dma_buf_put(dbuf);
@@ -449,7 +491,7 @@ int vcu_buffer_cache_sync(struct device *dev, struct mtk_vcu_queue *vcu_queue,
 		}
 	}
 	if (buffer == num_buffers) {
-		pr_info("Cache %s buffer fail, iova = %llx, size = %d, Not VCU allocated",
+		pr_debug("Cache %s buffer fail, iova = %llx, size = %d, Not VCU allocated",
 			(op == DMA_TO_DEVICE) ? "flush" : "invalidate",
 			(unsigned long long)dma_addr, (unsigned int)size);
 	}

@@ -42,5 +42,6 @@ struct mtkfb_device {
 	struct fb_info *fb_info; /* Linux fbdev framework data */
 	struct device *dev;
 };
+extern int32_t disp_mix_hal_set_black_pattern(bool en);
 
 #endif

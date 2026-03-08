@@ -194,5 +194,17 @@ int vcu_buffer_cache_sync(struct device *dev, struct mtk_vcu_queue *vcu_queue,
 int mtk_vcu_get_dma_addr(struct device *dev, int share_fd,
 	dma_addr_t *dma_addr, int *is_sec);
 
+/**
+ * mtk_dma_dup_sg_table_by_range - get sg_table for user
+ *
+ * @table:      sg table.
+ * @offset:    dma-buf offset.
+ * @len:          expected dup data length.
+ *
+ * Return:      Return pointer of sg_table
+ **/
+struct sg_table *mtk_dma_dup_sg_table_by_range(const struct sg_table *table,
+	unsigned int offset, unsigned int len);
+
 #endif
 

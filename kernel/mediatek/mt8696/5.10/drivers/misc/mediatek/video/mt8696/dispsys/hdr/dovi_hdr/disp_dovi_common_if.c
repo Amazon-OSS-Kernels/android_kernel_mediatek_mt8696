@@ -2431,14 +2431,16 @@ int disp_dovi_process(uint32_t enable,
 		} else
 			p_src_param[LAYER1].en = false;
 
-		if ((!dovi_idk_test) && dv_gfx_fe_en[0]) {
+		if (!dovi_idk_test && dv_gfx_fe_en[0]
+			&& !f_graphic_off_cmd) {
 			p_cp_param->num_input++;
 			//dovi_set_priority_mode(G_PRIORITY);
 			dovi_set_graphic_info(1);
 		} else
 			dovi_set_graphic_info(0);
 
-		if ((!dovi_idk_test) && dv_gfx_fe_en[1]) {
+		if (!dovi_idk_test && dv_gfx_fe_en[1]
+			&& !f_graphic_off_cmd) {
 			p_cp_param->num_input++;
 			//dovi_set_priority_mode(G_PRIORITY);
 			dovi_set_graphic_info_uhd(1);
@@ -3099,10 +3101,16 @@ enum dovi_signal_format_t dovi_judge_out_format(
 	struct disp_hw_tv_capbility *tv_cap,
 	const struct disp_hw_resolution *resolution)
 {
-	bool is_4k60_out = dovi_check_4k60_timing(resolution->res_mode);
+	bool is_4k60_out = false;
 	enum dovi_signal_format_t dovi_out_format_new =
 		DOVI_FORMAT_SDR;
 
+	if ((tv_cap == NULL) || (resolution == NULL)) {
+		dovi_error("%s params\n", __func__);
+		return DOVI_FORMAT_INVALID;
+	}
+
+	is_4k60_out = dovi_check_4k60_timing(resolution->res_mode);
 	dovi_out_format_new =
 	get_tv_output_format(tv_cap, is_4k60_out, resolution);
 	return dovi_out_format_new;
