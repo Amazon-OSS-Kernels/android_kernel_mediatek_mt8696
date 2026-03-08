@@ -21,6 +21,7 @@
 
 static struct dentry *fg_debugfs;
 static int fg_debug_inited;
+static bool fg_dump_param_enable;
 
 static char FG_STR_HELP[] =
 	"USAGE:\n"
@@ -29,7 +30,6 @@ static char FG_STR_HELP[] =
 	"       fg_en:enable                fg_en:0/1\n";
 
 /* raw data + \n */
-static char *fg_dbg_buf;
 static char fg_cmd_buf[512];
 
 struct mtk_av1_film_grain_params fg_param = {
@@ -244,109 +244,6 @@ struct mtk_av1_film_grain_params fg_param_t0009 = {
 	.clip_to_restricted_range = 0,
 };
 
-static u32 fg_alloc_dbg_buf(void)
-{
-	/* raw data 13358 * 2
-	 * line count 1287 * 4
-	 * \n 1287
-	 */
-	u32 buf_size = 2 * FILMG_SRC_LEN + 8 * FILMG_MAX_CMD_LEN;
-
-	if (!fg_dbg_buf) {
-		fg_dbg_buf = kzalloc(buf_size, GFP_KERNEL);
-		FG_LOG_I("alloc buf 0x%p size %d\n", fg_dbg_buf, buf_size);
-	}
-
-	return buf_size;
-}
-
-static void fg_free_dbg_buf(void)
-{
-	kfree(fg_dbg_buf);
-
-	if (fg_dbg_buf) {
-		FG_LOG_I("free buf 0x%p\n", fg_dbg_buf);
-		fg_dbg_buf = NULL;
-	}
-}
-
-static void fg_dump_adl_table(u32 hw_id)
-{
-	u8 *p_data;
-	u32 idx = 0, idy = 0, tmp_idx = 0, tmp_len = 0;
-	u8 tmp_buf[50];
-	u32 tmp_buf_size = sizeof(tmp_buf);
-
-	u8 *dbg_buf;
-	u32 buf_size;
-	u32 line = 0;
-
-	buf_size = fg_alloc_dbg_buf();
-
-	dbg_buf = fg_dbg_buf;
-	if (!dbg_buf) {
-		FG_ERR("debug buf alloc fail!!!\n");
-		return;
-	}
-
-	p_data = disp_fg_get_adl_tbl(hw_id);
-	if (!p_data) {
-		FG_ERR("dal table is null!!!\n");
-		return;
-	}
-
-	FG_LOG_I("dbg_buf 0x%p size %d 0x%p\n", dbg_buf, buf_size, dbg_buf + buf_size);
-	FG_LOG_I("fg lut\n");
-	memset(tmp_buf, 0, tmp_buf_size);
-	for (idx = 0; (idx < FG_TBL_LUT_SIZE) && (buf_size >= tmp_idx); idx += 3, line++) {
-		tmp_len = snprintf(tmp_buf, tmp_buf_size,
-			"[%04d] %02X%02X%02X\n",
-			line,
-			p_data[idx + 2],
-			p_data[idx + 1],
-			p_data[idx + 0]);
-		tmp_idx += snprintf(dbg_buf + tmp_idx, buf_size - tmp_idx, "%s", tmp_buf);
-		pr_info("[%06d] [%02d] %s", tmp_idx, tmp_len, tmp_buf);
-	}
-
-	FG_LOG_I("fg y noise\n");
-	memset(tmp_buf, 0, tmp_buf_size);
-	for (; (idx < FG_TBL_C_GNS_OFFSET) && (buf_size >= tmp_idx); idx += FILMG_YN_CMD, line++) {
-		tmp_len = 0;
-		for (idy = 0; idy < FILMG_YN_CMD; idy++)
-			tmp_len += snprintf(tmp_buf + tmp_len,
-					    tmp_buf_size - tmp_len,
-					    "%02X",
-					    p_data[idx + FILMG_YN_CMD - 1 - idy]);
-		tmp_idx += snprintf(dbg_buf + tmp_idx,
-				    buf_size - tmp_idx,
-				    "[%04d] %s\n",
-				    line,
-				    tmp_buf);
-		pr_info("[%06d] [%02d] %s", tmp_idx, tmp_len, tmp_buf);
-	}
-
-	FG_LOG_I("fg cbcr noise\n");
-	memset(tmp_buf, 0, tmp_buf_size);
-	for (; (idx < FILMG_SRC_LEN) && (buf_size >= tmp_idx); idx += FILMG_CBCRN_CMD, line++) {
-		tmp_len = 0;
-		for (idy = 0; idy < FILMG_CBCRN_CMD; idy++)
-			tmp_len += snprintf(tmp_buf + tmp_len,
-					    tmp_buf_size - tmp_len,
-					    "%02X",
-					    p_data[idx + FILMG_CBCRN_CMD - 1 - idy]);
-		tmp_idx += snprintf(dbg_buf + tmp_idx,
-				    buf_size - tmp_idx,
-				    "[%04d] %s\n",
-				    line,
-				    tmp_buf);
-		pr_info("[%06d] [%02d] %s", tmp_idx, tmp_len, tmp_buf);
-	}
-
-	FG_LOG_I("dump adl table done idx %d\n", idx);
-
-}
-
 static void fg_dump_param(u32 hw_id)
 {
 	struct mtk_av1_film_grain_params *param;
@@ -413,6 +310,13 @@ static void fg_dump_param(u32 hw_id)
 		param->clip_to_restricted_range);
 }
 
+void fg_dbg_dump_param(u32 hw_id)
+{
+	if (!fg_dump_param_enable)
+		return;
+
+	fg_dump_param(hw_id);
+}
 
 static void fg_process_dbg_opt(const char *opt)
 {
@@ -422,7 +326,7 @@ static void fg_process_dbg_opt(const char *opt)
 		u32 enable = 0;
 
 		FG_STR_CONVERT(&p, &enable, uint, goto Error);
-		FG_LOG_I("set fg enable %d\n", enable);
+		FG_LOG_I("set fg enable %u\n", enable);
 
 		if (enable == 1)
 			param = &fg_param;
@@ -430,14 +334,6 @@ static void fg_process_dbg_opt(const char *opt)
 			param = &fg_param_t0009;
 
 		disp_fg_config(0, param);
-	} else if (strncmp(opt, "dump_tbl:", 9) == 0) {
-		char *p = (char *)opt + 9;
-		u32 hw_id = 0;
-
-		FG_STR_CONVERT(&p, &hw_id, uint, goto Error);
-		FG_LOG_I("dump fg %d table\n", hw_id);
-
-		fg_dump_adl_table(hw_id);
 	} else if (strncmp(opt, "dump_param:", 11) == 0) {
 		char *p = (char *)opt + 11;
 		u32 hw_id = 0;
@@ -470,7 +366,45 @@ static void fg_process_dbg_opt(const char *opt)
 		FG_LOG_I("get fg status\n");
 
 		fg_sec_status();
-	} else {
+	} else if (strncmp(opt, "sw_filter:", 10) == 0) {
+		char *p = (char *)opt + 10;
+		uint32_t enable = 0;
+		bool sw_filter_enable = 0;
+
+		FG_STR_CONVERT(&p, &enable, uint, goto Error);
+
+		FG_LOG_I("set sw filter enable %u\n", enable);
+
+		sw_filter_enable = enable ? true : false;
+
+		disp_fg_sw_auto_reg_filter_enable(enable);
+	} else if (strncmp(opt, "dump_reg:", 9) == 0) {
+		char *p = (char *)opt + 9;
+		u32 hw_id = 0;
+		u32 len = 0;
+
+		FG_STR_CONVERT(&p, &hw_id, uint, goto Error);
+		FG_STR_CONVERT(&p, &len, uint, goto Error);
+
+		fg_hal_reg_dump(hw_id, len);
+	} else if (strncmp(opt, "write_reg:", 10) == 0) {
+		char *p = (char *)opt + 10;
+		u32 addr = 0;
+		u32 val = 0;
+
+		FG_STR_CONVERT(&p, &addr, uint, goto Error);
+		FG_STR_CONVERT(&p, &val, uint, goto Error);
+
+		fg_hal_reg_write(addr, val);
+	} else if (strncmp(opt, "dump_param_en:", 14) == 0) {
+		char *p = (char *)opt + 14;
+		u32 dump_en = 0;
+
+		FG_STR_CONVERT(&p, &dump_en, uint, goto Error);
+		FG_LOG_I("dump param enable %d\n", dump_en);
+
+		fg_dump_param_enable = dump_en ? true : false;
+	}  else {
 		FG_LOG_I(
 			"parse command error!\n%s\n\n%s sizeof(FG_STR_HELP) %d\n",
 			opt, FG_STR_HELP, (uint32_t)sizeof(FG_STR_HELP));
@@ -514,24 +448,11 @@ static int fg_debug_open(struct inode *inode, struct file *file)
 static ssize_t fg_debug_read(struct file *file, char __user *ubuf,
 			      size_t count, loff_t *ppos)
 {
-	ssize_t read_size = 0;
 
 	FG_LOG_I("start count %d\n", count);
 
-	if (fg_dbg_buf && strlen(fg_dbg_buf)) {
-		read_size = simple_read_from_buffer(ubuf, count, ppos, fg_dbg_buf,
-					       strlen(fg_dbg_buf));
-
-		FG_LOG_I("start strlen %d read_size %d\n", strlen(fg_dbg_buf), read_size);
-
-		if (read_size == 0)
-			fg_free_dbg_buf();
-	} else {
-		read_size = simple_read_from_buffer(ubuf, count, ppos, FG_STR_HELP,
-					       strlen(FG_STR_HELP));
-	}
-
-	return read_size;
+	return simple_read_from_buffer(ubuf, count, ppos, FG_STR_HELP,
+				       strlen(FG_STR_HELP));
 }
 
 static ssize_t fg_debug_write(struct file *file, const char __user *ubuf,

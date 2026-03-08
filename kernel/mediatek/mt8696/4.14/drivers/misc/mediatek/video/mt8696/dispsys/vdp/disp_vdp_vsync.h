@@ -77,6 +77,7 @@ enum WAKE_UP_TYPE {
 	WAKEUP_UNKNOWN,
 };
 extern void disp_fg_config(u32 fg_hw_id, struct mtk_av1_film_grain_params *fg_param);
+extern void disp_fg_config_scale_info(u32 hw_id, struct video_scale_info *info);
 void vdp_vsync_init(void);
 void vdp_wakeup_routine(enum WAKE_UP_TYPE type);
 void vdp_isr(void);
@@ -117,4 +118,5 @@ extern uint32_t idk_close_area;
 extern uint32_t idk_no_drop;
 extern uint32_t last_ion_fd[VIDEO_LAYER_MAX_COUNT];
 extern void dovi_idk_settings(uint32_t idk_set);
+extern struct mtk_disp_vdp_cap vdp_scale_info[VIDEO_LAYER_MAX_COUNT];
 #endif

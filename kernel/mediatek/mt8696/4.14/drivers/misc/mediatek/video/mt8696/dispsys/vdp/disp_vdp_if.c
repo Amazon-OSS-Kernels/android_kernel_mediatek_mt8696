@@ -119,6 +119,8 @@ uint32_t idk_vdo_pts[2];
 uint8_t idk_vdo_start[2];
 uint32_t vdp_not_mix = 3, vdp_not_display = 3;
 
+struct mtk_disp_vdp_cap vdp_scale_info[VIDEO_LAYER_MAX_COUNT];
+
 bool is_hd_resolution(void)
 {
 	return IS_HD_RES(current_resolution);
@@ -903,6 +905,11 @@ int disp_vdp_get_info(struct disp_hw_common_info *info)
 			vdp_cap->need_resizer = false;
 	} while (0);
 
+	if (vdp_cap->layer_id <= VDP_2)
+		memcpy((void *)&vdp_scale_info[vdp_cap->layer_id],
+		       (void *)vdp_cap,
+		       sizeof(struct mtk_disp_vdp_cap));
+
 	vdp_printf(
 		VDP_RESOLUTION_LOG,
 		"layer_id=%d, use_resizer=%d\n",
@@ -1203,9 +1210,10 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 			    &config->src, sizeof(struct mtk_disp_range)) &&
 		    !memcmp(&video_layer[config->layer_id].tgt_rgn,
 			    &config->tgt, sizeof(struct mtk_disp_range))) {
-			DISP_LOG_D(
-				"Same video buffer,skip,layerID[%d] pts[%lld]\n",
-				config->layer_id, config->pts);
+			vdp_printf(VDP_AVSYNC_LOG,
+				"Same video buffer,skip,layerID[%d] pts[%lld] fps=%d\n",
+				config->layer_id, config->pts,
+				config->fps);
 			return VDP_OK;
 		}
 	}
@@ -1669,10 +1677,15 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 	buf_info->release_fence_fd = fence.fence;
 	buf_info->current_fence_index = fence.value;
 
-	vdp_printf(VDP_AVSYNC_LOG,
-		"vdo%d new cur=%d",
+	vdp_printf(
+		VDP_AVSYNC_LOG,
+		"vdo%d new pts=%lld fps %d rel=%d cur=%d release %d",
 		buf_info->layer_id,
-		buf_info->current_fence_index);
+		config->pts,
+		config->fps,
+		buf_info->release_fence_fd,
+		buf_info->current_fence_index,
+		video_layer[config->layer_id].release_timeline_idx);
 
 	config_frame_count[config->layer_id]++;
 	if (vdp_cli_get()->enable_pts_debug)

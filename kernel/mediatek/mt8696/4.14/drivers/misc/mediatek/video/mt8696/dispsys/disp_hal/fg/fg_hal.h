@@ -15,6 +15,10 @@
 #define MS_U32		u32
 #endif
 
+#ifndef MS_S32
+#define MS_S32		s32
+#endif
+
 #ifndef MS_U16
 #define MS_U16		u16
 #endif
@@ -37,7 +41,16 @@
 #define FG_TBL_C_GNS_OFFSET		(FG_TBL_Y_GNS_OFFSET + FG_TBL_Y_GNS_SIZE)
 
 #define FG_LUMA_BLOCK_SIZE_Y		73
-#define FG_LUMA_BLOCK_SIZE_x		82
+#define FG_LUMA_BLOCK_SIZE_X		82
+
+#define FG_CHROMA_BLOCK_SIZE_Y		38
+#define FG_CHROMA_BLOCK_SIZE_X		44
+
+#define FG_LUAM_BLOCK_SIZE		(FG_LUMA_BLOCK_SIZE_Y * \
+					 FG_LUMA_BLOCK_SIZE_X)
+
+#define FG_CHROMA_BLOCK_SIZE		(FG_CHROMA_BLOCK_SIZE_Y * \
+					 FG_CHROMA_BLOCK_SIZE_X)
 
 #define FG_LUMA_GNS_PITCH		10
 #define FG_CHROMA_GNS_PITCH		20
@@ -78,6 +91,8 @@ struct fg_hw_reg_output {
 	MS_U8 cb_bypass_en;
 	MS_U8 cr_bypass_en;
 
+	MS_U8 force_write;
+
 	MS_U8 scaling_points_y[AV1_MAX_GRAIN_POINT_CNT][2];
 	MS_U8 scaling_points_cb[AV1_MAX_GRAIN_POINT_CNT][2];
 	MS_U8 scaling_points_cr[AV1_MAX_GRAIN_POINT_CNT][2];
@@ -91,9 +106,9 @@ struct fg_hw_adl_output {
 	MS_U8 u8scaling_lut_y256[256];
 	MS_U8 u8scaling_lut_cb256[256];
 	MS_U8 u8scaling_lut_cr256[256];
-	MS_U16 y_grain_block[5986];
-	MS_U16 cb_grain_block[1672];
-	MS_U16 cr_grain_block[1672];
+	MS_S32 y_grain_block[5986];
+	MS_S32 cb_grain_block[1672];
+	MS_S32 cr_grain_block[1672];
 };
 
 extern void __iomem *disp_fg_reg_base[];
