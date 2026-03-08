@@ -6089,7 +6089,7 @@ static int r8152_set_eee(struct r8152 *tp, struct ethtool_eee *eee)
 	tp->eee_en = eee->eee_enabled;
 	tp->eee_adv = val;
 
-	rtl_eee_enable(tp, tp->eee_en);
+	rtl_eee_enable(tp, false);
 
 	return 0;
 }
