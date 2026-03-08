@@ -381,6 +381,124 @@ int mmc_get_ext_csd(struct mmc_card *card, u8 **new_ext_csd)
 }
 EXPORT_SYMBOL_GPL(mmc_get_ext_csd);
 
+int mmc_send_vendor_cmd56_write(struct mmc_host *host, struct mmc_card *card,
+			 struct vendor_command_data *cmd_data, u32 arg)
+{
+	struct mmc_request mrq = {0};
+	struct mmc_command cmd = {0};
+	struct mmc_data data = {0};
+	struct scatterlist sg;
+	mrq.cmd = &cmd;
+	mrq.data = &data;
+	cmd.opcode = 56;
+	cmd.arg = arg;
+	cmd.flags = MMC_RSP_R1;
+	data.blksz = 512;
+	data.blocks = 1;
+	data.flags = MMC_DATA_WRITE;
+	data.sg = &sg;
+	data.sg_len = 1;
+
+	mmc_set_data_timeout(&data, card);
+	sg_init_one(&sg, cmd_data, 512);
+	mmc_wait_for_req(host, &mrq);
+
+	if (cmd.error)
+		return cmd.error;
+
+	if (data.error)
+		return data.error;
+
+	return 0;
+}
+
+int mmc_send_vendor_cmd56_read(struct mmc_host *host, struct mmc_card *card, u32 arg, u8 *buf)
+{
+	struct mmc_request mrq = {0};
+	struct mmc_command cmd = {0};
+	struct mmc_data data = {0};
+	struct scatterlist sg;
+
+	mrq.cmd = &cmd;
+	mrq.data = &data;
+	cmd.opcode = 56;
+	cmd.arg = arg;
+	cmd.flags = MMC_RSP_R1;
+	data.blksz = 512;
+	data.blocks = 1;
+	data.flags = MMC_DATA_READ;
+	data.sg = &sg;
+	data.sg_len = 1;
+
+	mmc_set_data_timeout(&data, card);
+	sg_init_one(&sg, buf, 512);
+	mmc_wait_for_req(host, &mrq);
+
+	if (cmd.error)
+		return cmd.error;
+
+	if (data.error)
+		return data.error;
+
+	return 0;
+}
+
+int mmc_send_vendor_cmd60(struct mmc_host *host, u32 arg)
+{
+	int ret = 0;
+	struct mmc_command cmd = {0};
+
+	cmd.opcode = 60;
+	cmd.arg = arg;
+	cmd.flags = MMC_RSP_R1B;
+
+	ret = mmc_wait_for_cmd(host, &cmd, 0);
+
+	return ret;
+}
+
+int mmc_send_cmd18_get_erase_count(struct mmc_host *host, struct mmc_card *card, u8 *buf)
+{
+	struct mmc_request mrq = {0};
+	struct mmc_command cmd = {0};
+	struct mmc_command stop = {0};
+	struct mmc_data data = {0};
+	struct scatterlist sg;
+
+	mrq.cmd = &cmd;
+	mrq.data = &data;
+	mrq.stop = &stop;
+
+	cmd.opcode = MMC_READ_MULTIPLE_BLOCK;
+	cmd.arg = 0;
+	cmd.flags = MMC_RSP_R1 | MMC_CMD_ADTC;
+
+	data.blksz = 512;
+	data.blocks = 32;
+	data.flags = MMC_DATA_READ;
+	data.sg = &sg;
+	data.sg_len = 1;
+
+	stop.opcode = MMC_STOP_TRANSMISSION;
+	stop.arg = 0;
+	stop.flags = MMC_RSP_R1B | MMC_CMD_AC;
+
+	mmc_set_data_timeout(&data, card);
+	sg_init_one(&sg, buf, 16384);
+	mmc_wait_for_req(host, &mrq);
+
+	if (cmd.error)
+		return cmd.error;
+
+	if (data.error)
+		return data.error;
+
+	if (stop.error)
+		return stop.error;
+
+	return 0;
+}
+
 int mmc_spi_read_ocr(struct mmc_host *host, int highcap, u32 *ocrp)
 {
 	struct mmc_command cmd = {};
@@ -1112,3 +1230,140 @@ int mmc_cmdq_disable(struct mmc_card *card)
 	return mmc_cmdq_switch(card, false);
 }
 EXPORT_SYMBOL_GPL(mmc_cmdq_disable);
+
+int mmc_send_vendor_wd_cmd62(struct mmc_card *card)
+{
+	int ret = 0;
+	struct mmc_command cmd = {0};
+	struct mmc_host *host = card->host;
+
+	cmd.opcode = 62;
+	cmd.arg = 0x96c9d71c;
+	cmd.flags = MMC_RSP_R1B | MMC_CMD_AC;
+
+	ret = mmc_wait_for_cmd(host, &cmd, 0);
+
+	return ret;
+}
+
+int mmc_send_vendor_wd_cmd63(struct mmc_card *card, unsigned char *buf, int len)
+{
+	struct mmc_request mrq = {0};
+	struct mmc_command cmd = {0};
+	struct mmc_data data = {0};
+	struct scatterlist sg;
+	struct mmc_host *host = card->host;
+
+	mrq.cmd = &cmd;
+	mrq.data = &data;
+
+	cmd.opcode = 63;
+	cmd.arg = 0;
+
+	cmd.flags =  MMC_RSP_R1 | MMC_CMD_ADTC;
+
+	data.blksz = len;
+	data.blocks = 1;
+	data.flags = MMC_DATA_READ;
+	data.sg = &sg;
+	data.sg_len = 1;
+
+	sg_init_one(&sg, buf, len);
+
+	mmc_set_data_timeout(&data, card);
+
+	mmc_wait_for_req(host, &mrq);
+
+	if (cmd.error)
+		return cmd.error;
+	if (data.error)
+		return data.error;
+
+	return 0;
+}
+
+int mmc_send_vendor_samsung_password_write(struct mmc_card *card, const unsigned char *buf)
+{
+        struct mmc_request mrq = {0};
+        struct mmc_command cmd = {0};
+        struct mmc_data data = {0};
+        struct scatterlist sg;
+        struct mmc_host *host = card->host;
+
+        mrq.cmd = &cmd;
+        mrq.data = &data;
+
+        cmd.opcode = 23;
+        cmd.arg = 1;
+        cmd.flags = MMC_RSP_R1 | MMC_CMD_AC;
+        mmc_wait_for_cmd(host, &cmd, 0);
+
+        if(cmd.error){
+                printk("[lxs] 1st cmd23 error=%d \n",cmd.error);
+                return cmd.error;
+        }
+
+        cmd.opcode = 25;
+        cmd.arg = 0xC7810000;
+        cmd.flags = MMC_RSP_R1 | MMC_CMD_ADTC;
+        data.blksz = 512;
+        data.blocks = 1;
+        data.flags = MMC_DATA_WRITE;
+        data.sg = &sg;
+        data.sg_len = 1;
+
+        mmc_set_data_timeout(&data, card);
+        sg_init_one(&sg, buf, 512);
+        mmc_wait_for_req(host, &mrq);
+
+        if (cmd.error)
+                return cmd.error;
+
+        if (data.error)
+                return data.error;
+
+        return 0;
+}
+
+int mmc_send_vendor_samsung_ssr_read(struct mmc_card *card, unsigned char *buf)
+{
+        struct mmc_request mrq = {0};
+        struct mmc_command cmd = {0};
+        struct mmc_data data = {0};
+        struct scatterlist sg;
+        struct mmc_host *host = card->host;
+
+        mrq.cmd = &cmd;
+        mrq.data = &data;
+        cmd.opcode = 23;
+        cmd.arg = 1;
+        cmd.flags = MMC_RSP_R1 | MMC_CMD_AC;
+        mmc_wait_for_cmd(host, &cmd, 0);
+
+        if(cmd.error){
+                printk("[lxs] 2nd cmd23 error=%d \n",cmd.error);
+                return cmd.error;
+        }
+
+        cmd.opcode = 18;
+        cmd.arg = 0xC7810000;
+        cmd.flags = MMC_RSP_R1;
+        data.blksz = 512;
+        data.blocks = 1;
+        data.flags = MMC_DATA_READ;
+        data.sg = &sg;
+        data.sg_len = 1;
+
+        mmc_set_data_timeout(&data, card);
+        sg_init_one(&sg, buf, 512);
+        mmc_wait_for_req(host, &mrq);
+
+        if (cmd.error) 
+                return cmd.error;
+
+        if (data.error)
+                return data.error;
+
+        return 0;
+}
+

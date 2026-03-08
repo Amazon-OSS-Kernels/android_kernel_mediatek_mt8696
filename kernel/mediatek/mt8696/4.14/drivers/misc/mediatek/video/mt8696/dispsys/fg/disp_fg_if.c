@@ -331,22 +331,8 @@ void disp_fg_config(u32 fg_hw_id, struct mtk_av1_film_grain_params *fg_param)
 	adl_tbl = &fg_adl_tbl[fg_hw_id];
 	param = &fg_params[fg_hw_id];
 
-	if (fg_param) {
-		FG_LOG_D("apply %d seed %d update %d scale %d lag %d %d %d\n",
-		fg_param->apply_grain,
-		fg_param->grain_seed,
-		fg_param->update_grain,
-		fg_param->grain_scaling,
-		fg_param->ar_coeff_lag,
-		fg_param->ar_coeff_shift,
-		fg_param->grain_scale_shift);
-
-		if (fg_param->update_grain)
-			memcpy(param, fg_param,
-			       sizeof(struct mtk_av1_film_grain_params));
-		else
-			param->grain_seed = fg_param->grain_seed;
-	}
+	if (fg_param)
+		memcpy(param, fg_param, sizeof(struct mtk_av1_film_grain_params));
 
 	ret = disp_fg_handler(fg_hw_id, param, adl_tbl);
 	FG_LOG_D("fg %d adl_tbl client %d used_size %d base %p\n",
