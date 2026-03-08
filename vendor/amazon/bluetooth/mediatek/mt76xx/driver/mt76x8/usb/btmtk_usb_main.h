@@ -20,7 +20,23 @@
 #endif
 
 #include <linux/timer.h>
+#if defined (CONFIG_AMAZON_METRICS_LOG) || defined(CONFIG_AMAZON_MINERVA_METRICS_LOG)
+#include <linux/metricslog.h>
+#endif
 
+#if defined (CONFIG_AMAZON_METRICS_LOG) || defined(CONFIG_AMAZON_MINERVA_METRICS_LOG)
+#define BT_DOMAIN                  "Kernel"
+#define BT_PROGRAM                 "remote-wireless"
+#define BT_OPERATION               "bt-driver"
+#define BT_KEY_BUS_DISC            "7668-bus-disc"
+#define BT_KEY_WOBLE               "7668-woble"
+#define BT_KEY_PROBE               "7668-probe"
+#endif
+
+#ifdef CONFIG_AMAZON_MINERVA_METRICS_LOG
+#define BT_GROUP_ID                "2999trpq"
+#define BT_SCHEMA_ID               "os59/2/02330400"
+#endif
 
 #define BD_ADDRESS_SIZE 6
 
@@ -38,14 +54,12 @@
 
 enum {
 	HW_ERR_NONE = 0,
-	HW_ERR_CODE_CHIP_RESET = 1,
-	HW_ERR_CODE_LEGACY_WOBLE = 2,
-	HW_ERR_CODE_USB_DISC = 3,
-	HW_ERR_CODE_CORE_DUMP = 4,
-	HW_ERR_CODE_POWER_ON = 5,
-	HW_ERR_CODE_POWER_OFF = 6,
-	HW_ERR_CODE_WOBLE = 7,
-	HW_ERR_CODE_SET_SLEEP_CMD = 8,
+	HW_ERR_CODE_BT_HOST = 0xF0,
+	HW_ERR_CODE_LEGACY_WOBLE = 0xF1,
+	HW_ERR_CODE_USB_DISC = 0xF2,
+	HW_ERR_CODE_WIFI = 0xF3,
+	HW_ERR_CODE_BT_FW = 0xF4,
+	HW_ERR_CODE_BT_DRIVER = 0xF5,
 };
 
 /* Please keep sync with btmtk_usb_set_state function */

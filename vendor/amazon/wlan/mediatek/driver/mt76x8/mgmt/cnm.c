@@ -1012,16 +1012,16 @@ UINT_8 cnmGetBssMaxBw(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 
 		if(prBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
 			eBand = prBssInfo->eBand;
-			DBGLOG(CNM, STATE, "use connected bcn eBand %d target prBssDesc %p\n", eBand, prBssDesc);
+			DBGLOG(CNM, INFO, "use connected bcn eBand %d target prBssDesc %p\n", eBand, prBssDesc);
 		}
 		else {
 			if (prBssDesc) {
 				eBand = prBssDesc->eBand;
-				DBGLOG(CNM, STATE, "use target bcn eBand %d\n", eBand);
+				DBGLOG(CNM, INFO, "use target bcn eBand %d\n", eBand);
 			}
 			else {
 				eBand = prBssInfo->eBand;
-				DBGLOG(CNM, STATE, "use bcn eBand %d\n", eBand);
+				DBGLOG(CNM, INFO, "use bcn eBand %d\n", eBand);
 			}
 		}
 
@@ -1068,18 +1068,18 @@ UINT_8 cnmGetBssMaxBw(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 			(prBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED) &&
 			prBssDesc) {
 		ucChannelBw = rlmDomainGetChannelBw(prBssDesc->ucChannelNum);
-		DBGLOG(CNM, STATE, "target channel %d ucChannelBw %d\n", prBssDesc->ucChannelNum, ucChannelBw);
+		DBGLOG(CNM, INFO, "target channel %d ucChannelBw %d\n", prBssDesc->ucChannelNum, ucChannelBw);
 	}
 	else { // P2P and IS_BSS_AIS(prBssInfo) in connected state
 		ucChannelBw =
 				rlmDomainGetChannelBw(prBssInfo->ucPrimaryChannel);
-		DBGLOG(CNM, STATE, "channel %d ucChannelBw %d\n", prBssInfo->ucPrimaryChannel, ucChannelBw);
+		DBGLOG(CNM, INFO, "channel %d ucChannelBw %d\n", prBssInfo->ucPrimaryChannel, ucChannelBw);
 	}
 	if (ucMaxBandwidth > ucChannelBw)
 		ucMaxBandwidth = ucChannelBw;
 #endif
 
-	DBGLOG(CNM, STATE, "ucMaxBandwidth %d\n", ucMaxBandwidth);
+	DBGLOG(CNM, INFO, "ucMaxBandwidth %d\n", ucMaxBandwidth);
 
 	return ucMaxBandwidth;
 }

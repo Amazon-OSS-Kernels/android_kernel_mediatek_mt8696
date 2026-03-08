@@ -80,6 +80,9 @@
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT
+static void glResetTriggerUpdateCnt(void);
+enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
+uint64_t u8ResetTime;
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -100,6 +103,21 @@
 #define RESETTING	1
 #define NOTIFY_REPEAT	2
 #endif
+
+// update chip_reset_info.c if apcChipResetReason / apcChipResetAction have
+// changed
+const char *const apcChipResetReason[RST_REASON_MAX] = {
+	"RST_UNKNOWN",
+	"RST_PROCESS_ABNORMAL_INT",
+	"RST_DRV_OWN_FAIL",
+	"RST_FW_ASSERT",
+	"RST_BT_TRIGGER",
+	"RST_OID_TIMEOUT",
+	"RST_CMD_TRIGGER",
+	"RST_CR_ACCESS_FAIL",
+	"RST_HIF_FAIL",
+	"RST_PROBE_FAIL",
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -137,6 +155,9 @@ static BOOLEAN g_fgIsBTExist = TRUE;
 static BOOLEAN g_fgIsCDEndTimeout = FALSE;
 static BOOLEAN g_fgIsNotifyBTRemoveEnd = FALSE;
 
+#endif
+#ifdef _HIF_USB
+BOOLEAN g_fgIsWifiTrig = FALSE;
 #endif
 /*******************************************************************************
 *                                 M A C R O S
@@ -188,8 +209,43 @@ static void RSTP2pDestroyWirelessDevice(void);
 *                              F U N C T I O N S
 ********************************************************************************
 */
+static void glResetTriggerUpdateCnt(void)
+{
+	typedef uint32_t (*p_inc_func_type) (uint32_t);
+	p_inc_func_type inc_func;
+	char *reason_func_name = "incChipResetReasonCnt";
+	void *pvAddrReason = NULL;
+
+	pvAddrReason = (void *) kallsyms_lookup_name(reason_func_name);
+
+	if (eResetReason >= 0 && eResetReason < RST_REASON_MAX) {
+		DBGLOG(INIT, ERROR, "reset reason %s\n",
+			apcChipResetReason[eResetReason]);
+		if(pvAddrReason) {
+			inc_func = (p_inc_func_type) pvAddrReason;
+			inc_func(eResetReason);
+		}
+		else {
+			DBGLOG(INIT, ERROR, "%s does not exist\n", reason_func_name);
+		}
+	}
+	else
+		DBGLOG(INIT, ERROR, "unsupported reason %d\n", eResetReason);
+}
+
 #ifdef _HIF_USB
-VOID glResetTrigger(P_ADAPTER_T prAdapter)
+BOOLEAN checkResetState(void)
+{
+	return (g_fgIsWifiTrig);
+}
+
+void RSTClearState(void)
+{
+	DBGLOG(INIT, STATE, "[RST] RSTClearState\n");
+	g_fgIsWifiTrig = FALSE;
+}
+
+VOID glResetTrigger(P_ADAPTER_T prAdapter, const UINT_8 *pucFile, UINT_32 u4Line)
 {
 
 	void (*btmtk_usb_toggle_rst_pin)(void);
@@ -197,13 +253,19 @@ VOID glResetTrigger(P_ADAPTER_T prAdapter)
         char buf[512];
 #endif
 
+	if (!checkResetState()) {
+		glResetTriggerUpdateCnt();
+		g_fgIsWifiTrig = TRUE;
+	}
+
 	/* Call POR(Power On Reset) off->on API provided by BT driver */
 	btmtk_usb_toggle_rst_pin = (void *)kallsyms_lookup_name("btmtk_usb_toggle_rst_pin");
 
 	if (!btmtk_usb_toggle_rst_pin) {
 		DBGLOG(HAL, ERROR, "btmtk_usb_toggle_rst_pin() is not found\n");
 	} else {
-		DBGLOG(HAL, ERROR, "Trigger MT7668 POR(Power On Reset) off->on by BT driver\n");
+		DBGLOG(HAL, ERROR, "Trigger MT7668 POR(Power On Reset) off->on by BT driver in %s line %u\n",
+			pucFile, u4Line);
 		btmtk_usb_toggle_rst_pin();
 
 #if defined(CFG_AMAZON_METRICS_LOG)
@@ -216,7 +278,7 @@ VOID glResetTrigger(P_ADAPTER_T prAdapter)
 #endif
 
 #ifdef _HIF_SDIO
-VOID glResetTrigger(P_ADAPTER_T prAdapter)
+VOID glResetTrigger(P_ADAPTER_T prAdapter, const UINT_8 *pucFile, UINT_32 u4Line)
 {
 	int bet = 0;
 	typedef int (*p_bt_fun_type) (int);
@@ -249,7 +311,8 @@ VOID glResetTrigger(P_ADAPTER_T prAdapter)
 	if (bt_func) {
 		BOOLEAN is_coredump = (~(prAdapter->fgIsChipNoAck)) & 0x1;
 
-		DBGLOG(INIT, STATE, "[RST] wifi driver trigger rst\n");
+		DBGLOG(INIT, STATE, "[RST] wifi driver trigger rst in %s line %u\n",
+			pucFile, u4Line);
 		DBGLOG(INIT, STATE, "[RST] is_coredump = %d\n",
 							is_coredump);
 #if CFG_ASSERT_DUMP
@@ -257,6 +320,7 @@ VOID glResetTrigger(P_ADAPTER_T prAdapter)
 #else
 		bet = bt_func(0);
 #endif
+
 		if (bet) {
 			g_fgIsBTExist = FALSE;
 			DBGLOG(INIT, ERROR, "[RST] bt driver is not ready\n");
@@ -298,11 +362,27 @@ RESET_START:
 #endif
 
 #ifdef _HIF_PCIE
-VOID glResetTrigger(P_ADAPTER_T prAdapter)
+VOID glResetTrigger(P_ADAPTER_T prAdapter, const UINT_8 *pucFile, UINT_32 u4Line)
 {
 	DBGLOG(HAL, ERROR, "pcie does not support trigger core dump yet !!\n");
 }
+
+BOOLEAN checkResetState(void)
+{
+	return FALSE;
+}
 #endif
+
+void glGetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T
+            eReason)
+{
+	if (kalIsResetting())
+		return;
+
+	u8ResetTime = sched_clock();
+	eResetReason = eReason;
+}
+
 
 #ifdef _HIF_SDIO
 /*----------------------------------------------------------------------------*/
@@ -371,6 +451,8 @@ void removeWlanSelf(struct work_struct *work)
 		kalMsleep(100);
 
 	DBGLOG(INIT, STATE, "[RST] start mtk_sdio_remove\n");
+	glResetTriggerUpdateCnt();
+
 #if MTK_WCN_HIF_SDIO
 	bet = mtk_sdio_remove();
 #else
@@ -585,6 +667,7 @@ INT_32 bt_notify_wlan_remove(INT_32 reserved)
 		g_fgIsBTExist = TRUE;
 		resetInit();
 		set_core_dump_start(TRUE);
+		glGetRstReason(RST_BT_TRIGGER);
 		schedule_work(&remove_work);
 		DBGLOG(INIT, ERROR, "[RST] creat remove_work\n");
 	}
@@ -705,12 +788,8 @@ void RSTP2pDestroyWirelessDevice(void)
 
 }
 
-#else
-BOOLEAN checkResetState(void)
-{
-	return FALSE;
-}
 #endif
+
 #endif /* CFG_CHIP_RESET_SUPPORT */
 
 /*----------------------------------------------------------------------------*/

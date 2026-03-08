@@ -3129,7 +3129,7 @@ INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		if (g_u4ProbeChipResetTimes < PROBE_CHIP_RESET_LIMIT) {
 			DBGLOG(INIT, ERROR, "wlanProbe: trigger whole reset\n");
 			g_u4ProbeChipResetTimes++;
-			glResetTrigger(prGlueInfo->prAdapter);
+			GL_RESET_TRIGGER(prAdapter, RST_PROBE_FAIL);
 		}
 #endif
 	}

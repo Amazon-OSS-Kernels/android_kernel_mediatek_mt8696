@@ -83,11 +83,6 @@
 #include <linux/can/netlink.h>
 #include <net/netlink.h>
 
-#if CFG_SUPPORT_WAPI
-extern UINT_8 keyStructBuf[1024];	/* add/remove key shared buffer */
-#else
-extern UINT_8 keyStructBuf[100];	/* add/remove key shared buffer */
-#endif
 /* workaround for some ANR CRs. if suppliant is blocked longer than 10s, wifi hal will tell wifiMonitor
 * to teminate. for the case which can block supplicant 10s is to del key more than 5 times. the root cause
 * is that there is no resource in TC4, so del key command was not able to set, and then oid

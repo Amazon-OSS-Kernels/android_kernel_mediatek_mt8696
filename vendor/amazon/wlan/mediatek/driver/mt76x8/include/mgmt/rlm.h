@@ -231,6 +231,7 @@ extern RLM_CAL_RESULT_ALL_V2_T g_rBackupCalDataAllV2;
 typedef struct _SWITCH_CH_AND_BAND_PARAMS_T {
 	BOOLEAN fgBeaconNewChannelIsDFS;
 	BOOLEAN fgActionNewChannelIsDFS;
+	BOOLEAN fgNewChannelIsDisabled;
 	UINT_8 ucCsaNewCh;
 	UINT_8 ucCsaCount;
 	UINT_8 ucVhtS1;

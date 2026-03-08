@@ -2601,11 +2601,14 @@ wlanoidSetAddKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Se
 	DBGLOG(RSN, INFO, "cipher = %d keyid = %d keylen = %d\n", prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId,
 	       prCmdKey->ucKeyLen);
 	DBGLOG_MEM8(RSN, INFO, prCmdKey->aucKeyMaterial, prCmdKey->ucKeyLen);
-
-	DBGLOG(RSN, INFO, "wepkeyUsed = %d\n", prBssInfo->wepkeyUsed[prCmdKey->ucKeyId]);
-	DBGLOG(RSN, INFO, "wepkeyWlanIdx = %d:", prBssInfo->wepkeyWlanIdx);
-	DBGLOG(RSN, INFO, "ucBMCWlanIndexSUsed = %d\n", prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId]);
-	DBGLOG(RSN, INFO, "ucBMCWlanIndexS = %d:", prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
+	if (prCmdKey->ucKeyId < MAX_KEY_NUM) {
+		DBGLOG(RSN, INFO, "wepkeyUsed = %d\n", prBssInfo->wepkeyUsed[prCmdKey->ucKeyId]);
+		DBGLOG(RSN, INFO, "wepkeyWlanIdx = %d:", prBssInfo->wepkeyWlanIdx);
+		DBGLOG(RSN, INFO, "ucBMCWlanIndexSUsed = %d\n", prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId]);
+		DBGLOG(RSN, INFO, "ucBMCWlanIndexS = %d:", prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
+	} else {
+		DBGLOG(RSN, WARN, "ucKeyId(%d) oob(%d)", prCmdKey->ucKeyId, MAX_KEY_NUM);
+	}
 #endif
 
 	/* insert into prCmdQueue */
@@ -6330,6 +6333,11 @@ wlanoidSetSwCtrlWrite(IN P_ADAPTER_T prAdapter,
 		ucChannelWidth = (UINT_8)((u4Data & BITS(4, 7)) >> 4);
 		ucBssIndex = (UINT_8) u2SubId;
 
+		if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+			DBGLOG(RLM, ERROR, "Invalid bssidx:%d\n", ucBssIndex);
+			break;
+		}
+
 		/* ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz */
 		DBGLOG(REQ, INFO, "Change BSS[%d] OpMode to BW[%d] Nss[%d]\n",
 			ucBssIndex, ucChannelWidth, ucNss);
@@ -6721,7 +6729,11 @@ wlanoidSetKeyCfg(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Se
 
 	wlanInitFeatureOption(prAdapter);
 #if CFG_SUPPORT_EASY_DEBUG
+#if CFG_SUPPORT_SEND_ONLY_ONE_CFG
+	wlanFeatureToFwOnlyOneCfg(prAdapter, prKeyCfgInfo->aucKey, prKeyCfgInfo->aucValue);
+#else
 	wlanFeatureToFw(prAdapter);
+#endif
 #endif
 
 	return rWlanStatus;
@@ -11964,6 +11976,10 @@ wlanoidAdvCtrl(IN P_ADAPTER_T prAdapter,
 		len = sizeof(struct CMD_ADMIN_CTRL_CONFIG);
 		break;
 #endif
+	case CMD_GET_MAGIC_PKT_INFO_TYPE:
+		*pu4QueryInfoLen = sizeof(CMD_GET_MAGIC_PKT_INFO_T);
+		len = sizeof(CMD_GET_MAGIC_PKT_INFO_T);
+		break;
 	default:
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
@@ -12751,10 +12767,15 @@ wlanSuspendLinkDown(IN P_GLUE_INFO_T prGlueInfo)
 
 	prAisFsmInfo = &(prGlueInfo->prAdapter->rWifiVar.rAisFsmInfo);
 
+	aisFsmStateAbort_SCAN(prGlueInfo->prAdapter);
+
 	/* 1) wifi cfg "Wow" must be true, 2) wow is disable 3) WIfI connected => execute link down flow */
 	if (prGlueInfo->prAdapter->rWifiVar.ucWow && !prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
 		if (kalGetMediaStateIndicated(prGlueInfo) == PARAM_MEDIA_STATE_CONNECTED ||
 			prAisFsmInfo->eCurrentState == AIS_STATE_DISCONNECTING) {
+
+			/* Only flush all pending AIS Reqs for suspend linkdown */
+			aisFsmFlushRequest(prGlueInfo->prAdapter);
 
 			DBGLOG(REQ, STATE, "Suspend link down\n");
 			rStatus = kalIoctl(prGlueInfo, wlanoidLinkDown, NULL, 0, TRUE, FALSE, FALSE, &u4BufLen);

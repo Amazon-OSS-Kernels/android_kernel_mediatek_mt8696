@@ -1588,6 +1588,15 @@ typedef struct _CMD_FW_LOG_2_HOST_CTRL_T {
 	UINT_32 u4HostTimeMSec;
 } CMD_FW_LOG_2_HOST_CTRL_T, *P_CMD_FW_LOG_2_HOST_CTRL_T;
 
+typedef struct _CMD_GET_MAGIC_PKT_INFO {
+	UINT_16 u2Type;
+	UINT_16 u2Len;
+	UINT_32 u4ConfigMask;
+	UINT_32 u4MagicPktCntTotal;
+	UINT_32 u4GpioPullLowCntTotal;
+	UINT_32 u4GpioPullHighCntTotal;
+} CMD_GET_MAGIC_PKT_INFO_T, *P_CMD_GET_MAGIC_PKT_INFO_T;
+
 typedef struct _CMD_CHIP_CONFIG_T {
 	UINT_16 u2Id;
 	UINT_8 ucType;
@@ -2570,6 +2579,8 @@ struct EVENT_CSI_DATA_T {
 #ifdef CFG_SUPPORT_EXT_PTA_DEBUG_COMMAND
 #define CMD_EXT_PTA_CONFIG_TYPE (0x7)
 #endif
+/* 0x8 is reserved for GARP count */
+#define CMD_GET_MAGIC_PKT_INFO_TYPE (0x9)
 
 /* for PtaConfig field */
 #define CMD_PTA_CONFIG_PTA_EN (1<<0)

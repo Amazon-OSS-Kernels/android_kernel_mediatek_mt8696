@@ -274,6 +274,11 @@ WLAN_STATUS bowCmdGetMacStatus(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd
 
 	/* fill event header */
 	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_MAC_STATUS)), VIR_MEM_TYPE);
+	if (!prEvent)
+	{
+		DBGLOG(BOW, WARN, "Memory allocate for prEvent failed: %d bytes\n", sizeof(AMPC_EVENT) + sizeof(BOW_MAC_STATUS));
+		return WLAN_STATUS_FAILURE;
+	}
 
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_MAC_STATUS;
 	prEvent->rHeader.ucSeqNumber = prCmd->rHeader.ucSeqNumber;
@@ -1019,6 +1024,11 @@ VOID wlanbowCmdEventSetCommon(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInf
 
 	/* fill event header */
 	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS)), VIR_MEM_TYPE);
+	if (!prEvent)
+	{
+		DBGLOG(BOW, WARN, "Memory allocate for prEvent failed: %d bytes\n", sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS));
+		return;
+	}
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_COMMAND_STATUS;
 	prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
 	prEvent->rHeader.u2PayloadLength = sizeof(BOW_COMMAND_STATUS);
@@ -1059,6 +1069,11 @@ VOID wlanbowCmdEventLinkConnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCm
 
 	/* fill event header */
 	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_LINK_CONNECTED)), VIR_MEM_TYPE);
+	if (!prEvent)
+	{
+		DBGLOG(BOW, WARN, "Memory allocate for prEvent failed: %d bytes\n", sizeof(AMPC_EVENT) + sizeof(BOW_LINK_CONNECTED));
+		return;
+	}
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_LINK_CONNECTED;
 	prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
 	prEvent->rHeader.u2PayloadLength = sizeof(BOW_LINK_CONNECTED);
@@ -1145,6 +1160,11 @@ VOID wlanbowCmdEventLinkDisconnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T p
 	}
 	/* fill event header */
 	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_LINK_DISCONNECTED)), VIR_MEM_TYPE);
+	if (!prEvent)
+	{
+		DBGLOG(BOW, WARN, "Memory allocate for prEvent failed: %d bytes\n", sizeof(AMPC_EVENT) + sizeof(BOW_LINK_DISCONNECTED));
+		return;
+	}
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_LINK_DISCONNECTED;
 	if ((prCmdInfo->u4PrivateData))
 		prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
@@ -1270,6 +1290,11 @@ VOID wlanbowCmdEventSetSetupConnection(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T
 
 	/* fill event header */
 	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS)), VIR_MEM_TYPE);
+	if (!prEvent)
+	{
+		DBGLOG(BOW, WARN, "Memory allocate for prEvent failed: %d bytes\n", sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS));
+		return;
+	}
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_COMMAND_STATUS;
 	prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
 	prEvent->rHeader.u2PayloadLength = sizeof(BOW_COMMAND_STATUS);
@@ -1315,6 +1340,11 @@ VOID wlanbowCmdEventReadLinkQuality(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T pr
 
 	/* fill event header */
 	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_LINK_QUALITY)), VIR_MEM_TYPE);
+	if (!prEvent)
+	{
+		DBGLOG(BOW, WARN, "Memory allocate for prEvent failed: %d bytes\n", sizeof(AMPC_EVENT) + sizeof(BOW_LINK_QUALITY));
+		return;
+	}
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_LINK_QUALITY;
 	prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
 	prEvent->rHeader.u2PayloadLength = sizeof(BOW_LINK_QUALITY);
@@ -1357,6 +1387,11 @@ VOID wlanbowCmdEventReadRssi(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 
 	/* fill event header */
 	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_LINK_QUALITY)), VIR_MEM_TYPE);
+	if (!prEvent)
+	{
+		DBGLOG(BOW, WARN, "Memory allocate for prEvent failed: %d bytes\n", sizeof(AMPC_EVENT) + sizeof(BOW_LINK_QUALITY));
+		return;
+	}
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_RSSI;
 	prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
 	prEvent->rHeader.u2PayloadLength = sizeof(BOW_RSSI);
@@ -1391,6 +1426,11 @@ VOID wlanbowCmdTimeoutHandler(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInf
 
 	/* fill event header */
 	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS)), VIR_MEM_TYPE);
+	if (!prEvent)
+	{
+		DBGLOG(BOW, WARN, "Memory allocate for prEvent failed: %d bytes\n", sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS));
+		return;
+	}
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_COMMAND_STATUS;
 	prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
 	prEvent->rHeader.u2PayloadLength = sizeof(BOW_COMMAND_STATUS);

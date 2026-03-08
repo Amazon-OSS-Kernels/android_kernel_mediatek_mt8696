@@ -164,6 +164,10 @@
 #define CFG_SUPPORT_DFS             1	/* DFS (802.11h) */
 #endif
 
+#ifndef CFG_DFS_NEWCH_DFS_FORCE_DISCONNECT
+#define CFG_DFS_NEWCH_DFS_FORCE_DISCONNECT          1
+#endif
+
 #if (CFG_SUPPORT_DFS == 1)	/* Add by Enlai */
 #define CFG_SUPPORT_QUIET           1	/* Quiet (802.11h) */
 #define CFG_SUPPORT_SPEC_MGMT       1	/* Spectrum Management (802.11h): TPC and DFS */
@@ -905,6 +909,14 @@
 #define CFG_SUPPORT_EASY_DEBUG               1
 #define CFG_SUPPORT_FW_DBG_LEVEL_CTRL        1
 
+/*------------------------------------------------------------------------------
+ * Flags of driver to send only one cfg to fw
+ *------------------------------------------------------------------------------
+ */
+
+#ifndef CFG_SUPPORT_SEND_ONLY_ONE_CFG
+#define CFG_SUPPORT_SEND_ONLY_ONE_CFG        1
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags of driver delay calibration atfer efuse buffer mode CMD
@@ -1101,6 +1113,11 @@
 #ifndef CFG_RESET_DUE_TO_REG_NETDEV_FAIL
 #define CFG_RESET_DUE_TO_REG_NETDEV_FAIL 0
 #endif
+
+#ifndef CFG_FTV_62866_PATCH
+#define CFG_FTV_62866_PATCH 0
+#endif
+
 
 /*******************************************************************************
 *                             D A T A   T Y P E S

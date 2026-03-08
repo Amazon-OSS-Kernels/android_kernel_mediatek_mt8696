@@ -1084,7 +1084,9 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 									cnmTimerStopTimer(prAdapter,
 										&prAdapter->rWifiVar.rDBDCDisableCountdownTimer);
 
-								if (timerPendingTimer(&prAdapter->rWifiVar.rDBDCSwitchGuardTimer))
+								/* only stop pening Switch Guard Timer when DBDC is being disabled */
+								if (timerPendingTimer(&prAdapter->rWifiVar.rDBDCSwitchGuardTimer) &&
+									!prAdapter->rWifiVar.fgDbDcModeEn)
 									cnmTimerStopTimer(prAdapter,
 										&prAdapter->rWifiVar.rDBDCSwitchGuardTimer);
 
@@ -1953,11 +1955,15 @@ VOID aisFsmStateAbort(IN P_ADAPTER_T prAdapter, UINT_8 ucReasonOfDisconnect, BOO
 		break;
 
 	case AIS_STATE_REQ_REMAIN_ON_CHANNEL:
+		fgIsCheckConnected = TRUE;
+
 		/* release channel */
 		aisFsmReleaseCh(prAdapter);
 		break;
 
 	case AIS_STATE_REMAIN_ON_CHANNEL:
+		fgIsCheckConnected = TRUE;
+
 		/* 1. release channel */
 		aisFsmReleaseCh(prAdapter);
 
@@ -2279,6 +2285,8 @@ enum _ENUM_AIS_STATE_T aisFsmJoinCompleteAction(IN struct _ADAPTER_T *prAdapter,
 				}
 			}
 		}
+		DBGLOG(AIS, STATE, "Joined BSS eBand %d channel %d ucChannelBw %d\n", prAisBssInfo->eBand,
+                       prAisBssInfo->ucPrimaryChannel, rlmDomainGetChannelBw(prAisBssInfo->ucPrimaryChannel));
 	return eNextState;
 }
 
@@ -3461,12 +3469,22 @@ VOID aisFsmRunEventJoinTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 			wlanClearScanningResult(prAdapter);
 			eNextState = AIS_STATE_ONLINE_SCAN;
 		}
+		/* 3. Process for pending roaming scan */
+		else if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_ROAMING_SEARCH, TRUE) == TRUE)
+			eNextState = AIS_STATE_LOOKING_FOR;
+		/* 4. Process for pending roaming scan */
+		else if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_ROAMING_CONNECT, TRUE) == TRUE)
+			eNextState = AIS_STATE_SEARCH;
+		else if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_REMAIN_ON_CHANNEL, TRUE) == TRUE)
+			eNextState = AIS_STATE_REQ_REMAIN_ON_CHANNEL;
 
 		break;
 
 	default:
 		/* release channel */
 		aisFsmReleaseCh(prAdapter);
+		prAisFsmInfo->fgIsInfraChannelFinished = TRUE;
+		DBGLOG(AIS, WARN, "Join Timeout in state(%d)\n", prAisFsmInfo->eCurrentState);
 		break;
 
 	}
@@ -3930,11 +3948,16 @@ VOID aisBssLinkDown(IN P_ADAPTER_T prAdapter)
 	P_BSS_INFO_T prAisBssInfo;
 	BOOLEAN fgDoAbortIndication = FALSE;
 	P_CONNECTION_SETTINGS_T prConnSettings;
+	P_AIS_FSM_INFO_T prAisFsmInfo;
 
 	ASSERT(prAdapter);
 
 	prAisBssInfo = prAdapter->prAisBssInfo;
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
+
+	if (!prAisFsmInfo)
+		return;
 
 	/* 4 <1> Diagnose Connection for Beacon Timeout Event */
 	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
@@ -3953,6 +3976,7 @@ VOID aisBssLinkDown(IN P_ADAPTER_T prAdapter)
 		prConnSettings->fgIsDisconnectedByNonRequest = TRUE;
 		DBGLOG(AIS, EVENT, "aisBssLinkDown\n");
 		aisFsmStateAbort(prAdapter, DISCONNECT_REASON_CODE_DISASSOCIATED, FALSE);
+		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rDeauthDoneTimer);
 		aisDeauthXmitComplete(prAdapter, NULL, TX_RESULT_LIFE_TIMEOUT);
 	} else {
 		DBGLOG(AIS, EVENT, "Skip aisBssLinkDown (state=%d)\n",
@@ -4002,7 +4026,7 @@ aisDeauthXmitComplete(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN 
 	ASSERT(prAdapter);
 
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
-	if (rTxDoneStatus == TX_RESULT_SUCCESS)
+	if (rTxDoneStatus == TX_RESULT_SUCCESS || rTxDoneStatus == TX_RESULT_DROPPED_IN_DRIVER)
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rDeauthDoneTimer);
 
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_DISCONNECTING) {
@@ -4359,7 +4383,9 @@ VOID aisFsmRunEventRemainOnChannel(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMs
 	prAisFsmInfo->rChReqInfo.u4DurationMs = prRemainOnChannel->u4DurationMs;
 	prAisFsmInfo->rChReqInfo.u8Cookie = prRemainOnChannel->u8Cookie;
 
-	if (prAisFsmInfo->eCurrentState == AIS_STATE_IDLE || prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_IDLE ||
+		(prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR &&
+		prAisFsmInfo->fgIsInfraChannelFinished == TRUE)) {
 		/* transit to next state */
 		aisFsmSteps(prAdapter, AIS_STATE_REQ_REMAIN_ON_CHANNEL);
 	} else {

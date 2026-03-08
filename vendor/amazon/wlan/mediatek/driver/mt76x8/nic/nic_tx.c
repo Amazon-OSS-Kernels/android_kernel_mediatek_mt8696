@@ -1281,6 +1281,14 @@ nicTxComposeDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	default:
 		break;
 	}
+		if (prMsduInfo->fgIs802_1x) {
+			if (prAdapter->fgIsTest1xTx == 2) {
+				DBGLOG(RSN, STATE, "%s: (fgIsTest1xTx == 2) test 1XTX frame stuck in queue\n", __func__);
+				HAL_MAC_TX_DESC_SET_FR_RATE(prTxDesc, 0xff);
+				HAL_MAC_TX_DESC_SET_FIXED_RATE_MODE_TO_DESC(prTxDesc);
+				HAL_MAC_TX_DESC_SET_FIXED_RATE_ENABLE(prTxDesc);
+			}
+		}
 
 }
 
@@ -1922,6 +1930,9 @@ WLAN_STATUS nicTxCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UIN
 	P_MSDU_INFO_T prMsduInfo;
 	P_TX_CTRL_T prTxCtrl;
 	struct sk_buff *skb;
+#if CFG_FTV_62866_PATCH
+	uint32_t ret = WLAN_STATUS_SUCCESS;
+#endif
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1943,7 +1954,11 @@ WLAN_STATUS nicTxCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UIN
 		prCmdInfo->pucTxp = skb->data;
 		prCmdInfo->u4TxpLen = skb->len;
 
+#if CFG_FTV_62866_PATCH
+		ret = HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
+#else
 		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
+#endif
 
 		prMsduInfo->prPacket = NULL;
 
@@ -1973,7 +1988,11 @@ WLAN_STATUS nicTxCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UIN
 		prCmdInfo->pucTxp = prMsduInfo->prPacket;
 		prCmdInfo->u4TxpLen = prMsduInfo->u2FrameLength;
 
+#if CFG_FTV_62866_PATCH
+		ret = HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
+#else
 		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
+#endif
 		/* <4> Management Frame Post-Processing */
 		GLUE_DEC_REF_CNT(prTxCtrl->i4TxMgmtPendingNum);
 
@@ -2020,13 +2039,25 @@ WLAN_STATUS nicTxCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UIN
 		prCmdInfo->pucTxp = NULL;
 		prCmdInfo->u4TxpLen = 0;
 
+#if CFG_FTV_62866_PATCH
+		ret = HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
+		DBGLOG(INIT, TRACE,
+		       "TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u] status[%x]\n",
+		       prWifiCmd->ucCID, prWifiCmd->ucSeqNum,
+		       prWifiCmd->ucSetQuery, prWifiCmd->u2Length, ret);
+#else
 		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
 
 		DBGLOG(INIT, INFO, "TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u]\n",
 			prWifiCmd->ucCID, prWifiCmd->ucSeqNum, prWifiCmd->ucSetQuery, prWifiCmd->u2Length);
+#endif
 	}
 
+#if CFG_FTV_62866_PATCH
+	return ret;
+#else
 	return WLAN_STATUS_SUCCESS;
+#endif
 }				/* end of nicTxCmd() */
 
 /*----------------------------------------------------------------------------*/
@@ -2283,8 +2314,11 @@ BOOLEAN nicTxFillMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 			prMsduInfo->pfTxDoneHandler = wlanDhcpTxDone;
 		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) && prAdapter->rWifiVar.ucArpTxDone)
 			prMsduInfo->pfTxDoneHandler = wlanArpTxDone;
-		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_1X))
+		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_1X)) {
 			prMsduInfo->pfTxDoneHandler = wlan1xTxDone;
+			nicTxSetPktLifeTime(prMsduInfo, 1500);
+			nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
+		}
 
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DHCP) ||
 			GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) ||

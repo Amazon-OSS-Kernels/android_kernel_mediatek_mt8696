@@ -42,6 +42,9 @@
 #define BTMTK_LOG_LEVEL_MAX		BTMTK_LOG_LEVEL_DEBUG
 #define BTMTK_LOG_LEVEL_DEFAULT		BTMTK_LOG_LEVEL_INFO	/* default setting */
 
+#define BTMTK_LOG_FULL_PRINT		1
+#define BTMTK_LOG_LIMIT_PRINT	 	0
+
 extern u8 btmtk_log_lvl;
 
 #define BTUSB_ERR(fmt, ...)	 \
@@ -52,6 +55,9 @@ extern u8 btmtk_log_lvl;
 	do { if (btmtk_log_lvl >= BTMTK_LOG_LEVEL_INFO) pr_warn_ratelimited("[btmtk_info] "fmt"\n", ##__VA_ARGS__); } while (0)
 #define BTUSB_DBG(fmt, ...)	 \
 	do { if (btmtk_log_lvl >= BTMTK_LOG_LEVEL_DEBUG) pr_warn_ratelimited("[btmtk_debug] "fmt"\n", ##__VA_ARGS__); } while (0)
+
+#define BTUSB_PRINT(val, fmt, ...)	 \
+	do { if (val == BTMTK_LOG_FULL_PRINT) pr_warn_ratelimited("[btmtk_log] "fmt"\n", ##__VA_ARGS__); } while (0)
 
 #define BTUSB_WARN_LIMITTED(fmt, ...)     \
         do {printk_ratelimited(KERN_WARNING     \
