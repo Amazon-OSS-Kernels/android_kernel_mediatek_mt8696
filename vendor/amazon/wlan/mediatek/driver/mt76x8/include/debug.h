@@ -240,7 +240,7 @@ typedef enum _ENUM_DBG_ASSERT_PATH_T {
 	do { \
 		if ((aucDebugModule[DBG_##_Module##_IDX] & DBG_CLASS_##_Class) == 0) \
 			break; \
-		if (kalPrintRateCtrl()) \
+		if (!kalPrintRateCtrl()) \
 			break; \
 		LOG_FUNC("[%u]%s:(" #_Module " " #_Class ") " _Fmt, KAL_GET_CURRENT_THREAD_ID(), \
 			 __func__, ##__VA_ARGS__); \

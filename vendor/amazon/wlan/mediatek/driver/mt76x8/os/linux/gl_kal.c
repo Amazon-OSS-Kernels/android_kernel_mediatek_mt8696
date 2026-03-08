@@ -3419,7 +3419,6 @@ static int idme_get_mac_addr(unsigned char *mac_addr, size_t addr_len)
 	int i, mac[IFHWADDRLEN];
 	mm_segment_t old_fs;
 	struct file *f;
-	size_t len;
 
 	if (!mac_addr || addr_len < IFHWADDRLEN) {
 		DBGLOG(INIT, ERROR, "invalid mac_addr ptr or buf\n");
@@ -3450,8 +3449,7 @@ static int idme_get_mac_addr(unsigned char *mac_addr, size_t addr_len)
 		str[1] = buf[i * 2 + 1];
 		if (!isxdigit(str[0]) || !isxdigit(str[1]))
 			goto bailout;
-		len = sscanf(str, "%02x", &mac[i]);
-		if (len != 1)
+		if (kstrtoint(str, 16, &mac[i]))
 			goto bailout;
 	}
 	for (i = 0; i < IFHWADDRLEN; i++)
@@ -5848,20 +5846,23 @@ void kal_sched_set(struct task_struct *p, int policy,
 	* TODO:
 	* kernel prefer modify "current" only, add sanity here?
 	*/
+
+#if KERNEL_VERSION(5, 14, 0) <= LINUX_VERSION_CODE
 	struct sched_attr attr = {
 		.sched_policy = policy,
 		.sched_priority = param->sched_priority,
 		.sched_nice = nice,
 	};
 
+	sched_setattr_nocheck(p, &attr);
+#else
 	if (policy == SCHED_NORMAL)
 		sched_set_normal(p, nice);
 	else if (policy == SCHED_FIFO)
 		sched_set_fifo(p);
 	else
 		sched_set_fifo_low(p);
-
-	sched_setattr_nocheck(p, &attr);
+#endif /* KERNEL_VERSION(5, 14, 0) <= LINUX_VERSION_CODE */
 #else
 	sched_setscheduler(p, policy, param);
 #endif

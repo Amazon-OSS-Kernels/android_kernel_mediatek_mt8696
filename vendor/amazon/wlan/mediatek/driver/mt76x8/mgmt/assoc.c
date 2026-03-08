@@ -87,53 +87,54 @@
 APPEND_VAR_IE_ENTRY_T txAssocReqIETable[] = {
 #if CFG_SUPPORT_SPEC_MGMT
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_POWER_CAP), NULL, rlmReqGeneratePowerCapIE}
-	,			/* 33 */
+	,			/* Assoc IE Order: 6, Element ID: 33 */
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_SUPPORTED_CHANNELS), NULL, rlmReqGenerateSupportedChIE}
-	,			/* 36 */
+	,			/* Assoc IE Order: 7, Element ID: 36 */
 #endif
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL, rlmReqGenerateHtCapIE}
-	,			/* 45 */
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL, rsnGenerateRSNIE}
+	,			/* Assoc IE Order: 8, Element ID: 48 */
 #if CFG_SUPPORT_802_11K
 	{(ELEM_HDR_LEN + 5), NULL, rlmReqGenerateRRMEnabledCapIE}
-	,			/* 70 */
+	,			/* Assoc IE Order: 10, Element ID: 70 */
 #endif
-#if CFG_SUPPORT_WPS2
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WSC), NULL, rsnGenerateWSCIE}
-	,			/* 221 */
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL, rlmReqGenerateHtCapIE}
+	,			/* Assoc IE Order: 13, Element ID: 45 */
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP), NULL, rlmReqGenerateExtCapIE}
+	,			/* Assoc IE Order: 15, Element ID: 127 */
+#if CFG_SUPPORT_PASSPOINT
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_INTERWORKING), NULL, hs20GenerateInterworkingIE}
+	,			/* Assoc IE Order: 18, Element ID: 107 */
+#endif /* CFG_SUPPORT_PASSPOINT */
+#if CFG_SUPPORT_802_11AC
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP), NULL, rlmReqGenerateVhtCapIE}
+	,			/* Assoc IE Order: 22, Element ID: 191 */
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL, rlmReqGenerateVhtOpNotificationIE}
+	,			/* Assoc IE Order: 23, Element ID: 199 */
+#endif
+#if CFG_SUPPORT_H2E
+	{0, rsnCalRSNXELen, rsnGenerateRSNXE}
+	,			/* Assoc IE Order: 43, Element ID: 244 */
 #endif
 #if CFG_SUPPORT_WAPI
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WAPI), NULL, wapiGenerateWAPIIE}
-	,			/* 68 */
+	,			/* Assoc IE Order: None (China's Spec, WLAN Authentication and Privacy Infrastructure) */
+#endif
+#if CFG_SUPPORT_WPS2
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WSC), NULL, rsnGenerateWSCIE}
+	,			/* Assoc IE Order: Last, Element ID: 221 (Vendor Specific)*/
 #endif
 #if CFG_SUPPORT_PASSPOINT
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_INTERWORKING), NULL, hs20GenerateInterworkingIE}
-	,			/* 107 */
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_ROAMING_CONSORTIUM), NULL, hs20GenerateRoamingConsortiumIE}
-	,			/* 111 */
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HS20_INDICATION), NULL, hs20GenerateHS20IE}
-	,			/* 221 */
+	,			/* Assoc IE Order: Last, Element ID: 221 (Vendor Specific)*/
 #endif /* CFG_SUPPORT_PASSPOINT */
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP), NULL, rlmReqGenerateExtCapIE}
-	,			/* 127 */
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WMM_INFO), NULL, mqmGenerateWmmInfoIE}
-	,			/* 221 */
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL, rsnGenerateRSNIE}
-	,			/* 48 */
-#if CFG_SUPPORT_802_11AC
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP), NULL, rlmReqGenerateVhtCapIE}
-	,			/*191 */
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL, rlmReqGenerateVhtOpNotificationIE}
-	,			/*199 */
-#endif
+	,			/* Assoc IE Order: Last, Element ID: 221 (Vendor Specific)*/
 #if CFG_SUPPORT_MTK_SYNERGY
 	{(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL, rlmGenerateMTKOuiIE}
-	,			/* 221 */
+	,			/* Assoc IE Order: Last, Element ID: 221 (Vendor Specific)*/
 #endif
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL, rsnGenerateWPAIE}	/* 221 */
-	,
-#if CFG_SUPPORT_H2E
-	{0, rsnCalRSNXELen, rsnGenerateRSNXE}			/* 244 */
-#endif
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL, rsnGenerateWPAIE}
+				/* Assoc IE Order: Last, Element ID: 221 (Vendor Specific)*/
 };
 
 #if CFG_SUPPORT_AAA

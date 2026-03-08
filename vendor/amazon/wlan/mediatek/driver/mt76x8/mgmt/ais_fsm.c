@@ -4778,7 +4778,7 @@ send_response:
 VOID aisSendNeighborRequest(IN P_ADAPTER_T prAdapter)
 {
 	struct SUB_ELEMENT_LIST *prSSIDIE;
-	UINT_8 aucBuffer[sizeof(*prSSIDIE) + 31];
+	UINT_8 aucBuffer[sizeof(*prSSIDIE) + ELEM_MAX_LEN_SSID];
 	P_BSS_INFO_T prBssInfo = prAdapter->prAisBssInfo;
 
 	kalMemZero(aucBuffer, sizeof(aucBuffer));

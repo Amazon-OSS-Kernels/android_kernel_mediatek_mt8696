@@ -5405,10 +5405,11 @@ VOID mqmGenerateWmmInfoIE(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
 		return;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	ASSERT(prStaRec);
-
-	if (prStaRec == NULL)
+	if (prStaRec == NULL) {
+		DBGLOG(QM, ERROR, "prStaRec of ucStaRecIndex %d is NULL!\n",
+			prMsduInfo->ucStaRecIndex);
 		return;
+	}
 
 	if (!prStaRec->fgIsWmmSupported)
 		return;

@@ -2014,7 +2014,8 @@ typedef struct _ACTION_BTM_RSP_FRAME_T {
 struct SUB_ELEMENT {
 	UINT_8 ucSubID;
 	UINT_8 ucLength;
-	UINT_8 aucOptInfo[1];
+	/* variable length */
+	uint8_t aucOptInfo[];
 };
 
 typedef struct _SM_BASIC_REQ_T {

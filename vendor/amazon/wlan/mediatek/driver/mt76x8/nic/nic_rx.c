@@ -1796,7 +1796,7 @@ VOID nicRxProcessDataPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 							HAL_RX_VECTOR_GET_RX_VECTOR(prRetSwRfb->prRxStatusGroup3, 4);
 					}
 					else {
-						DBGLOG(RX, ERROR, "invalid ucStaRecIdx %d\n", prRetSwRfb->ucStaRecIdx);
+						DBGLOG_RATELIMIT(RX, ERROR, "invalid ucStaRecIdx %d\n", prRetSwRfb->ucStaRecIdx);
 					}
 				}
 #endif
