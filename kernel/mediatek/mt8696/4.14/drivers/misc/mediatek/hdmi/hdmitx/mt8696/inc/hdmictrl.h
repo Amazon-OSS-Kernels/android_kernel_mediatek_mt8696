@@ -2045,6 +2045,7 @@ enum HDMI_GEN_PACKET_HW_ENUM {
 	GEN_PKT_HW13,
 	GEN_PKT_HW14,
 	GEN_PKT_HW15,
+	GEN_PKT_MPEG,
 	GEN_PKT_HW_NUM,
 };
 
@@ -3098,6 +3099,7 @@ extern struct clk *hdmitx_pxl_clk_d6;
 
 extern struct workqueue_struct *hdmi_wq;
 extern struct delayed_work dolby_work;
+extern struct delayed_work hfvsif_delay_work;
 extern unsigned int hdmi_rgb2hdmi_read(unsigned int u2Reg);
 extern void hdmi_rgb2hdmi_write(unsigned int u2Reg, unsigned int u4Data);
 extern unsigned int hdmi_p2i_read(unsigned int u2Reg);
@@ -3399,6 +3401,7 @@ void vBT2020Enable(bool fgEnable);
 void vDoviHdrEnable(bool fgEnable);
 void vDoviVsemHdrEnable(bool fgEnable, unsigned int type);
 void mtk_hdmi_dolby_work_handle(struct work_struct *work);
+void HFVsifPacketOffHandler(struct work_struct *work);
 void vSetHdrDebugType(unsigned int u4Data);
 void vVrrEnable(bool fgEnable);
 void vAllmEnable(bool fgEnable);

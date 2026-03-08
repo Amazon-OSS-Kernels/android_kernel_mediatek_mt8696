@@ -201,6 +201,7 @@ struct clk *hdmitx_pxl_clk_d6;
 
 struct workqueue_struct *hdmi_wq;
 struct delayed_work dolby_work;
+struct delayed_work hfvsif_delay_work;
 
 unsigned int port_edge_cnt[PORT_EDGE_RECORD_CNT];
 unsigned int port_irq_value[PORT_IRQ_CNT];
@@ -2873,6 +2874,7 @@ int hdmi_internal_probe(struct platform_device *pdev,
 		return -ENOMEM;
 	}
 	INIT_DELAYED_WORK(&dolby_work, mtk_hdmi_dolby_work_handle);
+	INIT_DELAYED_WORK(&hfvsif_delay_work, HFVsifPacketOffHandler);
 
 	/* Passive switches may not assert HPD so test current overdraw anyway */
 	return 0;

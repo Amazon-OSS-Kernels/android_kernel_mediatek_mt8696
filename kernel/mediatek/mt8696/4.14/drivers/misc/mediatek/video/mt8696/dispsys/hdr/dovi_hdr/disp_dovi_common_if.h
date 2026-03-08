@@ -50,6 +50,9 @@
 #define DV_SCRAMBLE_ADL_SIZE            (2048) //16 * 128
 #define DV_MD_PER_PKT_SIZE (124) //128- 4 crc bytes
 
+#define L11_MD_PRESENT 1
+#define L11_CONTENT_GAME 2
+#define L11_WHITE_POINT 8
 
 enum DV_RPU_TYPE {
 	HEVC_RPU = 0,
@@ -745,7 +748,8 @@ enum dovi_signal_format_t {
 	DOVI_FORMAT_HLG = 4,
 	DOVI_FORMAT_DOVI_LOW_LATENCY = 5,
 	DOVI_FORMAT_VSEM_DOVI = 6,
-	DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY = 7
+	DOVI_FORMAT_VSEM_DOVI_LOW_LATENCY = 7,
+	DOVI_FORMAT_INVALID
 };
 
 enum dovi_enable_type_t {

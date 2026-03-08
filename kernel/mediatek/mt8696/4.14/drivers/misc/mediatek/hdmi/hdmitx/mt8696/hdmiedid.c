@@ -50,6 +50,7 @@
 #include "hdmiedid.h"
 #include "hdmihdcp.h"
 
+#define HDMI_INVALID_VSIF_NUM 0xff
 
 
 bool debug_hdr10p_force_enable_edid = FALSE;
@@ -219,6 +220,8 @@ void vSetNoEdidChkInfo(void)
 	_HdmiSinkAvCap.u1_sink_mdelta = 0;
 	_HdmiSinkAvCap.u4_sink_vrr_min = 1;
 	_HdmiSinkAvCap.u4_sink_vrr_max = 120;
+	_HdmiSinkAvCap.ui1_sink_support_vsif_number = HDMI_INVALID_VSIF_NUM;
+	_HdmiSinkAvCap.ui1_sink_ifdb_exist = 0;
 }
 
 void vClearEdidInfo(void)
@@ -331,6 +334,8 @@ void vClearEdidInfo(void)
 	_HdmiSinkAvCap.u1_sink_mdelta = 0;
 	_HdmiSinkAvCap.u4_sink_vrr_min = 0;
 	_HdmiSinkAvCap.u4_sink_vrr_max = 0;
+	_HdmiSinkAvCap.ui1_sink_support_vsif_number = HDMI_INVALID_VSIF_NUM;
+	_HdmiSinkAvCap.ui1_sink_ifdb_exist = 0;
 
 	if (fgIsHdmiNoEDIDCheck())
 		vSetNoEdidChkInfo();
@@ -2108,6 +2113,10 @@ static void vParser_User_Extension_Tag(
 			_HdmiSinkAvCap.ui2_sink_vcdb_data |=
 			SINK_RGB_SELECTABLE;
 		}
+	}  else if (*(prData + 1) == 0x20) {
+		/* Extend Tag code ==0x20 */
+		_HdmiSinkAvCap.ui1_sink_support_vsif_number = *(prData + 3);
+		_HdmiSinkAvCap.ui1_sink_ifdb_exist = 1;
 	}
 }
 
@@ -3408,6 +3417,9 @@ _HdmiSinkAvCap.ui1_sink_hdr_content_max_frame_average_luminance);
 		_HdmiSinkAvCap.u4_sink_vrr_min);
 	HDMI_PLUG_LOG("[HDMI TX]u4_sink_vrr_max = 0x%x\n",
 		_HdmiSinkAvCap.u4_sink_vrr_max);
+	HDMI_PLUG_LOG("[HDMI TX]ui1_sink_support_vsif_number = 0x%x\n",
+		_HdmiSinkAvCap.ui1_sink_support_vsif_number);
+
 }
 
 long long hdmi_DispGetEdidInfo(void)

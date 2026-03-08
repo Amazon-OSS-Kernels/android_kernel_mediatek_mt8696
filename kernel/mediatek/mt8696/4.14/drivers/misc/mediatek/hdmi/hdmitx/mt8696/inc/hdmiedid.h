@@ -234,6 +234,8 @@ struct HDMI_SINK_AV_CAP_T {
 	unsigned char u1_sink_cinemavrr;
 	unsigned char u1_sink_mdelta;
 	unsigned int ui4_sink_dovi_vsvdb_dm_version;
+	unsigned char ui1_sink_support_vsif_number;
+	unsigned char ui1_sink_ifdb_exist;
 };
 
 

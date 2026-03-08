@@ -727,7 +727,6 @@ int disp_vdp_stop(unsigned int layer_id)
 
 	vdp_stop_disable_hw(layer_id);
 	set_fs_index(layer_id, 0);
-	hdmi_game_mode_enable(false);
 
 	DISP_LOG_I("%s layer_start %d end\n",
 		   __func__, layer_info->layer_start);
@@ -1256,10 +1255,8 @@ int disp_vdp_config(struct mtk_disp_buffer *config,
 	if (force_decode_allm > 0)
 		config->allm_en = true;
 
-	if (config->allm_en != video_layer[config->layer_id].allm_en) {
-		hdmi_game_mode_enable(config->allm_en);
+	if (config->allm_en != video_layer[config->layer_id].allm_en)
 		video_layer[config->layer_id].allm_en = config->allm_en;
-	}
 	video_layer[config->layer_id].type = config->type;
 	#ifdef DISP_GCE_SUPPORT
 	video_layer[config->layer_id].buffer_sec = config->secruity_en;

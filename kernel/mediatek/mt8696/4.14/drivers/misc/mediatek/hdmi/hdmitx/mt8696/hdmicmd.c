@@ -3350,10 +3350,6 @@ static unsigned int set_colordeep(char *str_p)
 		return FALSE;
 	}
 
-	if (colorspace == HDMI_YCBCR_420)
-		_HdmiSinkAvCap.ui2_sink_colorimetry = SINK_YCBCR_420;
-	else
-		_HdmiSinkAvCap.ui2_sink_colorimetry = SINK_RGB;
 	HDMI_ATTR_SPRINTF("color = %d; deep = %d\n",
 		_stAvdAVInfo.e_video_color_space,
 		   _stAvdAVInfo.e_deep_color_bit);

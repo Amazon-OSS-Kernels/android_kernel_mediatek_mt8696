@@ -628,7 +628,8 @@ const struct disp_hw_resolution *resolution)
 		tv_out_format = DOVI_FORMAT_SDR;
 
 	/*if game source, we keep output as lowlatency when tv support*/
-	if (hdr_allm_en && (tv_cap->is_support_dovi_low_latency)
+	if ((hdr_allm_en || (ui_allm_type == ALLM_EN))
+		&& (tv_cap->is_support_dovi_low_latency)
 		&& ((tv_cap->u1_sink_allm_support) ||
 		(tv_cap->u1_sink_14gamemode_support))) {
 		is_low_latency = true;
@@ -1303,7 +1304,7 @@ void dovi_update_output_setting(struct disp_hw_common_info *info,
 		dovi_out_info.is_vsem = false;
 
 	/*if ui select force sdr ,always keep sdr output*/
-	if (ui_force_hdr_type == 1)
+	if (ui_force_hdr_type == DYNA_SET_FORCE_SDR)
 		dovi_out_format = DOVI_FORMAT_SDR;
 
 	if (dovi_force_output) {
@@ -1359,10 +1360,6 @@ void dovi_path_enable(void)
 	struct VID_STATIC_HDMI_MD_T *hdr10_md = NULL;
 	#endif
 
-	if (dovi_vs10_path_en == ui_force_hdr_type) {
-		dovi_default("dovi path is already enabled!\n");
-		return;
-	}
 	if (osd_enable == 0) {
 		dovi_default("force enable ui for dovi path enable!\n");
 		osd_enable = 1;
@@ -1632,7 +1629,7 @@ uint32_t dovi_update_res_change(
 	get_tv_output_format(tv_cap, is_4k60_out, resolution);
 
 	/*if ui select force sdr ,always keep sdr output*/
-	if (ui_force_hdr_type == 1)
+	if (ui_force_hdr_type == DYNA_SET_FORCE_SDR)
 		dovi_out_format_new = DOVI_FORMAT_SDR;
 
 	if (dovi_force_output) {
@@ -2626,6 +2623,11 @@ int disp_dovi_process(uint32_t enable,
 		dovi_config_fefifo_swap(false);
 
 		dovi_enable = enable;
+	} else if (dovi_proc_state == 0) {
+		/* for lk force hdr, but need change to
+		 * adaptive when ALLM on and tv support std+allm
+		 */
+		dovi_config_fefifo_swap(false);
 	}
 
 	mutex_unlock(&disp_dovi_mutex);
@@ -2994,10 +2996,16 @@ enum dovi_signal_format_t dovi_judge_out_format(
 	struct disp_hw_tv_capbility *tv_cap,
 	const struct disp_hw_resolution *resolution)
 {
-	bool is_4k60_out = dovi_check_4k60_timing(resolution->res_mode);
+	bool is_4k60_out = false;
 	enum dovi_signal_format_t dovi_out_format_new =
 		DOVI_FORMAT_SDR;
 
+	if ((tv_cap == NULL) || (resolution == NULL)) {
+		dovi_error("%s params\n", __func__);
+		return DOVI_FORMAT_INVALID;
+	}
+
+	is_4k60_out = dovi_check_4k60_timing(resolution->res_mode);
 	dovi_out_format_new =
 	get_tv_output_format(tv_cap, is_4k60_out, resolution);
 	return dovi_out_format_new;

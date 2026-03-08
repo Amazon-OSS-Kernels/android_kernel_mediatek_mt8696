@@ -58,6 +58,7 @@ bool _fgLowLatencyDolbyVisionEnable;
 bool _fgVrrEnable;
 bool _fgAllmEnable;
 bool _fg14GameModeEnable;
+bool _fghfvsifenable;
 unsigned int low_latency_io_mode;
 bool low_latency_disp_en;
 unsigned int _u4HdrDebugDisableType;
@@ -65,6 +66,7 @@ bool dovi_off_delay_needed = FALSE;
 unsigned char hdr10p_vsif_application_version;
 unsigned char hdr10p_vsif_wr_en;
 unsigned char hdr10p_vsif_repeat_en;
+static unsigned short _fgu2HfVsifIdx;
 
 struct dovi_vsif_param_t hdmi_dovi_vsif;
 bool _fgBackltCtrlMDPresent;
@@ -502,7 +504,15 @@ static struct PACKET_HW_T pkthw[GEN_PKT_HW_NUM] = {
 		.addr_rep_en = TOP_INFO_RPT,
 		.mask_rep_en = GEN15_RPT_EN,
 	},
-
+	{
+		.hw_num = GEN_PKT_MPEG,
+		.addr_header = TOP_MPEG_HEADER,
+		.addr_pkt = TOP_MPEG_PKT00,
+		.addr_wr_en = TOP_INFO_EN,
+		.mask_wr_en = MPEG_EN | MPEG_EN_WR,
+		.addr_rep_en = TOP_INFO_RPT,
+		.mask_rep_en = MPEG_RPT_EN,
+	}
 };
 
 
@@ -3399,12 +3409,24 @@ void vHalSendHFVendorSpecificInfoFrame(bool fgEnable, unsigned char *pr_bData)
 	unsigned char bData1 = 0, bData2 = 0, bData3 = 0,
 		bData4 = 0, bData5 = 0;
 	unsigned int u4Data;
+	unsigned short u2VsifIdx;
+	unsigned short u2Enable;
 
-	u4Data = bReadByteHdmiGRL(TOP_INFO_EN) & MPEG_EN;
+	if ((_HdmiSinkAvCap.ui1_sink_ifdb_exist == 1) &&
+		(_HdmiSinkAvCap.ui1_sink_support_vsif_number > 0)) {
+		u2VsifIdx = GEN_PKT_HW5;
+		u2Enable = GEN5_EN;
+	} else {
+		u2VsifIdx = GEN_PKT_MPEG;
+		u2Enable = MPEG_EN;
+	}
 
+	u4Data = bReadByteHdmiGRL(pkthw[u2VsifIdx].addr_wr_en) & u2Enable;
+	_fgu2HfVsifIdx = u2VsifIdx;
+	vWriteHdmiGRLMsk(pkthw[u2VsifIdx].addr_wr_en, 0, pkthw[u2VsifIdx].mask_wr_en);
+	vWriteHdmiGRLMsk(pkthw[u2VsifIdx].addr_rep_en, 0, pkthw[u2VsifIdx].mask_rep_en);
 
-	vWriteHdmiGRLMsk(TOP_INFO_EN, 0, MPEG_EN_WR | MPEG_EN);
-	vWriteHdmiGRLMsk(TOP_INFO_RPT, 0, MPEG_RPT_EN);
+	HDMI_HDR_LOG("HFVSIF idx %d\n", u2VsifIdx);
 
 	bData1 = *pr_bData;
 	bData2 = *(pr_bData + 1);
@@ -3419,24 +3441,37 @@ void vHalSendHFVendorSpecificInfoFrame(bool fgEnable, unsigned char *pr_bData)
 	bHFVS_CHSUM += bData5;
 	bHFVS_CHSUM = 0x100 - bHFVS_CHSUM;
 
-	vWriteByteHdmiGRL(TOP_MPEG_HEADER, (HFVS_LEN << 16) +
+	vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_header, (HFVS_LEN << 16) +
 		(HFVS_VERS << 8) + (HFVS_TYPE << 0));
-	vWriteByteHdmiGRL(TOP_MPEG_PKT00,
+	vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt,
 			  (bData3 << 24) + (bData2 << 16) + (bData1 << 8) +
 			  (bHFVS_CHSUM << 0));
-	vWriteByteHdmiGRL(TOP_MPEG_PKT01, (bData5 << 8) + (bData4 << 0));
-	vWriteByteHdmiGRL(TOP_MPEG_PKT02, 0);
-	vWriteByteHdmiGRL(TOP_MPEG_PKT03, 0);
-	vWriteByteHdmiGRL(TOP_MPEG_PKT04, 0);
-	vWriteByteHdmiGRL(TOP_MPEG_PKT05, 0);
-	vWriteByteHdmiGRL(TOP_MPEG_PKT06, 0);
-	vWriteByteHdmiGRL(TOP_MPEG_PKT07, 0);
+	vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 4, (bData5 << 8) + (bData4 << 0));
+	vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 8, 0);
+	vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 12, 0);
+	vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 16, 0);
+	vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 20, 0);
+	vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 24, 0);
+	vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 28, 0);
 	if (fgEnable || u4Data) {
-		vWriteHdmiGRLMsk(TOP_INFO_RPT, MPEG_RPT_EN, MPEG_RPT_EN);
-		vWriteHdmiGRLMsk(TOP_INFO_EN, MPEG_EN_WR | MPEG_EN,
-		MPEG_EN_WR | MPEG_EN);
+		vWriteHdmiGRLMsk(pkthw[u2VsifIdx].addr_rep_en, pkthw[u2VsifIdx].mask_rep_en,
+			pkthw[u2VsifIdx].mask_rep_en);
+		vWriteHdmiGRLMsk(pkthw[u2VsifIdx].addr_wr_en, pkthw[u2VsifIdx].mask_wr_en,
+			pkthw[u2VsifIdx].mask_wr_en);
 	}
 }
+
+void HFVsifPacketOffHandler(struct work_struct *data)
+{
+	if (_fghfvsifenable) {
+		HDMI_HDR_LOG("[delay]HFVSIF Packet keep on\n");
+	} else {
+		vWriteHdmiGRLMsk(pkthw[_fgu2HfVsifIdx].addr_wr_en, 0, pkthw[_fgu2HfVsifIdx].mask_wr_en);
+		vWriteHdmiGRLMsk(pkthw[_fgu2HfVsifIdx].addr_rep_en, 0, pkthw[_fgu2HfVsifIdx].mask_rep_en);
+		HDMI_HDR_LOG("[delay]HFVSIF(%d) Packet off done.\n", _fgu2HfVsifIdx);
+	}
+}
+
 
 void vSendHFVendorSpecificInfoFrame(void)
 {
@@ -3453,8 +3488,16 @@ void vSendHFVendorSpecificInfoFrame(void)
 		bHfvsInfoFm[4] = 0x02;
 	else
 		bHfvsInfoFm[4] = 0x0;
-
-	vHalSendHFVendorSpecificInfoFrame(allmenable, &bHfvsInfoFm[0]);
+	if ((_fgLowLatencyDolbyVisionEnable || _fgDolbyHdrEnable)
+		&& fgUseDolbyVSIF()
+		&& (_HdmiSinkAvCap.ui1_sink_support_vsif_number == 0)) {
+		vHalSendHFVendorSpecificInfoFrame(0, &bHfvsInfoFm[0]);
+		_fghfvsifenable = 0;
+	} else {
+		vHalSendHFVendorSpecificInfoFrame(allmenable, &bHfvsInfoFm[0]);
+		_fghfvsifenable = allmenable;
+	}
+	queue_delayed_work(hdmi_wq, &hfvsif_delay_work, msecs_to_jiffies(500));
 }
 
 void vHalSendVrrEMP(bool fgEnable, unsigned char *pr_bData)
@@ -4731,12 +4774,19 @@ void vHalSendDolbyVSIF(bool fgEnable,
 	bool fgLowLatency, bool fgDolbyVisionSignal,
 			 bool fgBackltCtrlMdPresent, unsigned int u4EfftmaxPQ)
 {
-	unsigned char bData[13];
+	unsigned char bData[DOLBYVSIF_LEN] = {0};
 	unsigned char bHDR_CHSUM = 0;
 	unsigned char i;
+	unsigned short u2VsifIdx;
 
-	vWriteHdmiGRLMsk(TOP_INFO_EN, 0, GEN5_EN | GEN5_EN_WR);
-	vWriteHdmiGRLMsk(TOP_INFO_RPT, 0, GEN5_RPT_EN);
+	if ((_HdmiSinkAvCap.ui1_sink_ifdb_exist == 1) &&
+		(_HdmiSinkAvCap.ui1_sink_support_vsif_number > 0))
+		u2VsifIdx = GEN_PKT_MPEG;
+	else
+		u2VsifIdx = GEN_PKT_HW5;
+
+	vWriteHdmiGRLMsk(pkthw[u2VsifIdx].addr_wr_en, 0,  pkthw[u2VsifIdx].mask_wr_en);
+	vWriteHdmiGRLMsk(pkthw[u2VsifIdx].addr_rep_en, 0, pkthw[u2VsifIdx].mask_rep_en);
 
 	if (fgEnable) {
 		bData[0] = 0x46;
@@ -4748,55 +4798,57 @@ void vHalSendDolbyVSIF(bool fgEnable,
 				((u4EfftmaxPQ >> 8) & 0x0F);
 			bData[5] = u4EfftmaxPQ & 0xFF;
 		} else {
-			bData[3] = (fgDolbyVisionSignal << 1) | fgLowLatency |
-				(hdmi_dovi_vsif.dovi_signal_type << 1) |
-				(hdmi_dovi_vsif.source_dm_version << 5);
-			bData[4] = (fgBackltCtrlMdPresent << 7) |
-				(hdmi_dovi_vsif.L11_md_present << 5) |
-				(hdmi_dovi_vsif.auxiliary_md_present << 6) |
-				((u4EfftmaxPQ >> 8) & 0x0F);
-			bData[5] = u4EfftmaxPQ & 0xFF;
-			bData[6] = hdmi_dovi_vsif.auxiliary_runmode;
-			bData[7] = hdmi_dovi_vsif.auxiliary_runversion;
-			bData[8] = hdmi_dovi_vsif.auxiliary_debug0;
-			bData[9] = (hdmi_dovi_vsif.content_type & 0xF);
-			bData[10] = (hdmi_dovi_vsif.white_point & 0xF);
-			bData[11] = hdmi_dovi_vsif.L11_byte2;
-			bData[12] = hdmi_dovi_vsif.L11_byte3;
+		bData[3] = (fgDolbyVisionSignal << 1) | fgLowLatency |
+			(hdmi_dovi_vsif.dovi_signal_type << 1) |
+			(hdmi_dovi_vsif.source_dm_version << 5);
+		bData[4] = (fgBackltCtrlMdPresent << 7) |
+			(hdmi_dovi_vsif.L11_md_present << 5) |
+			(hdmi_dovi_vsif.auxiliary_md_present << 6) |
+			((u4EfftmaxPQ >> 8) & 0x0F);
+		bData[5] = u4EfftmaxPQ & 0xFF;
+		bData[6] = hdmi_dovi_vsif.auxiliary_runmode;
+		bData[7] = hdmi_dovi_vsif.auxiliary_runversion;
+		bData[8] = hdmi_dovi_vsif.auxiliary_debug0;
+		bData[9] = (hdmi_dovi_vsif.content_type & 0xF);
+		bData[10] = (hdmi_dovi_vsif.white_point & 0xF);
+		bData[11] = hdmi_dovi_vsif.L11_byte2;
+		bData[12] = hdmi_dovi_vsif.L11_byte3;
 		}
 
 		HDMI_PLUG_LOG("dovi vsif 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
 			bData[3], bData[4], bData[5], bData[6], bData[7],
 			bData[8], bData[9], bData[10], bData[11], bData[12]);
 
-		vWriteByteHdmiGRL(TOP_GEN5_HEADER,
+		vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_header,
 			(DOLBYVSIF_LEN << 16) + (DOLBYVSIF_VERS << 8) +
 			(DOLBYVSIF_TYPE << 0));
 		bHDR_CHSUM = DOLBYVSIF_LEN + DOLBYVSIF_VERS + DOLBYVSIF_TYPE;
-		for (i = 0; i < 6; i++)
+		for (i = 0; i < DOLBYVSIF_LEN; i++)
 			bHDR_CHSUM += bData[i];
 		bHDR_CHSUM = 0x100 - bHDR_CHSUM;
-		vWriteByteHdmiGRL(TOP_GEN5_PKT00,
+		vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt,
 			(bData[2] << 24) + (bData[1] << 16) +
 			(bData[0] << 8) + (bHDR_CHSUM << 0));
-		vWriteByteHdmiGRL(TOP_GEN5_PKT01, (bData[5] << 16) +
+		vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 4, (bData[5] << 16) +
 			(bData[4] << 8) + (bData[3] << 0));
 		if (dovi_vsif_ver == 0) {
-			vWriteByteHdmiGRL(TOP_GEN5_PKT02, 0);
-			vWriteByteHdmiGRL(TOP_GEN5_PKT03, 0);
+			vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 8, 0);
+			vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 12, 0);
 		} else {
-			vWriteByteHdmiGRL(TOP_GEN5_PKT02, (bData[9] << 24) +
+			vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 8, (bData[9] << 24) +
 				(bData[8] << 16) + (bData[7] << 8) + (bData[6] << 0));
-			vWriteByteHdmiGRL(TOP_GEN5_PKT03, (bData[12] << 16) +
+			vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 12, (bData[12] << 16) +
 				(bData[11] << 8) + (bData[10] << 0));
 		}
-		vWriteByteHdmiGRL(TOP_GEN5_PKT04, 0);
-		vWriteByteHdmiGRL(TOP_GEN5_PKT05, 0);
-		vWriteByteHdmiGRL(TOP_GEN5_PKT06, 0);
-		vWriteByteHdmiGRL(TOP_GEN5_PKT07, 0);
-		vWriteHdmiGRLMsk(TOP_INFO_RPT, GEN5_RPT_EN, GEN5_RPT_EN);
-		vWriteHdmiGRLMsk(TOP_INFO_EN, GEN5_EN |
-			GEN5_EN_WR, GEN5_EN | GEN5_EN_WR);
+		vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 16, 0);
+		vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 20, 0);
+		vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 24, 0);
+		vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt + 28, 0);
+
+		vWriteHdmiGRLMsk(pkthw[u2VsifIdx].addr_rep_en,
+			pkthw[u2VsifIdx].mask_rep_en, pkthw[u2VsifIdx].mask_rep_en);
+		vWriteHdmiGRLMsk(pkthw[u2VsifIdx].addr_wr_en,
+			pkthw[u2VsifIdx].mask_wr_en, pkthw[u2VsifIdx].mask_wr_en);
 	}
 }
 
@@ -5327,15 +5379,18 @@ void vDoviHdrEnable(bool fgEnable)
 
 	if (fgEnable) {
 		queue_delayed_work(hdmi_wq, &dolby_work,
-			msecs_to_jiffies(DelayFromFPS(_stAvdAVInfo.e_resolution)));
+		msecs_to_jiffies(DelayFromFPS(_stAvdAVInfo.e_resolution)));
 	} else {
 		vSendAVIInfoFrame(_stAvdAVInfo.e_resolution,
-			_stAvdAVInfo.e_video_color_space);
+		_stAvdAVInfo.e_video_color_space);
 		_fgVoutInVsync = TRUE;
 		dv_end_line = hdmi_vdout_read(0x28) & 0xFFF;
 		vHDMIVOutMuteBG(_stAvdAVInfo.e_resolution,
-			_stAvdAVInfo.e_video_color_space);
+		_stAvdAVInfo.e_video_color_space);
 	}
+	if ((_HdmiSinkAvCap.ui1_sink_ifdb_exist == 1) &&
+		(_HdmiSinkAvCap.ui1_sink_support_vsif_number == 0))
+		vSendHFVendorSpecificInfoFrame();
 }
 
 void hdmi_vsync_handle(void)
@@ -5395,6 +5450,10 @@ void vLowLatencyDoviEnable(bool fgEnable)
 		vSendVendorSpecificInfoFrame(_stAvdAVInfo.e_resolution);
 		_bHdrType = VID_PLA_DR_TYPE_SDR;
 	}
+
+	if ((_HdmiSinkAvCap.ui1_sink_ifdb_exist == 1) &&
+		(_HdmiSinkAvCap.ui1_sink_support_vsif_number == 0))
+		vSendHFVendorSpecificInfoFrame();
 }
 
 void vHalVrrEnable(bool fgEnable)

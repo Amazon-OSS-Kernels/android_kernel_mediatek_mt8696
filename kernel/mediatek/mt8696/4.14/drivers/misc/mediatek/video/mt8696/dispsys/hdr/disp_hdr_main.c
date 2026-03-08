@@ -499,6 +499,20 @@ int disp_hdr_change_resolution(
 
 	res_mod = info->res_mode;
 	hdr_drv->drv_call(DISP_CMD_GET_HDMI_CAP, &tv_cap);
+
+	/* for hotplug case, only allm ui force on
+	 * ui set as force hdr mode
+	 * no allm support tv <-> allm support tv
+	 */
+	if (ui_allm_type == ALLM_EN) {
+		if ((tv_cap.u1_sink_allm_support
+			|| tv_cap.u1_sink_14gamemode_support
+			|| tv_cap.is_support_dovi_low_latency)
+			&& tv_cap.is_support_dovi) {
+			disp_hdr_allm_process(&tv_cap);
+		} else
+			b_allm_ctl_force_hdr = false;
+	}
 	#ifdef CONFIG_DOVI_SUPPORT
 	if (g_dovi_efuse)
 		disp_dovi_resolution_change(info);
@@ -554,12 +568,24 @@ int disp_hdr_cmd(enum DISP_CMD cmd, void *data)
 		if (force_sdr_output)
 			*((uint32_t *) data) = 1;
 		ui_force_hdr_type = *((uint32_t *) data);
+		g_force_hdr = ui_force_hdr_type;
 		#ifdef CONFIG_DOVI_SUPPORT
 		if ((dovi_vs10_path_en == ui_force_hdr_type) && g_dovi_efuse) {
 			hdr_printf("dovi path is already enabled!\n");
-			return 0;
+			return HDR_RET_OK;
 		}
 		#endif
+
+		/* only force hdr mode may reject due to allm on */
+		if (b_allm_ctl_force_hdr
+			&& (ui_force_hdr_type == DYNA_SET_FORCE_HDR)
+			&& (disp_common_info.tv.u1_sink_allm_support
+			|| disp_common_info.tv.u1_sink_14gamemode_support
+			|| disp_common_info.tv.is_support_dovi_low_latency)) {
+			hdr_printf("force hdr ctl by allm\n");
+			return HDR_RET_OK;
+		}
+
 		disp_hdr_irq_event |= 1 << FORCE_HDR_CHG;
 		//disp_hdr_handle_forcehdr(cmd, data);
 		break;
@@ -588,7 +614,7 @@ int disp_hdr_cmd(enum DISP_CMD cmd, void *data)
 		#endif
 		break;
 	}
-	return 0;
+	return HDR_RET_OK;
 }
 
 

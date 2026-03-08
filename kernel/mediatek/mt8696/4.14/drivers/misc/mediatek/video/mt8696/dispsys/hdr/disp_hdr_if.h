@@ -60,6 +60,20 @@ enum HDR_PATH {
 	OPENHDR_PATH = 2,
 };
 
+enum ALLM_UI {
+	ALLM_AUTO = 0,
+	ALLM_DIS = 1,
+	ALLM_EN = 2,
+	ALLM_INVALID
+};
+#define HDR_RET_OK 0
+#define HDR_RET_FAIL 0
+
+#define DYNA_SET_ADAPTIVE 0
+#define DYNA_SET_FORCE_SDR 1
+#define DYNA_SET_FORCE_HDR 2
+#define DYNA_SET_INVALID 3
+
 #define HDR_ReadREG(arg) __raw_readl((unsigned long *)(arg))
 
 
@@ -90,6 +104,10 @@ extern enum HDR_PATH hdr_path_select;
 extern uint32_t time_check;
 extern uint32_t line_cnt[5];
 extern uint32_t idk_vsem;
+extern bool b_allm_ctl_force_hdr;
+extern bool hdr_allm_en;
+extern uint32_t hdr_allm_change;
+extern enum ALLM_UI ui_allm_type;
 
 #ifdef CONFIG_MTK_INTERNAL_HDMI_SUPPORT
 extern void vVdpSetHdrMetadata(bool enable,
@@ -143,5 +161,7 @@ int disp_hdr_fe_set_clk(uint32_t layer_id, bool en);
 int disp_hdr_set_vdo_be_clk(bool en);
 extern int32_t disp_mix_hal_set_black_pattern(bool en);
 extern void disp_hdr_handle_allm_change(void *data);
+void disp_hdr_allm_process(struct disp_hw_tv_capbility *tv_cap);
+uint32_t disp_hdr_allm_ctl_path(void);
 
 #endif
