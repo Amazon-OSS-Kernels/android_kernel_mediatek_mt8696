@@ -21,6 +21,7 @@
 
 static struct dentry *fg_debugfs;
 static int fg_debug_inited;
+static bool fg_dump_param_enable;
 
 static char FG_STR_HELP[] =
 	"USAGE:\n"
@@ -475,22 +476,23 @@ static void fg_dump_param(u32 hw_id)
 		param->clip_to_restricted_range);
 }
 
+void fg_dbg_dump_param(u32 hw_id)
+{
+	if (!fg_dump_param_enable)
+		return;
+
+	fg_dump_param(hw_id);
+}
 
 static void fg_process_dbg_opt(const char *opt)
 {
-	int ret = 0;
-
 	if (strncmp(opt, "fg_en:", 6) == 0) {
 		char *p = (char *)opt + 6;
 		struct mtk_av1_film_grain_params *param = NULL;
 		u32 enable = 0;
 
-		ret = kstrtouint(p, 0, &enable);
-		if (ret != 0) {
-			FG_ERR("failed to paraser fg enabel param!\n");
-			goto Error;
-		}
-		FG_LOG_I("set fg enable %d\n", enable);
+		FG_STR_CONVERT(&p, &enable, uint, goto Error);
+		FG_LOG_I("set fg enable %u\n", enable);
 
 		if (enable == 1)
 			param = &fg_param;
@@ -538,7 +540,45 @@ static void fg_process_dbg_opt(const char *opt)
 		FG_LOG_I("get fg status\n");
 
 		fg_sec_status();
-	} else {
+	} else if (strncmp(opt, "sw_filter:", 10) == 0) {
+		char *p = (char *)opt + 10;
+		uint32_t enable = 0;
+		bool sw_filter_enable = 0;
+
+		FG_STR_CONVERT(&p, &enable, uint, goto Error);
+
+		FG_LOG_I("set sw filter enable %u\n", enable);
+
+		sw_filter_enable = enable ? true : false;
+
+		disp_fg_sw_auto_reg_filter_enable(enable);
+	} else if (strncmp(opt, "dump_reg:", 9) == 0) {
+		char *p = (char *)opt + 9;
+		u32 hw_id = 0;
+		u32 len = 0;
+
+		FG_STR_CONVERT(&p, &hw_id, uint, goto Error);
+		FG_STR_CONVERT(&p, &len, uint, goto Error);
+
+		fg_hal_reg_dump(hw_id, len);
+	} else if (strncmp(opt, "write_reg:", 10) == 0) {
+		char *p = (char *)opt + 10;
+		u32 addr = 0;
+		u32 val = 0;
+
+		FG_STR_CONVERT(&p, &addr, uint, goto Error);
+		FG_STR_CONVERT(&p, &val, uint, goto Error);
+
+		fg_hal_reg_write(addr, val);
+	} else if (strncmp(opt, "dump_param_en:", 14) == 0) {
+		char *p = (char *)opt + 14;
+		u32 dump_en = 0;
+
+		FG_STR_CONVERT(&p, &dump_en, uint, goto Error);
+		FG_LOG_I("dump param enable %u\n", dump_en);
+
+		fg_dump_param_enable = dump_en ? true : false;
+	}  else {
 		FG_LOG_I(
 			"parse command error!\n%s\n\n%s sizeof(FG_STR_HELP) %d\n",
 			opt, FG_STR_HELP, (uint32_t)sizeof(FG_STR_HELP));

@@ -19,6 +19,9 @@
 #include <linux/types.h>
 #include <linux/uaccess.h>
 #include <linux/wait.h>
+#include <linux/sched/clock.h>
+#include <uapi/linux/time.h>
+#include <linux/time64.h>
 
 #include "disp_hw_mgr.h"
 #include "disp_adl_if.h"
@@ -27,14 +30,12 @@
 #include "disp_info.h"
 #include "disp_fg_drv.h"
 
-static int chroma_subsamp_x = 1;
-static int chroma_subsamp_y = 1;
-
 static MS_U8 frame_num;
 static const int gauss_bits = 11;
 static MS_U16 random_register;  // random number generator register
 
 static bool fg_force_bypass;
+static bool fg_sw_auto_reg_filter = true;
 
 static const int gaussian_sequence[2048] = {
 	56,    568,   -180,  172,   124,   -84,   172,   -64,   -900,  24,   820,
@@ -239,7 +240,7 @@ do {							\
  */
 struct disp_fg_info fg_info[MAX_FG];
 
-inline int get_random_number(int bits)
+int get_random_number(int bits)
 {
 	MS_U16 bit;
 
@@ -379,132 +380,218 @@ static void disp_fg_parser_lut(struct mtk_av1_film_grain_params *fg_param,
 }
 
 /* parser grain noise */
-static void disp_fg_parser_gns(struct mtk_av1_film_grain_params *fg_param,
+static void disp_fg_parser_gns(struct mtk_av1_film_grain_params *params,
 			       struct fg_hw_reg_output *params_hw_reg)
 {
-	MS_U8 num;
-	MS_U8 NunPosLuma;
-	MS_U8 NunPosLuma_PlusOne;
-	MS_U8 NumPosChroma;
+	MS_U8 num = 0;
+	MS_U8 NumPosLuma = 0;
+	MS_U8 NumPosLuma_PlusOne = 0;
+	MS_U8 NumPosChroma = 0;
 
-	MS_U8 ar_coeff_lag;
+	MS_U8 ar_coeffs_y[AV1_MAX_AR_COEFFS_CNT] = {0};
+	MS_U8 ar_coeffs_cb[AV1_MAX_AR_COEFFS_CNT] = {0};
+	MS_U8 ar_coeffs_cr[AV1_MAX_AR_COEFFS_CNT] = {0};
+	MS_U8 ar_coeff_lag = 0;
 
 	FG_FUNC();
 
-	params_hw_reg->grain_seed = fg_param->grain_seed;
-	params_hw_reg->grain_scale_shift = fg_param->grain_scale_shift;
+	params_hw_reg->grain_seed = params->grain_seed;
+	params_hw_reg->grain_scale_shift = params->grain_scale_shift;
 
-	ar_coeff_lag = fg_param->ar_coeff_lag;
+	ar_coeff_lag = params->ar_coeff_lag;
+	NumPosLuma = FG_GRAIN_MARGIN_NS * ar_coeff_lag * (ar_coeff_lag + 1);
 
-	/* ar_coeff_shift minus 6, refer tv driver code, and refer t0009 c module setting */
-	params_hw_reg->ar_coeff_shift = fg_param->ar_coeff_shift - 6;
-	params_hw_reg->overlap_flag = fg_param->overlap_flag;
+	if (params_hw_reg->num_y_points) {
+		NumPosLuma_PlusOne = 1;
+		for (num = 0; num < NumPosLuma; num++)
+			ar_coeffs_y[num] =
+				(MS_U8)((params->ar_coeffs_y[num]) &
+					FG_AR_COEFF_MASK);
+	}
 
+	NumPosChroma = NumPosLuma_PlusOne + NumPosLuma;
+	if (params_hw_reg->chroma_scaling_from_luma ||
+	    params_hw_reg->num_cb_points) {
+		for (num = 0; num < NumPosChroma; num++)
+			ar_coeffs_cb[num] =
+				(MS_U8)((params->ar_coeffs_cb[num]) &
+					FG_AR_COEFF_MASK);
+	}
 
-	NunPosLuma = 2 * ar_coeff_lag * (ar_coeff_lag + 1);
+	if (params_hw_reg->chroma_scaling_from_luma ||
+	    params_hw_reg->num_cr_points) {
+		for (num = 0; num < NumPosChroma; num++)
+			ar_coeffs_cr[num] =
+				(MS_U8)((params->ar_coeffs_cr[num]) &
+					FG_AR_COEFF_MASK);
+	}
 
-	memset(params_hw_reg->ar_coeffs_y, 0, sizeof(params_hw_reg->ar_coeffs_y));
-	memset(params_hw_reg->ar_coeffs_cb, 0, sizeof(params_hw_reg->ar_coeffs_cb));
-	memset(params_hw_reg->ar_coeffs_cr, 0, sizeof(params_hw_reg->ar_coeffs_cr));
+	/* ar_coeff_shift minus 6 */
+	params_hw_reg->ar_coeff_shift = params->ar_coeff_shift -
+					FG_AR_COEFF_SHIT_MINUS;
+	params_hw_reg->overlap_flag = params->overlap_flag;
+
+	memset(params_hw_reg->ar_coeffs_y, 0,
+	       sizeof(params_hw_reg->ar_coeffs_y));
+	memset(params_hw_reg->ar_coeffs_cb, 0,
+	       sizeof(params_hw_reg->ar_coeffs_cb));
+	memset(params_hw_reg->ar_coeffs_cr, 0,
+	       sizeof(params_hw_reg->ar_coeffs_cr));
 
 	/* copy ar_coeffs_y[] */
 	if (params_hw_reg->num_y_points) {
-		NunPosLuma_PlusOne = 1;
+		NumPosLuma_PlusOne = 1;
 
 		if (ar_coeff_lag == 3) {
-			for (num = 0; num < AV1_MAX_AR_COEFFS_CNT - 1; num++)
-				params_hw_reg->ar_coeffs_y[num] = fg_param->ar_coeffs_y[num];
+			memcpy(params_hw_reg->ar_coeffs_y, ar_coeffs_y,
+			       sizeof(params_hw_reg->ar_coeffs_y));
 		} else if (ar_coeff_lag == 2) {
-			/* 8 - 12*/
-			for (num = 0; num < 5; num++)
-				params_hw_reg->ar_coeffs_y[num + 8] =
-					fg_param->ar_coeffs_y[num + 0];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_8] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_0];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_9] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_1];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_10] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_2];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_11] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_3];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_12] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_4];
 
-			/* 15 - 19*/
-			for (num = 0; num < 5; num++)
-				params_hw_reg->ar_coeffs_y[num + 15] =
-					fg_param->ar_coeffs_y[num + 5];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_15] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_5];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_16] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_6];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_17] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_7];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_18] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_8];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_19] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_9];
 
-			/* 22 - 23*/
-			params_hw_reg->ar_coeffs_y[22] = fg_param->ar_coeffs_y[10];
-			params_hw_reg->ar_coeffs_y[23] = fg_param->ar_coeffs_y[11];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_22] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_10];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_23] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_11];
 		} else if (ar_coeff_lag == 1) {
-			for (num = 0; num < 3; num++)
-				params_hw_reg->ar_coeffs_y[num + 16] =
-					fg_param->ar_coeffs_y[num + 0];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_16] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_0];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_17] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_1];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_18] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_2];
 
-			params_hw_reg->ar_coeffs_y[23] = fg_param->ar_coeffs_y[3];
+			params_hw_reg->ar_coeffs_y[FG_AR_COEFF_IDX_23] =
+				ar_coeffs_y[FG_AR_COEFF_IDX_3];
 		}
 	} else {
-		NunPosLuma_PlusOne = 0;
+		NumPosLuma_PlusOne = 0;
 	}
 
-	NumPosChroma = NunPosLuma_PlusOne + NunPosLuma;
+	NumPosChroma = NumPosLuma_PlusOne + NumPosLuma;
 	/* copy ar_coeffs_cb[] */
-	if (params_hw_reg->chroma_scaling_from_luma || params_hw_reg->num_cb_points) {
+	if (params_hw_reg->chroma_scaling_from_luma ||
+	    params_hw_reg->num_cb_points) {
 		if (ar_coeff_lag == 3) {
-			for (num = 0; num < AV1_MAX_AR_COEFFS_CNT; num++)
-				params_hw_reg->ar_coeffs_cb[num] = fg_param->ar_coeffs_cb[num];
+			memcpy(params_hw_reg->ar_coeffs_cb, ar_coeffs_cb,
+			       sizeof(params_hw_reg->ar_coeffs_cb));
 		} else if (ar_coeff_lag == 2) {
-			/* 8 - 12*/
-			for (num = 0; num < 5; num++)
-				params_hw_reg->ar_coeffs_cb[num + 8] =
-					fg_param->ar_coeffs_cb[num + 0];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_8] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_0];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_9] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_1];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_10] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_2];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_11] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_3];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_12] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_4];
 
-			/* 15 - 19*/
-			for (num = 0; num < 5; num++)
-				params_hw_reg->ar_coeffs_cb[num + 15] =
-					fg_param->ar_coeffs_cb[num + 5];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_15] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_5];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_16] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_6];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_17] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_7];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_18] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_8];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_19] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_9];
 
-			/* 22 - 23*/
-			params_hw_reg->ar_coeffs_cb[22] = fg_param->ar_coeffs_cb[10];
-			params_hw_reg->ar_coeffs_cb[23] = fg_param->ar_coeffs_cb[11];
-			if (NunPosLuma_PlusOne == 1)
-				params_hw_reg->ar_coeffs_cb[24] = fg_param->ar_coeffs_cb[12];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_22] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_10];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_23] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_11];
+			if (NumPosLuma_PlusOne == 1)
+				params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_24]
+					= ar_coeffs_cb[FG_AR_COEFF_IDX_12];
 		} else if (ar_coeff_lag == 1) {
-			for (num = 0; num < 3; num++)
-				params_hw_reg->ar_coeffs_cb[num + 16] =
-					fg_param->ar_coeffs_cb[num + 0];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_16] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_0];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_17] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_1];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_18] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_2];
 
-			params_hw_reg->ar_coeffs_cb[23] = fg_param->ar_coeffs_cb[3];
-			if (NunPosLuma_PlusOne == 1)
-				params_hw_reg->ar_coeffs_cb[24] = fg_param->ar_coeffs_cb[4];
+			params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_23] =
+				ar_coeffs_cb[FG_AR_COEFF_IDX_3];
+			if (NumPosLuma_PlusOne == 1)
+				params_hw_reg->ar_coeffs_cb[FG_AR_COEFF_IDX_24]
+					= ar_coeffs_cb[FG_AR_COEFF_IDX_4];
 		}
 	}
 
 	/* copy ar_coeffs_cr[] */
-	if (params_hw_reg->chroma_scaling_from_luma || params_hw_reg->num_cr_points) {
+	if (params_hw_reg->chroma_scaling_from_luma ||
+	    params_hw_reg->num_cr_points) {
 		if (ar_coeff_lag == 3) {
-			for (num = 0; num < AV1_MAX_AR_COEFFS_CNT; num++)
-				params_hw_reg->ar_coeffs_cr[num] = fg_param->ar_coeffs_cr[num];
+			memcpy(params_hw_reg->ar_coeffs_cr, ar_coeffs_cr,
+			       sizeof(params_hw_reg->ar_coeffs_cr));
 		} else if (ar_coeff_lag == 2) {
-			/* 8 - 12*/
-			for (num = 0; num < 5; num++)
-				params_hw_reg->ar_coeffs_cr[num + 8] =
-					fg_param->ar_coeffs_cr[num + 0];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_8] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_0];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_9] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_1];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_10] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_2];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_11] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_3];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_12] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_4];
 
-			/* 15 - 19*/
-			for (num = 0; num < 5; num++)
-				params_hw_reg->ar_coeffs_cr[num + 15] =
-					fg_param->ar_coeffs_cr[num + 5];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_15] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_5];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_16] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_6];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_17] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_7];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_18] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_8];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_19] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_9];
 
-			/* 22 - 23*/
-			params_hw_reg->ar_coeffs_cr[22] = fg_param->ar_coeffs_cr[10];
-			params_hw_reg->ar_coeffs_cr[23] = fg_param->ar_coeffs_cr[11];
-			if (NunPosLuma_PlusOne == 1)
-				params_hw_reg->ar_coeffs_cr[24] = fg_param->ar_coeffs_cr[12];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_22] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_10];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_23] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_11];
+			if (NumPosLuma_PlusOne == 1)
+				params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_24]
+					= ar_coeffs_cr[FG_AR_COEFF_IDX_12];
 		} else if (ar_coeff_lag == 1) {
-			for (num = 0; num < 3; num++)
-				params_hw_reg->ar_coeffs_cr[num + 16] =
-					fg_param->ar_coeffs_cr[num + 0];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_16] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_0];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_17] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_1];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_18] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_2];
 
-			params_hw_reg->ar_coeffs_cr[23] = fg_param->ar_coeffs_cr[3];
-			if (NunPosLuma_PlusOne == 1)
-				params_hw_reg->ar_coeffs_cr[24] = fg_param->ar_coeffs_cr[4];
+			params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_23] =
+				ar_coeffs_cr[FG_AR_COEFF_IDX_3];
+			if (NumPosLuma_PlusOne == 1)
+				params_hw_reg->ar_coeffs_cr[FG_AR_COEFF_IDX_24]
+					= ar_coeffs_cr[FG_AR_COEFF_IDX_4];
 		}
 	}
 }
-
 
 static void disp_fg_process_lut(struct fg_hw_reg_output *params_hw_reg,
 				struct fg_hw_adl_output *params_hw_adl)
@@ -539,101 +626,86 @@ static void disp_fg_process_lut(struct fg_hw_reg_output *params_hw_reg,
 static void disp_fg_process_gns(struct fg_hw_reg_output *params_hw_reg,
 				struct fg_hw_adl_output *params_hw_adl)
 {
-	MS_U8 left_pad = 3;
-	MS_U8 right_pad = 3;  // padding to offset for AR coefficients
-	MS_U8 top_pad = 3;
-	MS_U8 bottom_pad = 0;
-	MS_U8 ar_padding = 3;  // maximum lag used for stabilization of AR coefficients
-	MS_U8 luma_subblock_size_y = 32;
-	MS_U8 luma_subblock_size_x = 32;
-	MS_U8 chroma_subblock_size_y = 16;
-	MS_U8 chroma_subblock_size_x = 16;
-	MS_U8 luma_block_size_y;
-	MS_U8 luma_block_size_x;
-	MS_U8 chroma_block_size_y;
-	MS_U8 chroma_block_size_x;
-	MS_U8 luma_grain_stride;
-	MS_U8 chroma_grain_stride;
+	MS_U8 luma_block_size_y = FG_LUMA_BLOCK_SIZE_Y;
+	MS_U8 luma_block_size_x = FG_LUMA_BLOCK_SIZE_X;
+	MS_U8 chroma_block_size_y = FG_CHROMA_BLOCK_SIZE_Y;
+	MS_U8 chroma_block_size_x = FG_CHROMA_BLOCK_SIZE_X;
+	MS_U8 luma_grain_stride = 0;
+	MS_U8 chroma_grain_stride = 0;
 
-	int grain_center;
-	int grain_min;
-	int grain_max;
 
 	int gauss_sec_shift;
-	int rounding_offset;
 	int i;
 	int j;
-	int chroma_grain_block_size;
 
 	FG_FUNC();
 
 	random_register = params_hw_reg->grain_seed;
 
-	luma_block_size_y = top_pad + 2 * ar_padding + luma_subblock_size_y * 2 + bottom_pad; //73
-	luma_block_size_x = left_pad + 2 * ar_padding + luma_subblock_size_x * 2 + 2 * ar_padding +
-			    right_pad; //82
-	chroma_block_size_y = top_pad + (2 >> chroma_subsamp_y) * ar_padding +
-			      chroma_subblock_size_y * 2 + bottom_pad; ////38
-	chroma_block_size_x = left_pad + (2 >> chroma_subsamp_x) * ar_padding +
-			      chroma_subblock_size_x * 2 + (2 >> chroma_subsamp_x) * ar_padding +
-			      right_pad; ////44
-	luma_grain_stride = luma_block_size_x; ////82
-	chroma_grain_stride = chroma_block_size_x; ////44
+	luma_grain_stride = luma_block_size_x; /* 82 */
+	chroma_grain_stride = chroma_block_size_x; /* 44 */
 
-	grain_center = 128 << (params_hw_reg->bit_depth - 8);
-	grain_min = 0 - grain_center;
-	grain_max = (256 << (params_hw_reg->bit_depth - 8)) - 1 - grain_center;
+	gauss_sec_shift = FG_MAX_BITS - params_hw_reg->bit_depth +
+		params_hw_reg->grain_scale_shift;
 
-	gauss_sec_shift = 12 - params_hw_reg->bit_depth + params_hw_reg->grain_scale_shift;
-	rounding_offset = (1 << (params_hw_reg->ar_coeff_shift - 1));
-
+	FG_LOG_D("random_register %u\n", random_register);
+	FG_LOG_D("bit_depth %u grain_scale_shift %u gauss_sec_shift %d\n",
+		params_hw_reg->bit_depth,
+		params_hw_reg->grain_scale_shift,
+		gauss_sec_shift);
 
 	if (params_hw_reg->num_y_points) {
 		/* 73 x 82 = 5986 */
 		for (i = 0; i < luma_block_size_y; i++) {	/* 73 */
 			for (j = 0; j < luma_block_size_x; j++)	/* 82 */
-				params_hw_adl->y_grain_block[i * luma_grain_stride + j] =
-				(MS_U16)(((gaussian_sequence[get_random_number(gauss_bits)] +
-					   ((1 << gauss_sec_shift) >> 1)) >> gauss_sec_shift) &
-					  0xffff);
+				params_hw_adl->y_grain_block[i *
+				luma_grain_stride + j] =
+				(((gaussian_sequence[get_random_number
+				(gauss_bits)] +
+				((1 << gauss_sec_shift) >> 1)) >>
+				gauss_sec_shift));
 		}
 	} else {
 		memset(params_hw_adl->y_grain_block, 0,
 			sizeof(params_hw_adl->y_grain_block));
 	}
 
-	chroma_grain_block_size = chroma_block_size_y * chroma_grain_stride;
-
-	if (params_hw_reg->chroma_scaling_from_luma || params_hw_reg->num_cb_points) {
-		init_random_generator(7 << 5, params_hw_reg->grain_seed);
+	if (params_hw_reg->chroma_scaling_from_luma ||
+	    params_hw_reg->num_cb_points) {
+		init_random_generator(FG_CB_LINE, params_hw_reg->grain_seed);
 		/* 38 x 44 = 1762 */
 		for (i = 0; i < chroma_block_size_y; i++) {
 			for (j = 0; j < chroma_block_size_x; j++)
-				params_hw_adl->cb_grain_block[i * chroma_grain_stride + j] =
-				(MS_U16)(((gaussian_sequence[get_random_number(gauss_bits)] +
-					   ((1 << gauss_sec_shift) >> 1)) >> gauss_sec_shift) &
-					  0xffff);
+				params_hw_adl->cb_grain_block[i *
+				chroma_grain_stride + j] =
+				(((gaussian_sequence[get_random_number(
+				gauss_bits)] +
+				((1 << gauss_sec_shift) >> 1)) >>
+				gauss_sec_shift));
 		}
-	} else	{
+	} else {
 		memset(params_hw_adl->cb_grain_block, 0,
 			sizeof(params_hw_adl->cb_grain_block));
 	}
 
 
-	if (params_hw_reg->chroma_scaling_from_luma || params_hw_reg->num_cr_points) {
-		init_random_generator(11 << 5, params_hw_reg->grain_seed);
+	if (params_hw_reg->chroma_scaling_from_luma ||
+	    params_hw_reg->num_cr_points) {
+		init_random_generator(FG_CR_LINE, params_hw_reg->grain_seed);
 		for (i = 0; i < chroma_block_size_y; i++) {
 			for (j = 0; j < chroma_block_size_x; j++)
-				params_hw_adl->cr_grain_block[i * chroma_grain_stride + j] =
-				(MS_U16)(((gaussian_sequence[get_random_number(gauss_bits)] +
-				((1 << gauss_sec_shift) >> 1)) >> gauss_sec_shift) & 0xffff);
+				params_hw_adl->cr_grain_block[i *
+				chroma_grain_stride + j] =
+				(((gaussian_sequence[get_random_number(
+				gauss_bits)] +
+				((1 << gauss_sec_shift) >> 1)) >>
+				gauss_sec_shift));
 		}
 	} else {
 		memset(params_hw_adl->cr_grain_block, 0,
 			sizeof(params_hw_adl->cr_grain_block));
 	}
 }
-
 
 /* vdec metada data -> fg hw reg setting & adl raw data */
 static void disp_fg_parser_meta(struct mtk_av1_film_grain_params *fg_param,
@@ -642,7 +714,7 @@ static void disp_fg_parser_meta(struct mtk_av1_film_grain_params *fg_param,
 {
 	FG_FUNC();
 
-	params_hw_reg->bit_depth = 10;
+	params_hw_reg->bit_depth = FG_DEFAULT_BIT;
 
 	disp_fg_check_vdec_md(fg_param);
 
@@ -655,18 +727,73 @@ static void disp_fg_parser_meta(struct mtk_av1_film_grain_params *fg_param,
 	disp_fg_process_gns(params_hw_reg, params_hw_adl);
 }
 
+static uint64_t disp_fg_gettimeofday(void)
+{
+	struct timespec64 t;
+
+	ktime_get_ts64(&t);
+
+	return (t.tv_sec & FG_SEC_MASK) * FG_ONE_SEC_PER_NS + t.tv_nsec;
+}
+
+static void disp_fg_sw_auto_reg(struct mtk_av1_film_grain_params *fg_param,
+				struct disp_fg_info *info)
+{
+	uint64_t start_timer, end_timer;
+
+	FG_FUNC();
+
+	start_timer = disp_fg_gettimeofday();
+
+	info->hw_reg->force_write = 1;
+	disp_fg_init_gns_grain_info(fg_param,
+				    info->hw_reg,
+				    &info->gns_info);
+	disp_fg_pre_process_gns(fg_param, &info->gns_info, info->hw_adl,
+				&info->gns_ar_info);
+	disp_fg_pre_process_ar_coeffs(info->hw_reg);
+
+	end_timer = disp_fg_gettimeofday();
+
+	FG_SW_PER("sw filter %llu ns start %llu %llu\n",
+		  (end_timer - start_timer),
+		  start_timer,
+		  end_timer);
+}
+
+static void disp_fg_hw_auto_reg(struct mtk_av1_film_grain_params *fg_param,
+				struct disp_fg_info *info)
+{
+	uint32_t i = 0;
+	MS_S32 *y_grain_block = info->hw_adl->y_grain_block;
+	MS_S32 *cb_grain_block = info->hw_adl->cb_grain_block;
+	MS_S32 *cr_grain_block = info->hw_adl->cr_grain_block;
+
+	FG_FUNC();
+
+	info->hw_reg->force_write = 0;
+
+	for (i = 0; i < FG_LUAM_BLOCK_SIZE; i++)
+		y_grain_block[i] = REVISE_VAL(y_grain_block[i],
+					      FG_GRAIN_VALUE_MAX);
+
+	for (i = 0; i < FG_CHROMA_BLOCK_SIZE; i++) {
+		cb_grain_block[i] = REVISE_VAL(cb_grain_block[i],
+					       FG_GRAIN_VALUE_MAX);
+		cr_grain_block[i] = REVISE_VAL(cr_grain_block[i],
+					       FG_GRAIN_VALUE_MAX);
+	}
+}
+
 MS_BOOL disp_fg_handler(u32 fg_hw_id, struct mtk_av1_film_grain_params *fg_param,
 			struct adl_src_tbl *adl_tbl)
 {
-	MS_BOOL STATUS = false;
 	MS_U8 apply_grain;
 	MS_U8 update_grain;
 	struct disp_fg_info *info;
 
-	if (!fg_param || fg_force_bypass) {
-		STATUS = false;
+	if (!fg_param || fg_force_bypass || !fg_param->apply_grain)
 		goto bypass_fg;
-	}
 
 	FG_FUNC();
 
@@ -675,26 +802,23 @@ MS_BOOL disp_fg_handler(u32 fg_hw_id, struct mtk_av1_film_grain_params *fg_param
 	apply_grain = fg_param->apply_grain;
 	update_grain = fg_param->update_grain;
 
-	if (apply_grain) {
-		if (update_grain) {
-			info->fg_params_idx = (info->fg_params_idx + 1) % FG_MAX_PARAM_NS;
-			info->hw_reg = &info->fg_params_hw_reg[info->fg_params_idx];
-			info->hw_adl = &info->fg_params_hw_adl[info->fg_params_idx];
-			disp_fg_parser_meta(fg_param, info->hw_reg, info->hw_adl);
-		}
+	info->fg_params_idx = (info->fg_params_idx + 1) % FG_MAX_PARAM_NS;
+	info->hw_reg = &info->fg_params_hw_reg[info->fg_params_idx];
+	info->hw_adl = &info->fg_params_hw_adl[info->fg_params_idx];
+	disp_fg_parser_meta(fg_param, info->hw_reg, info->hw_adl);
 
-		if (info->hw_reg && info->hw_adl)
-			fg_hal_update_process(fg_hw_id, info->hw_reg, info->hw_adl, adl_tbl);
+	if (fg_sw_auto_reg_filter && info->gns_ar_info.ar_block_alloc)
+		disp_fg_sw_auto_reg(fg_param, info);
+	else
+		disp_fg_hw_auto_reg(fg_param, info);
+	fg_hal_update_process(fg_hw_id, info->hw_reg, info->hw_adl, adl_tbl);
 
-		STATUS = true;
-
-		return STATUS;
-	}
+	return true;
 
 bypass_fg:
 	fg_hal_bypass(fg_hw_id, true);
 
-	return STATUS;
+	return false;
 }
 
 void disp_fg_force_bypass(u32 fg_hw_id, bool bypass)
@@ -703,4 +827,72 @@ void disp_fg_force_bypass(u32 fg_hw_id, bool bypass)
 
 	fg_force_bypass = bypass;
 	fg_hal_bypass(fg_hw_id, bypass);
+}
+
+void disp_fg_sw_auto_reg_filter_enable(bool enable)
+{
+	FG_FUNC();
+
+	fg_sw_auto_reg_filter = enable;
+}
+
+void disp_fg_free_gns_ar_scale_info(u32 fg_hw_id)
+{
+	struct disp_fg_info *info = NULL;
+
+	FG_FUNC();
+
+	if (fg_hw_id >= MAX_FG) {
+		FG_ERR("invalid hw id %u\n", fg_hw_id);
+		return;
+	}
+
+	info = &fg_info[fg_hw_id];
+
+	disp_fg_free_gns_ar_block(&info->gns_ar_info);
+
+	info->scale_info.src_w = 0;
+	info->scale_info.src_h = 0;
+	info->scale_info.dst_w = 0;
+	info->scale_info.dst_h = 0;
+}
+
+void disp_fg_update_scale_info(u32 hw_id, struct video_scale_info *scale_info)
+{
+	struct disp_fg_info *info = NULL;
+
+	FG_FUNC();
+
+	if (hw_id >= MAX_FG || !scale_info) {
+		FG_ERR("invalid hw id %u or scale_info is NULL\n", hw_id);
+		return;
+	}
+
+	if (!fg_sw_auto_reg_filter)
+		return;
+
+	info = &fg_info[hw_id];
+
+	if ((scale_info->src_w != info->scale_info.src_w) ||
+	    (scale_info->src_h != info->scale_info.src_h) ||
+	    (scale_info->dst_w != info->scale_info.dst_w) ||
+	    (scale_info->dst_h != info->scale_info.dst_h)) {
+
+		FG_LOG_D("scale_info [%ux%u -> %ux%u] [%ux%u -> %ux%u]\n",
+			 info->scale_info.src_w,
+			 info->scale_info.src_h,
+			 info->scale_info.dst_w,
+			 info->scale_info.dst_h,
+			 scale_info->src_w,
+			 scale_info->src_h,
+			 scale_info->dst_w,
+			 scale_info->dst_h);
+
+		memcpy(&info->scale_info, scale_info,
+		       sizeof(struct video_scale_info));
+		disp_fg_init_gns_basic_info(&info->gns_info);
+		disp_fg_update_gns_ar_block_info(&info->gns_info,
+						 &info->scale_info,
+						 &info->gns_ar_info);
+	}
 }

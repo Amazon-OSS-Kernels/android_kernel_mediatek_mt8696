@@ -252,6 +252,8 @@ static int disp_fg_stop(void *data)
 
 	fg_start[layer_id] = false;
 
+	disp_fg_free_gns_ar_scale_info(layer_id);
+
 	return FG_OK;
 }
 
@@ -331,8 +333,25 @@ void disp_fg_config(u32 fg_hw_id, struct mtk_av1_film_grain_params *fg_param)
 	adl_tbl = &fg_adl_tbl[fg_hw_id];
 	param = &fg_params[fg_hw_id];
 
-	if (fg_param)
-		memcpy(param, fg_param, sizeof(struct mtk_av1_film_grain_params));
+	if (fg_param) {
+		FG_LOG_D("apply %u seed %u update %u scale %u lag %u %u %u\n",
+			 fg_param->apply_grain,
+			 fg_param->grain_seed,
+			 fg_param->update_grain,
+			 fg_param->grain_scaling,
+			 fg_param->ar_coeff_lag,
+			 fg_param->ar_coeff_shift,
+			 fg_param->grain_scale_shift);
+
+		if (fg_param->update_grain)
+			memcpy(param, fg_param,
+			       sizeof(struct mtk_av1_film_grain_params));
+		else
+			param->grain_seed = fg_param->grain_seed;
+
+		if (fg_param->update_grain)
+			fg_dbg_dump_param(fg_hw_id);
+	}
 
 	ret = disp_fg_handler(fg_hw_id, param, adl_tbl);
 	FG_LOG_D("fg %d adl_tbl client %d used_size %d base %p\n",
@@ -345,6 +364,16 @@ void disp_fg_config(u32 fg_hw_id, struct mtk_av1_film_grain_params *fg_param)
 		disp_adl_cfg_client_en(adl_tbl->client, 1, 0);
 		disp_filmg_config_adl_table(adl_tbl);
 	}
+}
+
+void disp_fg_config_scale_info(u32 hw_id, struct video_scale_info *info)
+{
+	if (hw_id >= MAX_FG || !info) {
+		FG_ERR("invalid hw id %u or info is NULL\n", hw_id);
+		return;
+	}
+
+	disp_fg_update_scale_info(hw_id, info);
 }
 
 /***************** driver ************/

@@ -868,7 +868,7 @@ static int _imgresz_hal_if_do_scale(struct imgresz_data *data)
 			return -EPERM;
 
 		imgresz_ufo_poweron(base);
-		imgresz_ufo_config(base, src_buf->ufo_type);
+		imgresz_ufo_config(base, src_buf->ufo_type, src_buf->tilemode);
 		imgresz_ufo_pagesz(base, partition->src_w,
 			src_buf->pic_height, partition->dst_w);
 		imgresz_ufo_picsz(base,
@@ -878,8 +878,6 @@ static int _imgresz_hal_if_do_scale(struct imgresz_data *data)
 
 		if (imgresz_cur_chip_ver >= IMGRESZ_CURR_CHIP_VER_8695) {
 			imgresz_ufo_idle_int_on(base);
-			if (dst_format->bit10)
-				imgresz_ufo_10bit_output_enable(base);
 			if (src_format->jump_10bit)
 				imgresz_ufo_10bit_jump_mode_enable(base);
 			if (scaledata->outstanding)
@@ -941,6 +939,9 @@ static int _imgresz_hal_if_do_scale(struct imgresz_data *data)
 		dst_buf->pic_y_offset);
 	imgresz_hal_set_vdo_cbcr_swap(base, dst_buf->cbcr_swap);
 
+	if (dst_format->bit10)
+		imgresz_ufo_10bit_output_enable(base);
+
 	/* 6. Set Scale Factor to HW */
 	if (rm_info->rpr_mode) {
 		imgresz_hal_coeff_set_rpr_H_factor(base, src_buf->pic_width,
@@ -971,7 +972,7 @@ static int _imgresz_hal_if_do_scale(struct imgresz_data *data)
 			 dst_format->bit10);
 
 	/* Partition adjust, should be behind src/dst basic info. */
-	if (h_partition && imgresz_src_is_ufo(src_buf->ufo_type)) {
+	if (h_partition) {
 		if (scaledata->ufo_page0)
 			imgresz_hal_coeff_h8tap_vdo_partition_offset
 					(base, 0, 0, 0);
@@ -979,7 +980,6 @@ static int _imgresz_hal_if_do_scale(struct imgresz_data *data)
 			imgresz_hal_coeff_h8tap_vdo_partition_offset
 				(base, partition->dst_x_offset,
 				hal_info->h8_factor_y, hal_info->h8_factor_cb);
-		/*imgresz_hal_coeff_v4tap_vdo_partition_offset(base, 0);*/
 			imgresz_ufo_partition_set_start_point
 			(base, partition->src_x_offset, 0);
 		}
@@ -1519,8 +1519,13 @@ imgresz_cal_ufo_h_partition_2hw
 	unsigned int tg_x1, u4Count;
 	bool fgLinebufok;
 	bool dst_blk = dst_format->block;
+	bool dst_10bit = dst_format->bit10;
+	unsigned int alignsize = 32;
 
-	tg_x1 = IMGALIGN(dst_buf->pic_width/2, 32);
+	if (dst_10bit)
+		alignsize = 64;
+
+	tg_x1 = IMGALIGN(dst_buf->pic_width/2, alignsize);
 	if (!tg_x1 || !hal_info->h8_factor_y || !hal_info->h8_factor_cb)
 		return -EINVAL;
 	if ((src_buf->pic_height == dst_buf->pic_height) &&
@@ -1532,23 +1537,28 @@ imgresz_cal_ufo_h_partition_2hw
 		/* page0 */
 		u4Count = 0;
 		do {
-			tg_x1 = IMGALIGN(dst_buf->pic_width/2 - u4Count*32, 32);
+			tg_x1 = IMGALIGN(dst_buf->pic_width/2 - u4Count*32, alignsize);
 			x0_end = IMG_VdoPart_GetSrcW(tg_x1,
 				hal_info->h8_factor_y);
 			x0_c_end = IMG_VdoPart_GetSrcW
 				(tg_x1/2, hal_info->h8_factor_cb);
 
 			/* whether the linebuf is 0. this is not allowed. */
-			fgLinebufok = imgresz_hal_survey_linebuflen_is_ok
-				(true, false, dst_blk, x0_end, tg_x1, 16);
+			fgLinebufok = imgresz_hal_survey_linebuflen_is_ok(
+					imgresz_src_is_ufo(src_buf->ufo_type),
+					false,
+					dst_blk,
+					x0_end,
+					tg_x1,
+					16);
 			if (!fgLinebufok) {
 				loginfo(IMGRESZ_LOG_UFO,
 					"fg:%d,tg_x1:%d x0_end:%d,u4Count:%d\n",
 					fgLinebufok, tg_x1, x0_end, u4Count);
 				u4Count++;
 			}
-			if (tg_x1 < 32) {
-				loginfo(IMGRESZ_LOG_UFO, "page0 < 32,break\n");
+			if (tg_x1 < alignsize) {
+				loginfo(IMGRESZ_LOG_UFO, "page0 < %d,break\n", alignsize);
 				return -EINVAL;
 			}
 		} while (!fgLinebufok && (tg_x1 > 4));

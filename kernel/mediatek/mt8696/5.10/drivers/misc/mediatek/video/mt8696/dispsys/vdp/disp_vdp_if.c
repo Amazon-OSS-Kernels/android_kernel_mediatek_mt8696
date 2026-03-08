@@ -127,6 +127,8 @@ bool set_qms_en;
 uint32_t vdp_qms_fps[2];
 #endif
 
+struct mtk_disp_vdp_cap vdp_scale_info[VIDEO_LAYER_MAX_COUNT];
+
 bool is_hd_resolution(void)
 {
 	return IS_HD_RES(current_resolution);
@@ -880,6 +882,11 @@ int disp_vdp_get_info(struct disp_hw_common_info *info)
 		if ((vdp_cap->layer_id == 3) && ((height < dst_height * 4)))
 			vdp_cap->need_resizer = false;
 	} while (0);
+
+	if (vdp_cap->layer_id <= VDP_2)
+		memcpy((void *)&vdp_scale_info[vdp_cap->layer_id],
+		       (void *)vdp_cap,
+		       sizeof(struct mtk_disp_vdp_cap));
 
 	vdp_printf(
 		VDP_RESOLUTION_LOG,

@@ -746,6 +746,7 @@ bool hdmi_ddc_request(unsigned char req)
 #if (defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE))
 		vCaHDMIWriteHDCPRST(RISC_CLK_DDC_RST, RISC_CLK_DDC_RST);
 #endif
+		dsb(SY);
 		udelay(1);
 #if (defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE))
 		vCaHDMIWriteHDCPRST(0, RISC_CLK_DDC_RST);
@@ -804,6 +805,7 @@ bool hdmi_ddc_request(unsigned char req)
 #if (defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE))
 		vCaHDMIWriteHDCPRST(RISC_CLK_DDC_RST, RISC_CLK_DDC_RST);
 #endif
+		dsb(SY);
 		udelay(1);
 #if (defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE))
 		vCaHDMIWriteHDCPRST(0, RISC_CLK_DDC_RST);
@@ -832,6 +834,7 @@ bool hdmi_ddc_request(unsigned char req)
 #if (defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE))
 	vCaHDMIWriteHDCPRST(SOFT_HDCP_CORE_RST, SOFT_HDCP_CORE_RST);
 #endif
+	dsb(SY);
 	udelay(1);
 	/* SOFT_HDCP_NOR, SOFT_HDCP_RST); */
 #if (defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE))
@@ -4284,6 +4287,7 @@ void vHDMIResetGenReg(void)
 		_stAvdAVInfo.e_video_color_space);
 	vHalVrrEnable(_fgVrrEnable);
 	vResetHDMI(0);		/* HDMI normally */
+	dsb(SY);
 	HAL_Delay_us(2);
 	vWriteByteHdmiGRL(HDCP_TOP_CTRL, 0x0);
 	HDMI_EnableIrq();
@@ -4382,8 +4386,10 @@ void vTxSignalOnOff(unsigned char bOn)
 		vWriteIoHdmiAnaMsk(HDMI_1_CFG_3, 0, RG_HDMITX21_SLDO_EN);
 
 		vWriteIoHdmiAnaMsk(HDMI_1_PLL_CFG_4, 0, DA_HDMITXPLL_PWR_ON);
+		dsb(SY);
 		udelay(20);
 		vWriteIoHdmiAnaMsk(HDMI_1_PLL_CFG_4, 0, DA_HDMITXPLL_ISO_EN);
+		dsb(SY);
 		udelay(20);
 		vWriteIoHdmiAnaMsk(HDMI_1_PLL_CFG_2, 0, RG_HDMITXPLL_PWD);
 
@@ -4429,6 +4435,7 @@ void vChgHDMIVideoResolution(void)
 	/*vHDMIAVMute(); */
 	vHDMIResetGenReg();
 	/*vChgHDMIAudioOutput(CHG_NCTS_AND_INPUT);  */
+	dsb(SY);
 
 	for (u4Index = 0; u4Index < 5; u4Index++)
 		HAL_Delay_us(1);
@@ -4727,7 +4734,7 @@ void vHalSendDolbyVSIF(bool fgEnable,
 	bool fgLowLatency, bool fgDolbyVisionSignal,
 			 bool fgBackltCtrlMdPresent, unsigned int u4EfftmaxPQ)
 {
-	unsigned char bData[13];
+	unsigned char bData[DOLBYVSIF_LEN] = {0};
 	unsigned char bHDR_CHSUM = 0;
 	unsigned char i;
 	unsigned short u2VsifIdx;
@@ -4776,7 +4783,7 @@ void vHalSendDolbyVSIF(bool fgEnable,
 			(DOLBYVSIF_LEN << 16) + (DOLBYVSIF_VERS << 8) +
 			(DOLBYVSIF_TYPE << 0));
 		bHDR_CHSUM = DOLBYVSIF_LEN + DOLBYVSIF_VERS + DOLBYVSIF_TYPE;
-		for (i = 0; i < 6; i++)
+		for (i = 0; i < DOLBYVSIF_LEN; i++)
 			bHDR_CHSUM += bData[i];
 		bHDR_CHSUM = 0x100 - bHDR_CHSUM;
 		vWriteByteHdmiGRL(pkthw[u2VsifIdx].addr_pkt,

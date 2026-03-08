@@ -207,32 +207,27 @@ enum imgresz_src_color_mode mdp_imgresz_map_src_format(
 	/* TODO: we need to map more color format */
 	switch (color_format) {
 	case DP_COLOR_420_BLKP:
-			return IMGRESZ_SRC_COL_MD_420_BLK;
+	case DP_COLOR_420_BLKP_UFO_10_H:
+	case DP_COLOR_420_BLKP_UFO_10_V:
+	case DP_COLOR_420_BLKP_UFO:
+	case DP_COLOR_420_BLKP_10_H:
+	case DP_COLOR_420_BLKP_10_V:
+		return IMGRESZ_SRC_COL_MD_420_BLK;
 	case DP_COLOR_NV12:
 	case DP_COLOR_NV21:
-			return IMGRESZ_SRC_COL_MD_420_RS;
+	case DP_COLOR_NV12_10L:
+		return IMGRESZ_SRC_COL_MD_420_RS;
 	case DP_COLOR_YV12:
 	case DP_COLOR_YV16:
-			return IMGRESZ_SRC_COL_MD_JPG_DEF;
+		return IMGRESZ_SRC_COL_MD_JPG_DEF;
 	case DP_COLOR_422_BLKP:
-			return IMGRESZ_SRC_COL_MD_422_BLK;
+		return IMGRESZ_SRC_COL_MD_422_BLK;
 	case DP_COLOR_YUYV:
-			return IMGRESZ_SRC_COL_MD_422_RS;
+		return IMGRESZ_SRC_COL_MD_422_RS;
 	case DP_COLOR_ARGB8888:
 		return IMGRESZ_SRC_COL_MD_ARGB_8888;
 	case DP_COLOR_RGB565:
 		return IMGRESZ_SRC_COL_MD_RGB_565;
-	case DP_COLOR_420_BLKP_UFO_10_H:
-	case DP_COLOR_420_BLKP_UFO_10_V:
-	case DP_COLOR_420_BLKP_UFO:
-		return IMGRESZ_SRC_COL_MD_420_BLK;
-	case DP_COLOR_420_BLKP_10_H:
-	case DP_COLOR_420_BLKP_10_V:
-		return IMGRESZ_SRC_COL_MD_420_BLK;
-	case DP_COLOR_NV12_10L:
-		return IMGRESZ_SRC_COL_MD_420_RS;
-
-
 	default:
 		return IMGRESZ_SRC_COL_MD_NONE;
 	}
@@ -249,6 +244,7 @@ enum imgresz_dst_color_mode mdp_imgresz_map_dst_format(
 	/* TODO: we need to map more color format */
 	switch (color_format) {
 	case DP_COLOR_420_BLKP:
+	case DP_COLOR_420_BLKP_10_H:
 		return IMGRESZ_DST_COL_MD_420_BLK;
 	case DP_COLOR_NV12:
 	case DP_COLOR_NV21:
@@ -261,7 +257,6 @@ enum imgresz_dst_color_mode mdp_imgresz_map_dst_format(
 		return IMGRESZ_DST_COL_MD_ARGB_8888;
 	case DP_COLOR_RGB565:
 		return IMGRESZ_DST_COL_MD_RGB_565;
-
 	default:
 		return IMGRESZ_DST_COL_MD_NONE;
 	}
@@ -520,6 +515,9 @@ enum MDP_TASK_STATUS mdp_imgresz_fill_task(struct mdp_task_struct *pTask)
 		mdp_imgresz_get_ufo_format(
 			p_command_buffer->color_format);
 
+	p_task_src_buffer->tilemode = DP_COLOR_GET_10BIT_TILE_MODE(
+		p_command_buffer->color_format);
+
 	if (DP_COLOR_GET_UFP_ENABLE(p_command_buffer->color_format)) {
 		p_task_src_buffer->buf_info.ylen_offset =
 			p_command_buffer->buffer_info.ylen_offset;
@@ -541,6 +539,9 @@ enum MDP_TASK_STATUS mdp_imgresz_fill_task(struct mdp_task_struct *pTask)
 	/* dst buffer info */
 	p_task_dst_buffer = &pTask->task.imgresz_task.dst_buffer;
 	p_command_buffer = &pTask->mdp_command.dst_buffer;
+
+	p_task_dst_buffer->bit10 = DP_COLOR_GET_10BIT(
+		p_command_buffer->color_format);
 
 	p_task_dst_buffer->dst_mode = mdp_imgresz_map_dst_format(
 		p_command_buffer->color_format);

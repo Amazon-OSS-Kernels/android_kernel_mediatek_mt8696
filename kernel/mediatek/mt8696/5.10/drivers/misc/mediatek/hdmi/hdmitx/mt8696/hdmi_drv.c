@@ -1796,6 +1796,7 @@ void read_int_status(unsigned char savevalue)
 void vClear_pordhpd_irq(void)
 {
 	vWriteByteHdmiGRL(TOP_INT_CLR00, 0xf);
+	dsb(SY);
 	udelay(1);
 	vWriteByteHdmiGRL(TOP_INT_CLR00, 0x0);
 }
