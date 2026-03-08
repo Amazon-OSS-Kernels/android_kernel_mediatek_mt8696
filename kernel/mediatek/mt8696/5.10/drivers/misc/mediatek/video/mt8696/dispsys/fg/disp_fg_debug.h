@@ -32,5 +32,9 @@ void fg_debug_exit(void);
 	} while (0)
 #endif
 
+enum fg_hw_id;
+
 extern void fg_sec_status(void);
+extern void fg_hal_reg_dump(enum fg_hw_id hw_id, u32 len);
+void fg_hal_reg_write(u32 addr, u32 val);
 #endif /* __DISP_VDP_DEBUG_H__ */

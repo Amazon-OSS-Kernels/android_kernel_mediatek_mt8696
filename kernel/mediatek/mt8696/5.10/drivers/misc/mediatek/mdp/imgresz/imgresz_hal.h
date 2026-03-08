@@ -162,7 +162,7 @@ void imgresz_ufo_partition_set_start_point
 void imgresz_ufo_pagesz(void __iomem *base,
 	uint32_t srcwid, uint32_t srchei, uint32_t dstwid);
 void imgresz_ufo_poweron(void __iomem *base);
-void imgresz_ufo_config(void __iomem *base, enum imgresz_ufo_type type);
+void imgresz_ufo_config(void __iomem *base, enum imgresz_ufo_type type, bool tilemode);
 void imgresz_ufo_picsz(void __iomem *base,
 	uint32_t buf_width, uint32_t buf_height);
 void imgresz_ufo_src_buf(void __iomem *base,

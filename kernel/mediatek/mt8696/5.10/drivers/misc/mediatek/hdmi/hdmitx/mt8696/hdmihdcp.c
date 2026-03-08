@@ -271,6 +271,7 @@ void vInitHdcpKey(void)
 void vCleanAuthFailInt(void)
 {
 	vWriteByteHdmiGRL(TOP_INT_CLR00, 0x00020000);
+	dsb(SY);
 	udelay(1);
 	vWriteByteHdmiGRL(TOP_INT_CLR00, 0x00000000);
 	HDMI_HDCP_LOG("0x14025c8c = 0x%08x\n",
@@ -284,6 +285,7 @@ void vHDMI2xClearINT(void)
 
 	vWriteByteHdmiGRL(TOP_INT_CLR00, 0xfffffff0);
 	vWriteByteHdmiGRL(TOP_INT_CLR01, 0xffffffff);
+	dsb(SY);
 	udelay(1);
 	vWriteByteHdmiGRL(TOP_INT_CLR00, 0x0);
 	vWriteByteHdmiGRL(TOP_INT_CLR01, 0x0);
@@ -421,6 +423,7 @@ void vHDMIClearINT(void)
 
 	vWriteByteHdmiGRL(TOP_INT_CLR00, 0xfffffff0);
 	vWriteByteHdmiGRL(TOP_INT_CLR01, 0xffffffff);
+	dsb(SY);
 	udelay(1);
 	vWriteByteHdmiGRL(TOP_INT_CLR00, 0x0);
 	vWriteByteHdmiGRL(TOP_INT_CLR01, 0x0);
@@ -469,6 +472,7 @@ void vHalHDCP2x_Reset(void)
 		vCaHDMIWriteHDCPRST(SOFT_HDCP_CORE_RST,
 		SOFT_HDCP_CORE_RST);
 #endif
+	dsb(SY);
 	udelay(1);
 	/* SOFT_HDCP_NOR, SOFT_HDCP_RST); */
 #if (defined(CONFIG_MTK_IN_HOUSE_TEE_SUPPORT) || defined(CONFIG_OPTEE))
@@ -582,6 +586,7 @@ void vWriteBksvToTx(unsigned char *bBKsv)
 	    (((bBKsv[1]) & 0xff) << 8) +
 	    (bBKsv[0] & 0xff);
 	vWriteByteHdmiGRL(0xcb0, temp);
+	dsb(SY);
 	udelay(10);
 	vWriteByteHdmiGRL(0xcb4, bBKsv[4]);
 
@@ -1495,6 +1500,7 @@ void HdcpService(enum HDCP_CTRL_STATE_T e_hdcp_state)
 		uitemp1 = uiReadHDCPStatus();
 		uitemp2 = uiReadIRQStatus01();
 		vWriteByteHdmiGRL(TOP_INT_CLR01, 0x00004000);
+		dsb(SY);
 		udelay(10);
 		vWriteByteHdmiGRL(TOP_INT_CLR01, 0x00000000);
 		if ((uitemp2 & (1 << 14)) || (uitemp1 & (1 << 28))) {
@@ -1746,6 +1752,7 @@ void HdcpService(enum HDCP_CTRL_STATE_T e_hdcp_state)
 #else
 			TX_DEF_LOG("Normal Mode fgCaHDMILoadROM\n");
 			for (readvalue = 0; readvalue < 0x8000; readvalue++) {
+				dsb(SY);
 				udelay(1);
 				vWriteByteHdmiGRL(PROM_CTRL,
 				(readvalue << PROM_ADDR_SHIFT) +
@@ -1757,6 +1764,7 @@ void HdcpService(enum HDCP_CTRL_STATE_T e_hdcp_state)
 			vWriteByteHdmiGRL(PROM_CTRL, 0);
 
 			for (readvalue = 0; readvalue < 0x4000; readvalue++) {
+				dsb(SY);
 				udelay(1);
 				vWriteByteHdmiGRL(PRAM_CTRL,
 				(readvalue << PRAM_ADDR_SHIFT) +
@@ -1765,6 +1773,7 @@ void HdcpService(enum HDCP_CTRL_STATE_T e_hdcp_state)
 				PRAM_CTRL_SEL +
 				PRAM_CS + PRAM_WR);
 			}
+			dsb(SY);
 			udelay(5);
 			vWriteByteHdmiGRL(PRAM_CTRL, 0);
 #endif
@@ -1858,6 +1867,7 @@ void HdcpService(enum HDCP_CTRL_STATE_T e_hdcp_state)
 		vWriteHdmiGRLMsk(HDCP2X_CTRL_0, HDCP2X_EN, HDCP2X_EN);
 		vWriteHdmiGRLMsk(HDCP2X_CTRL_0, HDCP2X_REAUTH_SW,
 			HDCP2X_REAUTH_SW);
+		dsb(SY);
 		udelay(1);
 		vWriteHdmiGRLMsk(HDCP2X_CTRL_0, 0, HDCP2X_REAUTH_SW);
 		vSetHDCPState(HDCP2x_CHECK_CERT_OK);
@@ -2031,6 +2041,7 @@ HDMI_HDCP_LOG(
 			bReadByteHdmiGRL(HDCP2X_STATUS_0), jiffies);
 		vWriteHdmiGRLMsk(HDCP2X_CTRL_2, HDCP2X_RPT_RCVID_RD_START,
 				 HDCP2X_RPT_RCVID_RD_START);
+		dsb(SY);
 		udelay(1);
 		vWriteHdmiGRLMsk(HDCP2X_CTRL_2, 0, HDCP2X_RPT_RCVID_RD_START);
 		devicecnt =
@@ -2052,6 +2063,7 @@ HDMI_HDCP_LOG(
 			vWriteHdmiGRLMsk(HDCP2X_CTRL_2,
 				HDCP2X_RPT_RCVID_RD,
 				HDCP2X_RPT_RCVID_RD);
+			dsb(SY);
 			udelay(1);
 			vWriteHdmiGRLMsk(HDCP2X_CTRL_2, 0,
 				HDCP2X_RPT_RCVID_RD);

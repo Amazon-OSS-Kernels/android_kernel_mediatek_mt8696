@@ -83,6 +83,8 @@ static struct sync_pt *sync_pt_create(struct sync_timeline *obj,
 {
 	struct sync_pt *pt;
 
+	if (!obj)
+		return NULL;
 	pt = kzalloc(sizeof(*pt), GFP_KERNEL);
 	if (!pt)
 		return NULL;
@@ -294,6 +296,12 @@ int fence_create(struct sync_timeline *obj, struct fence_data *data)
 
 	if (fd < 0)
 		return fd;
+
+	if ((!data) || (!obj)) {
+		pr_err("%s: invalid value!\n", __func__);
+		err = -EINVAL;
+		goto err;
+	}
 
 	pt = sync_pt_create(obj, data->value);
 	if (!pt) {

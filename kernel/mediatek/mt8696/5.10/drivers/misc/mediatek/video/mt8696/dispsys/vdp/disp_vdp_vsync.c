@@ -58,7 +58,6 @@
 #include <uapi/linux/sched/types.h>
 #include <linux/sched/types.h>
 
-
 uint32_t vdp_line_cnt[VDP_HW_NS][VDP_MAX_REC];
 
 #define DUMP_VDP_LINE(_vdp_id, vsync_cnt)					\
@@ -443,8 +442,10 @@ void vdp_prepare_GCE_command(struct cmdq_pkt *pkt_main,
 static void vdp_config_film_grain(u32 vdp_id, struct video_buffer_info *buf)
 {
 	struct mtk_av1_film_grain_params *fg_param = NULL;
-	struct mtk_disp_film_grain_md_t film_grain_info;
+	struct mtk_disp_film_grain_md_t film_grain_info = {0};
 	int ret = 0;
+	struct video_scale_info scale_info = {0};
+	struct mtk_disp_vdp_cap *vdp_cap = &vdp_scale_info[vdp_id];
 
 	if (!buf->is_film_grain)
 		return;
@@ -470,6 +471,17 @@ static void vdp_config_film_grain(u32 vdp_id, struct video_buffer_info *buf)
 			   film_grain_info.len,
 			   film_grain_info.pts);
 	}
+
+	if (vdp_cap->need_resizer) {
+		scale_info.src_w = vdp_cap->crop.width;
+		scale_info.src_h = vdp_cap->crop.height;
+	} else {
+		scale_info.src_w = buf->crop.width;
+		scale_info.src_h = buf->crop.height;
+	}
+	scale_info.dst_w = buf->tgt.width;
+	scale_info.dst_h = buf->tgt.height;
+	disp_fg_config_scale_info(vdp_id, &scale_info);
 
 	fg_param = (struct mtk_av1_film_grain_params *)buf->film_grain_info.buff;
 	disp_fg_config(vdp_id, fg_param);

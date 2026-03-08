@@ -33,7 +33,11 @@ ccflags-y +=  -I$(srctree)/drivers/misc/mediatek/video/$(CONFIG_MTK_VIDEO_PLATFO
 
 
 #common
-obj-y += disp_fg_if.o disp_fg_drv.o disp_fg_debug.o disp_fg_tz_client.o
-
+obj-y += disp_fg_if.o \
+	 disp_fg_drv.o \
+	 disp_fg_pre_drv.o \
+	 disp_fg_pre_scale.o \
+	 disp_fg_debug.o \
+	 disp_fg_tz_client.o
 
 # EOF

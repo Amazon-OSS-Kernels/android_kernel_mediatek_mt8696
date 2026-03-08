@@ -710,6 +710,13 @@ struct mtk_disp_layer_info {
 	uint32_t supported_video_num;
 };
 
+struct video_scale_info {
+	uint32_t src_w;
+	uint32_t src_h;
+	uint32_t dst_w;
+	uint32_t dst_h;
+};
+
 #define MTK_DISP_IOW(num, dtype) _IOW('O', num, dtype)
 #define MTK_DISP_IOR(num, dtype) _IOR('O', num, dtype)
 #define MTK_DISP_IOWR(num, dtype) _IOWR('O', num, dtype)

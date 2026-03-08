@@ -156,7 +156,8 @@ struct sync_timeline *osd_create_timeline(unsigned int lay_id)
 	if (osd_timeline[lay_id] == NULL)
 		OSD_LOG_E("error: cannot create osd_timeline!\n");
 	else
-		OSDDBG("osd Timeline name=%s created!\n", name);
+		OSDMSG("osd Timeline%d name=%s va=0x%llx created!\n",
+			lay_id, name, (unsigned long long)osd_timeline[lay_id]);
 
 	prefix = OSD_PRE_TIMELINE_NAME_PREFIX;
 	ret = snprintf(name, sizeof(name),"%s", prefix);
@@ -172,7 +173,8 @@ struct sync_timeline *osd_create_timeline(unsigned int lay_id)
 	if (osd_pre_timeline[lay_id] == NULL)
 		OSD_LOG_E("error: cannot create osd_pre_timeline!\n");
 	else
-		OSDDBG("osd Timeline name=%s created!\n", name);
+		OSDMSG("osd Timeline%d name=%s va=0x%llx created!\n",
+			lay_id, name, (unsigned long long)osd_pre_timeline[lay_id]);
 
 	return osd_timeline[lay_id];
 }
@@ -232,6 +234,7 @@ int osd_create_fence(int *pfence, int *rfence, unsigned int *pvalue,
 	const char *prefix = OSD_FENCE_NAME_PREFIX;
 	struct fence_data data;
 	int ret = 0;
+	unsigned long long va = 0;
 
 	*rfence = MTK_OSD_NO_FENCE_FD;
 	mutex_lock(&osd_fence_mutex[lay_id]);
@@ -249,6 +252,13 @@ int osd_create_fence(int *pfence, int *rfence, unsigned int *pvalue,
 			sizeof(data.name));
 
 	if (osd_timeline[lay_id] != NULL) {
+		va = (unsigned long long)osd_timeline[lay_id];
+
+		if (!((va >= MIN_TIMELINE_ADDR) && (va <= MAX_TIMELINE_ADDR)))
+			OSDMSG("%s WARN:(va LayId addr0 addr1)=(0x%llx %d 0x%llx 0x%llx)\n",
+			__func__, va, lay_id, (unsigned long long)osd_timeline[0],
+			(unsigned long long)osd_timeline[1]);
+
 		if (fence_create(osd_timeline[lay_id], &data)) {
 			data.fence = MTK_OSD_NO_FENCE_FD;
 			OSD_LOG_E("cannot create Fence Obj %d\n",
@@ -278,6 +288,13 @@ int osd_create_fence(int *pfence, int *rfence, unsigned int *pvalue,
 			ret,
 			sizeof(data.name));
 	if (osd_pre_timeline[lay_id] != NULL) {
+		va = (unsigned long long)osd_pre_timeline[lay_id];
+
+		if (!((va >= MIN_TIMELINE_ADDR) && (va <= MAX_TIMELINE_ADDR)))
+			OSDMSG("%s WARN:(va LayId paddr0 paddr1)=(0x%llx %d 0x%llx 0x%llx)\n",
+			__func__, va, lay_id, (unsigned long long)osd_pre_timeline[0],
+			(unsigned long long)osd_pre_timeline[1]);
+
 		if (fence_create(osd_pre_timeline[lay_id], &data)) {
 			data.fence = MTK_OSD_NO_FENCE_FD;
 			OSD_LOG_E("cannot create Fence Obj %d\n",

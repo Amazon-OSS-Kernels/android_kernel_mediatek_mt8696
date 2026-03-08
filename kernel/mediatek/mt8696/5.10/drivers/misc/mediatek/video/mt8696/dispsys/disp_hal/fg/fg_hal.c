@@ -192,7 +192,7 @@ void fg_hal_reg_update(enum fg_hw_id hw_id, struct fg_hw_reg_output *params_hw_r
 		      (params_hw_reg->clip_to_restricted_range << 11) |
 		      (params_hw_reg->overlap_flag << 12) |
 		      (0 << 13) |	/* chrome scaling md */
-		      (0 << 14) |	/* film grain force write */
+		      FG_SW_FILTER_EN(params_hw_reg->force_write) |
 		      (params_hw_reg->chroma_scaling_from_luma << 15) |
 		      (params_hw_reg->grain_scaling << 16)));
 
@@ -211,6 +211,52 @@ void fg_hal_reg_update(enum fg_hw_id hw_id, struct fg_hw_reg_output *params_hw_r
 	fg_write_reg(fg_base + FG_REG_XX(0x19),
 		     ((params_hw_reg->cb_offset << 0) |
 		      (params_hw_reg->cr_offset << 16)));
+}
+
+void fg_hal_reg_write(u32 addr, u32 val)
+{
+	void __iomem *va_base = NULL;
+	u32 offset = 0;
+
+	FG_LOG_I("write reg 0x%X val 0x%X\n", addr, val);
+
+	if (FG_REG_BASE(addr) == FG_REG_BASE(FG_REG_MAIN_BASE)) {
+		va_base = disp_fg_reg_base[0];
+		offset = addr - FG_REG_MAIN_BASE;
+	} else if (FG_REG_BASE(addr) == FG_REG_BASE(FG_REG_SUB_BASE)) {
+		va_base = disp_fg_reg_base[1];
+		offset = addr - FG_REG_SUB_BASE;
+	} else {
+		FG_ERR("invalid reg addr 0x%X\n", addr);
+		return;
+	}
+
+	fg_write_reg(va_base + offset, val);
+}
+
+void fg_hal_reg_dump(enum fg_hw_id hw_id, u32 len)
+{
+	void __iomem *fg_base = NULL;
+	u32 pa_base = 0;
+	u32 idx = 0;
+
+	if (hw_id >= MAX_FG || len > FG_REG_MAX_LEN) {
+		FG_ERR("invalid parameter hw id %u len 0x%X\n", hw_id, len);
+		return;
+	}
+
+	fg_base = disp_fg_reg_base[hw_id];
+	pa_base = (hw_id == MAIN_FG) ? FG_REG_MAIN_BASE : FG_REG_SUB_BASE;
+
+	FG_LOG_I("dump fg %u reg 0x%X len %u\n", hw_id, pa_base, len);
+
+	for (idx = 0; idx < len; idx += FG_REG_DUMP_PITCH)
+		FG_LOG_I("0x%08X | 0x%08X 0x%08X 0x%08X 0x%08X\n",
+			 (pa_base + idx),
+			 readl(fg_base + idx + 0x0),
+			 readl(fg_base + idx + FG_REG_OFFSET_1),
+			 readl(fg_base + idx + FG_REG_OFFSET_2),
+			 readl(fg_base + idx + FG_REG_OFFSET_3));
 }
 
 /*

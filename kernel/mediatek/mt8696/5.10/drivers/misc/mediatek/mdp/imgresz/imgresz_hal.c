@@ -314,6 +314,7 @@
 #define RW_IMG_RESZ_UFO_CFG			0x20C
 #define IMG_RESZ_COMPRESS_EN			(0x1 << 0)
 #define IMG_RESZ_CHROMA				(0x1 << 3)
+#define IMG_RESZ_TILE_MODE			(0x1 << 4)
 /*no need to wait for imgresz req up, then trig ufo_dec.*/
 /*if this bit's up, after trig imgresz, ufo will be auto trig*/
 #define IMG_RESZ_UFO_AUTO_TRIG			(0x1 << 5)
@@ -2221,7 +2222,7 @@ void imgresz_ufo_poweron(void __iomem *base)
 	imgresz_writel_relaxed(u4ufopower, base + RW_IMG_RESZ_UFO_POWER);
 }
 
-void imgresz_ufo_config(void __iomem *base, enum imgresz_ufo_type type)
+void imgresz_ufo_config(void __iomem *base, enum imgresz_ufo_type type, bool tilemode)
 {
 	u32 reg = 0;
 
@@ -2236,6 +2237,10 @@ void imgresz_ufo_config(void __iomem *base, enum imgresz_ufo_type type)
 		reg |= (0x1 << 1);
 
 	reg &= ~(0x1 << 3);/* bit3 default to 0 */
+
+	if (tilemode)
+		reg |= IMG_RESZ_TILE_MODE;
+
 	if (imgresz_cur_chip_ver >= IMGRESZ_CURR_CHIP_VER_8695)
 		reg |= IMG_RESZ_UFO_AUTO_TRIG;
 

@@ -3551,9 +3551,11 @@ void set_hdmi_tmds_driver(unsigned int resolutionmode,
 		(deepcolor == 4)))) {
 		HDMI_ATTR_SPRINTF("over 3G-------\n");
 		vSendTMDSConfiguration(2);
+		dsb(SY);
 		HAL_Delay_us(10);
 	} else {
 		vSendTMDSConfiguration(0);
+		dsb(SY);
 		HAL_Delay_us(10);
 	}
 	vTxSignalOnOff(SV_ON);

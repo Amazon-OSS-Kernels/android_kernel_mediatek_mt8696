@@ -197,6 +197,7 @@ inline void mtkcec_hwrx_reset(struct mtk_cec *cec)
 
 	val = cec->cec_read(cec, CEC2_TR_CONFIG);
 	cec->cec_write(cec, CEC2_TR_CONFIG, val & (~CEC2_RX_RESET_WRITE));
+	dsb(SY);
 	udelay(1);
 	val = cec->cec_read(cec, CEC2_TR_CONFIG);
 	cec->cec_write(cec, CEC2_TR_CONFIG,
@@ -246,6 +247,7 @@ inline void mtkcec_hwtx_reset(struct mtk_cec *cec)
 	val = cec->cec_read(cec, CEC2_TR_CONFIG);
 	cec->cec_write(cec, CEC2_TR_CONFIG,
 		val & (~CEC2_TX_RESET_WRITE));
+	dsb(SY);
 	udelay(1);
 	val = cec->cec_read(cec, CEC2_TR_CONFIG);
 	cec->cec_write(cec, CEC2_TR_CONFIG,

@@ -287,13 +287,24 @@ void disp_hdr_config_hdmi_signal(uint32_t path)
 	/*dovi game mode only support when LL output*/
 	if ((out_format == HDR_OUT_TYPE_DV_LL)
 		|| (out_format == HDR_OUT_TYPE_VSEM_DV_LL)) {
-		if (p_vsif != NULL && !hdr_allm_en) {
-			//if game mode disable, clear those parameter
-			p_vsif->L11_md_present = 0;
-			p_vsif->content_type = 0;
-			p_vsif->white_point = 0;
-			p_vsif->L11_byte2 = 0;
-			p_vsif->L11_byte3 = 0;
+		if (p_vsif != NULL) {
+			if (hdr_allm_en || (ui_allm_type == ALLM_EN)) {
+				/* add dummy L11MD when source not contain */
+				if (p_vsif->L11_md_present == 0) {
+					p_vsif->L11_md_present = L11_MD_PRESENT;
+					p_vsif->content_type = L11_CONTENT_GAME;
+					p_vsif->white_point = L11_WHITE_POINT;
+					p_vsif->L11_byte2 = 0;
+					p_vsif->L11_byte3 = 0;
+				}
+			} else {
+				/* if game mode disable, clear those parameter */
+				p_vsif->L11_md_present = 0;
+				p_vsif->content_type = 0;
+				p_vsif->white_point = 0;
+				p_vsif->L11_byte2 = 0;
+				p_vsif->L11_byte3 = 0;
+			}
 		}
 	} else if ((out_format == HDR_OUT_TYPE_DV_STD)
 		|| (out_format == HDR_OUT_TYPE_VSEM_DV_STD)) {
@@ -329,7 +340,11 @@ void disp_hdr_config_hdmi_signal(uint32_t path)
 			(out_format == HDR_OUT_TYPE_HLG)) ||
 			((hdr_output_signal_type == HDR_OUT_TYPE_HLG) &&
 			((out_format == HDR_OUT_TYPE_HDR10PLUS_VSIF) ||
-			(out_format == HDR_OUT_TYPE_HDR10PLUS))))
+			(out_format == HDR_OUT_TYPE_HDR10PLUS))) ||
+			((hdr_output_signal_type == HDR_OUT_TYPE_DV_STD) &&
+			(out_format == HDR_OUT_TYPE_DV_LL)) ||
+			((hdr_output_signal_type == HDR_OUT_TYPE_DV_LL) &&
+			(out_format == HDR_OUT_TYPE_DV_STD)))
 			bneeddelay = true;
 
 		if (bneeddelay) {

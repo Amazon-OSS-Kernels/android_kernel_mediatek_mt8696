@@ -42,6 +42,9 @@
 #ifndef _H_DRV_OSD_FENCE_
 #define _H_DRV_OSD_FENCE_
 
+#define MAX_TIMELINE_ADDR 0xFFFFFFFFFFFFFFFFULL
+#define MIN_TIMELINE_ADDR 0xFFFFFF8000000000ULL
+
 extern unsigned long vsync_cnt;
 
 struct sync_timeline *osd_create_timeline(unsigned int lay_id);

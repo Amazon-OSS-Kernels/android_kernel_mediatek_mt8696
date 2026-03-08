@@ -236,6 +236,7 @@ struct imgresz_src_buf_info {
 	uint32_t ufo_ybuf_len;    /* C always half of Y*/
 	bool ufo_jump;
 	uint32_t sec_meta_fd;
+	bool tilemode;            /* ufo 10bit: 2bit HEVC tile mode */
 };
 
 struct imgresz_dst_buf_info {
