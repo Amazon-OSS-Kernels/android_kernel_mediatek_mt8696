@@ -371,15 +371,26 @@ static dma_addr_t create_meta_buffer_info(struct mtk_vcodec_ctx *ctx, int fd)
 
 	dmabuf = dma_buf_get(fd);
 	mtk_v4l2_debug(5, "%s, dmabuf:%p", __func__, dmabuf);
-	if (dmabuf == NULL) {
-		mtk_v4l2_debug(0, "invalid meta fd %d\n", fd);
+	if (IS_ERR_OR_NULL(dmabuf)) {
+		mtk_v4l2_err("dma_buf_get fail ret %ld", PTR_ERR(dmabuf));
 		return 0;
 	}
 
 	buf_att = dma_buf_attach(
 		dmabuf,
 		&ctx->dev->plat_dev->dev);
+	if (IS_ERR_OR_NULL(buf_att)) {
+		mtk_v4l2_err("attach fail ret %ld", PTR_ERR(buf_att));
+		dma_buf_put(dmabuf);
+		return 0;
+	}
 	sgt = dma_buf_map_attachment(buf_att, DMA_TO_DEVICE);
+	if (IS_ERR_OR_NULL(sgt)) {
+		mtk_v4l2_err("map attachment fail ret %ld", PTR_ERR(sgt));
+		dma_buf_detach(dmabuf, buf_att);
+		dma_buf_put(dmabuf);
+		return 0;
+	}
 	dma_meta_addr  = sg_dma_address(sgt->sgl);
 
 	mtk_v4l2_debug(4, "map new, dmabuf:%p, dma_addr:%p",
@@ -450,16 +461,30 @@ static int *create_general_buffer_info(struct mtk_vcodec_ctx *ctx, int fd)
 
 	dmabuf = dma_buf_get(fd);
 	mtk_v4l2_debug(5, "%s, dmabuf:%p", __func__, dmabuf);
-	if (dmabuf == NULL) {
-		mtk_v4l2_debug(0, "invalid general fd %d\n", fd);
-		return 0;
+	if (IS_ERR_OR_NULL(dmabuf)) {
+		mtk_v4l2_err("dma_buf_get fail ret %ld", PTR_ERR(dmabuf));
+		return NULL;
 	}
 	dma_buf_begin_cpu_access(dmabuf, DMA_TO_DEVICE);
 	va = dma_buf_vmap(dmabuf);
 	buf_att = dma_buf_attach(
 		dmabuf,
 		&ctx->dev->plat_dev->dev);
+	if (IS_ERR_OR_NULL(buf_att)) {
+		mtk_v4l2_err("attach fail ret %ld", PTR_ERR(buf_att));
+		dma_buf_vunmap(dmabuf, va);
+		dma_buf_put(dmabuf);
+		return NULL;
+	}
+
 	sgt = dma_buf_map_attachment(buf_att, DMA_TO_DEVICE);
+	if (IS_ERR_OR_NULL(sgt)) {
+		mtk_v4l2_err("map attachment fail ret %ld", PTR_ERR(sgt));
+		dma_buf_detach(dmabuf, buf_att);
+		dma_buf_vunmap(dmabuf, va);
+		dma_buf_put(dmabuf);
+		return NULL;
+	}
 	dma_general_addr  = sg_dma_address(sgt->sgl);
 
 	mtk_v4l2_debug(4, "map new va %p, dmabuf:%p, dma_addr:%p",

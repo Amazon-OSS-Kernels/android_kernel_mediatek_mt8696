@@ -1021,6 +1021,12 @@ extern unsigned char hdr10p_vsif_repeat_en;
 #define C_SD2 (0x2 << 8)
 #define C_SD1 (0x1 << 4)
 #define C_SD0 (0x0 << 0)
+/* 7.1 PCM swap Ls <->Lrs & Rs <-> Rrs
+ * to make from L R LFE C Lrs Rrs Ls Rs
+ * to  L R LFE C Ls Rs Lrs Rrs
+ */
+#define C_SD3_SWAP (0x2 << 12)
+#define C_SD2_SWAP (0x3 << 8)
 
 
 /***********************************************/

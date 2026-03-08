@@ -587,6 +587,9 @@ int disp_hdr_cmd(enum DISP_CMD cmd, void *data)
 			*((uint32_t *) data) = 1;
 		ui_force_hdr_type = *((uint32_t *) data);
 		g_force_hdr = ui_force_hdr_type;
+
+		if (!tv_info_set_by_cmd)
+			disp_hw_mgr_get_info(&hdr_common_info);
 		#ifdef CONFIG_DOVI_SUPPORT
 		if ((dovi_vs10_path_en == ui_force_hdr_type) && g_dovi_efuse) {
 			hdr_printf("dovi path is already enabled!\n");
