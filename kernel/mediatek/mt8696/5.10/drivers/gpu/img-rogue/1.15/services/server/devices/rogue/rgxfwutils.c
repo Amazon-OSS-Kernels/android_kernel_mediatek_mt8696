@@ -3528,7 +3528,7 @@ PVRSRV_ERROR RGXWaitForKCCBSlotUpdate(PVRSRV_RGXDEV_INFO *psDevInfo,
 	PVR_LOG_RETURN_IF_ERROR(eError, "PVRSRVWaitForValueKM");
 
 #if defined(PDUMP)
-	/* PDumping conditions same as RGXSendCommandRaw for the actual command and poll command to go in abc123 */
+	/* PDumping conditions same as RGXSendCommandRaw for the actual command and poll command to go in harmony */
 	if (PDumpIsContCaptureOn())
 	{
 		IMG_BOOL bIsInCaptureRange;

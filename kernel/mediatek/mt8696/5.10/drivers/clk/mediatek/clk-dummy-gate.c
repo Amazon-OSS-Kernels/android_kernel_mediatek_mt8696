@@ -1,0 +1,230 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ * Author: Chun-Jie Chen <chun-jie.chen@mediatek.com>
+ */
+
+#include <linux/of.h>
+#include <linux/of_address.h>
+
+#include <linux/io.h>
+#include <linux/slab.h>
+#include <linux/delay.h>
+#include <linux/clkdev.h>
+#include <linux/module.h>
+
+#include "clk-mtk.h"
+#include "clk-gate.h"
+
+struct mtk_clk_dummy_gate {
+	struct clk_hw   hw;
+	u8      is_set;
+};
+
+static inline struct mtk_clk_dummy_gate *to_mtk_clk_dummy_gate(struct clk_hw *hw)
+{
+	return container_of(hw, struct mtk_clk_dummy_gate, hw);
+}
+
+static int mtk_cg_bit_is_cleared(struct clk_hw *hw)
+{
+	struct mtk_clk_dummy_gate *cg = to_mtk_clk_dummy_gate(hw);
+
+	return !cg->is_set;
+}
+
+static int mtk_cg_bit_is_set(struct clk_hw *hw)
+{
+	struct mtk_clk_dummy_gate *cg = to_mtk_clk_dummy_gate(hw);
+
+	return cg->is_set;
+}
+
+static void mtk_cg_set_bit(struct clk_hw *hw)
+{
+	struct mtk_clk_dummy_gate *cg = to_mtk_clk_dummy_gate(hw);
+
+	cg->is_set = 1;
+}
+
+static void mtk_cg_clr_bit(struct clk_hw *hw)
+{
+	struct mtk_clk_dummy_gate *cg = to_mtk_clk_dummy_gate(hw);
+
+	cg->is_set = 0;
+}
+
+static void mtk_cg_set_bit_no_setclr(struct clk_hw *hw)
+{
+	struct mtk_clk_dummy_gate *cg = to_mtk_clk_dummy_gate(hw);
+
+	cg->is_set = 1;
+}
+
+static void mtk_cg_clr_bit_no_setclr(struct clk_hw *hw)
+{
+	struct mtk_clk_dummy_gate *cg = to_mtk_clk_dummy_gate(hw);
+
+	cg->is_set = 0;
+}
+
+static int mtk_cg_enable(struct clk_hw *hw)
+{
+	mtk_cg_clr_bit(hw);
+
+	return 0;
+}
+
+static void mtk_cg_disable(struct clk_hw *hw)
+{
+	mtk_cg_set_bit(hw);
+}
+
+static void mtk_cg_disable_unused(struct clk_hw *hw)
+{
+	const char *c_n = clk_hw_get_name(hw);
+
+	pr_notice("disable_unused - %s\n", c_n);
+	mtk_cg_set_bit(hw);
+}
+
+static int mtk_cg_enable_inv(struct clk_hw *hw)
+{
+	mtk_cg_set_bit(hw);
+
+	return 0;
+}
+
+static void mtk_cg_disable_inv(struct clk_hw *hw)
+{
+	mtk_cg_clr_bit(hw);
+}
+
+static void mtk_cg_disable_unused_inv(struct clk_hw *hw)
+{
+	const char *c_n = clk_hw_get_name(hw);
+
+	pr_notice("disable_unused - %s\n", c_n);
+	mtk_cg_clr_bit(hw);
+}
+
+static int mtk_cg_enable_no_setclr(struct clk_hw *hw)
+{
+	mtk_cg_clr_bit_no_setclr(hw);
+
+	return 0;
+}
+
+static void mtk_cg_disable_no_setclr(struct clk_hw *hw)
+{
+	mtk_cg_set_bit_no_setclr(hw);
+}
+
+static void mtk_cg_disable_unused_no_setclr(struct clk_hw *hw)
+{
+	const char *c_n = clk_hw_get_name(hw);
+
+	pr_notice("disable_unused - %s\n", c_n);
+	mtk_cg_set_bit_no_setclr(hw);
+}
+
+
+static int mtk_cg_enable_inv_no_setclr(struct clk_hw *hw)
+{
+	mtk_cg_set_bit_no_setclr(hw);
+
+	return 0;
+}
+
+static void mtk_cg_disable_inv_no_setclr(struct clk_hw *hw)
+{
+	mtk_cg_clr_bit_no_setclr(hw);
+}
+
+static void mtk_cg_disable_unused_inv_no_setclr(struct clk_hw *hw)
+{
+	const char *c_n = clk_hw_get_name(hw);
+
+	pr_notice("disable_unused - %s\n", c_n);
+	mtk_cg_clr_bit_no_setclr(hw);
+}
+
+const struct clk_ops mtk_clk_gate_ops_setclr_dummy = {
+	.is_enabled	= mtk_cg_bit_is_cleared,
+	.enable		= mtk_cg_enable,
+	.disable_unused = mtk_cg_disable_unused,
+};
+EXPORT_SYMBOL(mtk_clk_gate_ops_setclr_dummy);
+
+const struct clk_ops mtk_clk_gate_ops_setclr = {
+	.is_enabled	= mtk_cg_bit_is_cleared,
+	.enable		= mtk_cg_enable,
+	.disable	= mtk_cg_disable,
+	.disable_unused = mtk_cg_disable_unused,
+};
+EXPORT_SYMBOL(mtk_clk_gate_ops_setclr);
+
+const struct clk_ops mtk_clk_gate_ops_setclr_inv = {
+	.is_enabled	= mtk_cg_bit_is_set,
+	.enable		= mtk_cg_enable_inv,
+	.disable	= mtk_cg_disable_inv,
+	.disable_unused = mtk_cg_disable_unused_inv,
+};
+EXPORT_SYMBOL(mtk_clk_gate_ops_setclr_inv);
+
+const struct clk_ops mtk_clk_gate_ops_no_setclr = {
+	.is_enabled	= mtk_cg_bit_is_cleared,
+	.enable		= mtk_cg_enable_no_setclr,
+	.disable	= mtk_cg_disable_no_setclr,
+	.disable_unused = mtk_cg_disable_unused_no_setclr,
+};
+EXPORT_SYMBOL(mtk_clk_gate_ops_no_setclr);
+
+const struct clk_ops mtk_clk_gate_ops_no_setclr_inv = {
+	.is_enabled	= mtk_cg_bit_is_set,
+	.enable		= mtk_cg_enable_inv_no_setclr,
+	.disable	= mtk_cg_disable_inv_no_setclr,
+	.disable_unused = mtk_cg_disable_unused_inv_no_setclr,
+};
+EXPORT_SYMBOL(mtk_clk_gate_ops_no_setclr_inv);
+
+struct clk *mtk_clk_register_gate(
+		const char *name,
+		const char *parent_name,
+		struct regmap *regmap,
+		int set_ofs,
+		int clr_ofs,
+		int sta_ofs,
+		u8 bit,
+		const struct clk_ops *ops,
+		unsigned long flags,
+		struct device *dev)
+{
+	struct mtk_clk_dummy_gate *cg;
+	struct clk *clk;
+	struct clk_init_data init = {};
+
+	cg = kzalloc(sizeof(*cg), GFP_KERNEL);
+	if (!cg)
+		return ERR_PTR(-ENOMEM);
+
+	init.name = name;
+	init.flags = flags | CLK_SET_RATE_PARENT | CLK_OPS_PARENT_ENABLE;
+	init.parent_names = parent_name ? &parent_name : NULL;
+	init.num_parents = parent_name ? 1 : 0;
+	init.ops = ops;
+
+	cg->is_set = 0;
+	cg->hw.init = &init;
+
+	clk = clk_register(dev, &cg->hw);
+	if (IS_ERR(clk))
+		kfree(cg);
+
+	return clk;
+}
+EXPORT_SYMBOL(mtk_clk_register_gate);
+
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("MediaTek Dummy GATE");
+MODULE_AUTHOR("MediaTek Inc.");
