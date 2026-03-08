@@ -1,0 +1,5 @@
+config MTK_DEBUGFS_CREATOR
+	tristate "build debugfs creator"
+	depends on DEBUG_FS && ARCH_MEDIATEK
+	help
+	  This module is used for help all kernel modules create debugfs file

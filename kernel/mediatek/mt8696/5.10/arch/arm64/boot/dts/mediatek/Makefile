@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0
+dtb-$(CONFIG_ARCH_MEDIATEK) += bx8696p1_k64.dtb
+dtb-$(CONFIG_ARCH_MEDIATEK) += bx8696p1_k64_kasan.dtb
+dtb-$(CONFIG_ARCH_MEDIATEK) += bx8696p1_k64_vulscan.dtb
+dtb-$(CONFIG_ARCH_MEDIATEK) += bx8696p1_k64_hwasan.dtb
+dtb-$(CONFIG_ARCH_MEDIATEK) += bx8696m1_k64.dtb
+dtb-$(CONFIG_ARCH_MEDIATEK) += karat.dtb
+dtb-$(CONFIG_ARCH_MEDIATEK) += kara.dtb
+dtb-$(CONFIG_ARCH_MEDIATEK) += mt8696.dtb

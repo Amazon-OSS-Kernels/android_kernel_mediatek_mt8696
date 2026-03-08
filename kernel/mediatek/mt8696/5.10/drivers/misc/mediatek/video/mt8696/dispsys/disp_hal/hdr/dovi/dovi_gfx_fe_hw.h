@@ -1,0 +1,207 @@
+/*
+ * Copyright (C) 2017 MediaTek Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
+
+#ifndef _DOVI_GFX_FE_HW_H
+#define _DOVI_GFX_FE_HW_H
+
+#define FHD_HDR_FE_BASE 0x14009000
+#define UHD_HDR_FE_BASE 0x1400A000
+
+#define GFX_FE_REG_NUM (0x200/4)
+
+#define SC5_REG_GFX_0100_GFX_DV_WP    0x100
+
+#define SC5_REG_GFX_011C_GFX_DV_WP    0x11C
+
+#define SC5_REG_GFX_0120_GFX_DV_WP    0x120
+
+#define SC5_REG_GFX_0128_GFX_DV_WP    0x128
+
+#define SC5_REG_GFX_012C_GFX_DV_WP    0x12C
+
+#define SC5_REG_GFX_0134_GFX_DV_WP    0x134
+
+#define SC5_REG_GFX_0138_GFX_DV_WP    0x138
+
+#define SC5_REG_GFX_013C_GFX_DV_WP    0x13C
+
+#define SC5_REG_GFX_0140_GFX_DV_WP    0x140
+
+#define SC5_REG_GFX_0144_GFX_DV_WP    0x144
+
+#define SC5_REG_GFX_0148_GFX_DV_WP    0x148
+
+#define SC5_REG_GFX_014C_GFX_DV_WP    0x14C
+
+#define SC5_REG_GFX_0150_GFX_DV_WP    0x150
+
+#define SC5_REG_GFX_0154_GFX_DV_WP    0x154
+
+#define SC5_REG_GFX_0204_GFX_HDR_FE    0x204
+
+#define SC5_REG_GFX_021C_GFX_HDR_FE    0x21C
+
+#define SC5_REG_GFX_0220_GFX_HDR_FE    0x220
+
+#define SC5_REG_GFX_0224_GFX_HDR_FE    0x224
+
+#define SC5_REG_GFX_0228_GFX_HDR_FE    0x228
+
+#define SC5_REG_GFX_022C_GFX_HDR_FE    0x22C
+
+#define SC5_REG_GFX_0230_GFX_HDR_FE    0x230
+
+#define SC5_REG_GFX_0234_GFX_HDR_FE    0x234
+
+#define SC5_REG_GFX_0238_GFX_HDR_FE    0x238
+
+#define SC5_REG_GFX_023C_GFX_HDR_FE    0x23C
+
+#define SC5_REG_GFX_0240_GFX_HDR_FE    0x240
+
+#define SC5_REG_GFX_0244_GFX_HDR_FE    0x244
+
+#define SC5_REG_GFX_0248_GFX_HDR_FE    0x248
+
+#define SC5_REG_GFX_024C_GFX_HDR_FE    0x24C
+
+#define SC5_REG_GFX_0250_GFX_HDR_FE    0x250
+
+#define SC5_REG_GFX_0254_GFX_HDR_FE    0x254
+
+#define SC5_REG_GFX_0258_GFX_HDR_FE    0x258
+
+#define SC5_REG_GFX_025C_GFX_HDR_FE    0x25C
+
+#define SC5_REG_GFX_0260_GFX_HDR_FE    0x260
+
+#define SC5_REG_GFX_0264_GFX_HDR_FE    0x264
+
+#define SC5_REG_GFX_0268_GFX_HDR_FE    0x268
+
+#define SC5_REG_GFX_026C_GFX_HDR_FE    0x26C
+
+#define SC5_REG_GFX_0270_GFX_HDR_FE    0x270
+
+#define SC5_REG_GFX_0280_GFX_HDR_FE    0x280
+
+#define SC5_REG_GFX_0284_GFX_HDR_FE    0x284
+
+#define SC5_REG_GFX_0288_GFX_HDR_FE    0x288
+
+#define SC5_REG_GFX_028C_GFX_HDR_FE    0x28C
+
+#define SC5_REG_GFX_0290_GFX_HDR_FE    0x290
+
+#define SC5_REG_GFX_0294_GFX_HDR_FE    0x294
+
+#define SC5_REG_GFX_0298_GFX_HDR_FE    0x298
+
+#define SC5_REG_GFX_029C_GFX_HDR_FE    0x29C
+
+#define SC5_REG_GFX_02A0_GFX_HDR_FE    0x2A0
+
+#define SC5_REG_GFX_02A4_GFX_HDR_FE    0x2A4
+
+#define SC5_REG_GFX_02A8_GFX_HDR_FE    0x2A8
+
+#define SC5_REG_GFX_02AC_GFX_HDR_FE    0x2AC
+
+#define SC5_REG_GFX_02B0_GFX_HDR_FE    0x2B0
+
+#define SC5_REG_GFX_02B4_GFX_HDR_FE    0x2B4
+
+#define SC5_REG_GFX_02B8_GFX_HDR_FE    0x2B8
+
+#define SC5_REG_GFX_02BC_GFX_HDR_FE    0x2BC
+
+#define SC5_REG_GFX_02C0_GFX_HDR_FE    0x2C0
+
+#define SC5_REG_GFX_02C4_GFX_HDR_FE    0x2C4
+
+#define SC5_REG_GFX_02C8_GFX_HDR_FE    0x2C8
+
+#define SC5_REG_GFX_02CC_GFX_HDR_FE    0x2CC
+
+#define SC5_REG_GFX_02D0_GFX_HDR_FE    0x2D0
+
+#define SC5_REG_GFX_02D4_GFX_HDR_FE    0x2D4
+
+#define SC5_REG_GFX_02E8_GFX_HDR_FE    0x2E8
+
+#define SC5_REG_GFX_0370_GFX_HDR_FE    0x370
+
+#define SC5_REG_GFX_0374_GFX_HDR_FE    0x374
+
+#define SC5_REG_GFX_0380_GFX_HDR_FE    0x380
+
+#define SC5_REG_GFX_0384_GFX_HDR_FE    0x384
+
+#define SC5_REG_GFX_0388_GFX_HDR_FE    0x388
+
+#define SC5_REG_GFX_038C_GFX_HDR_FE    0x38C
+
+#define SC5_REG_GFX_0390_GFX_HDR_FE    0x390
+
+#define SC5_REG_GFX_0394_GFX_HDR_FE    0x394
+
+#define SC5_REG_GFX_0398_GFX_HDR_FE    0x398
+
+#define SC5_REG_GFX_039C_GFX_HDR_FE    0x39C
+
+#define SC5_REG_GFX_037C_GFX_HDR_FE    0x37C
+
+#define SC5_REG_GFX_03A0_GFX_HDR_FE    0x3A0
+
+#define SC5_REG_GFX_03A4_GFX_HDR_FE    0x3A4
+
+#define SC5_REG_GFX_03A8_GFX_HDR_FE    0x3A8
+
+#define SC5_REG_GFX_03AC_GFX_HDR_FE    0x3AC
+
+#define SC5_REG_GFX_03B0_GFX_HDR_FE    0x3B0
+
+#define SC5_REG_GFX_03B4_GFX_HDR_FE    0x3B4
+
+#define SC5_REG_GFX_03B8_GFX_HDR_FE    0x3B8
+
+#define SC5_REG_GFX_03BC_GFX_HDR_FE    0x3BC
+
+#define SC5_REG_GFX_0378_GFX_HDR_FE    0x378
+
+#define SC5_REG_GFX_03C0_GFX_HDR_FE    0x3C0
+
+#define SC5_REG_GFX_03C4_GFX_HDR_FE    0x3C4
+
+#define SC5_REG_GFX_03C8_GFX_HDR_FE    0x3C8
+
+#define SC5_REG_GFX_03D0_GFX_HDR_FE    0x3D0
+
+#define SC5_REG_GFX_03D4_GFX_HDR_FE    0x3D4
+
+#define SC5_REG_GFX_03D8_GFX_HDR_FE    0x3D8
+
+#define SC5_REG_GFX_03DC_GFX_HDR_FE    0x3DC
+
+#define SC5_REG_GFX_03E0_GFX_HDR_FE    0x3E0
+
+#define SC5_REG_GFX_03E4_GFX_HDR_FE    0x3E4
+
+#define SC5_REG_GFX_03E8_GFX_HDR_FE    0x3E8
+
+#define SC5_REG_GFX_03EC_GFX_HDR_FE    0x3EC
+
+#define SC5_REG_GFX_03F4_GFX_HDR_FE    0x3F4
+
+#endif				/* _DOVI_CORE2_HW_H */

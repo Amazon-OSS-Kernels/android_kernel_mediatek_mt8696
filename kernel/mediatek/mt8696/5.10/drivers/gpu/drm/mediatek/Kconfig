@@ -1,0 +1,79 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config DRM_MEDIATEK
+	tristate "DRM Support for Mediatek SoCs"
+	depends on DRM
+	depends on ARCH_MEDIATEK || (ARM && COMPILE_TEST)
+	depends on COMMON_CLK
+	depends on HAVE_ARM_SMCCC
+	depends on OF
+	depends on MTK_MMSYS
+	select DRM_GEM_CMA_HELPER
+	select DRM_KMS_HELPER
+	select DRM_MIPI_DSI
+	select DRM_PANEL
+	select MEMORY
+	select MTK_SMI
+	select VIDEOMODE_HELPERS
+	help
+	  Choose this option if you have a Mediatek SoCs.
+	  The module will be called mediatek-drm
+	  This driver provides kernel mode setting and
+	  buffer management to userspace.
+
+config DRM_MEDIATEK_CEC
+	tristate "DRM CEC Support for Mediatek SoCs"
+	help
+	  DRM/KMS HDMI CEC driver for Mediatek SoCs.
+	  Choose this option if you want to enable
+	  CEC driver, and the DRM_MEDIATEK_HDMI
+	  selects this config.
+
+config DRM_MEDIATEK_HDMI
+	tristate "DRM HDMI Support for Mediatek SoCs"
+	depends on DRM_MEDIATEK
+	select SND_SOC_HDMI_CODEC if SND_SOC
+	select DRM_MEDIATEK_CEC
+	help
+	  DRM/KMS HDMI driver for Mediatek SoCs
+
+config DRM_MEDIATEK_HDMI_HDCP
+	tristate "DRM HDMI HDCP Support for Mediatek SoCs"
+	depends on DRM_MEDIATEK_HDMI
+	help
+	  DRM/KMS HDMI HDCP driver for Mediatek SoCs.
+	  Choose this option if you want to enable
+	  HDCP driver, and this config depends on
+	  DRM_MEDIATEK_HDMI.
+
+config DRM_MEDIATEK_HDMI_SUSPEND_LOW_POWER
+	tristate "DRM HDMI SUSPEND LOW POWER Support for Mediatek SoCs"
+	depends on DRM_MEDIATEK_HDMI
+	help
+	  DRM/KMS HDMI SUSPEND_LOW_POWER for Mediatek SoCs.
+	  Choose this option if you want to disable/enable
+	  clock and power domain when platform enter suspend,
+	  and this config depends on DRM_MEDIATEK_HDMI.
+
+config MTK_DPTX_SUPPORT
+	tristate "DRM DPTX Support for Mediatek SoCs"
+	depends on DRM_MEDIATEK
+	select PHY_MTK_DP
+	help
+	  DRM/KMS DPTX driver for Mediatek SoCs
+	  Choose this option if you want to enable
+	  DPTX driver, and this config depends on
+	  DRM_MEDIATEK.
+
+config MTK_EDPTX_SUPPORT
+	tristate "DRM eDP Support for Mediatek SoCs"
+	depends on DRM_MEDIATEK
+	select PHY_MTK_DP
+	help
+	  DRM/KMS eDPTX driver for Mediatek SoCs
+	  Choose this option if you want to enable
+	  DPTX driver, and this config depends on
+	  DRM_MEDIATEK.
+
+source "drivers/gpu/drm/mediatek/mediatek_v2/Kconfig"
+source "drivers/gpu/drm/mediatek/mml/Kconfig"
+

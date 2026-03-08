@@ -1,0 +1,3 @@
+
+config MTK_LTR559
+	tristate "LTR559 for MediaTek alsps package"

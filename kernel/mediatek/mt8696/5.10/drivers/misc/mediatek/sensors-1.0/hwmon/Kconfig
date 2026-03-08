@@ -1,0 +1,4 @@
+config MTK_HWMON
+	tristate "MTK HWMON Config"
+	help
+	  CONFIG_MTK_HWMON for sensor common util

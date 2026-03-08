@@ -1,0 +1,3 @@
+config MTK_ICE_DEBUG
+	tristate "ICE_DEBUG"
+	depends on ARCH_MEDIATEK && OF

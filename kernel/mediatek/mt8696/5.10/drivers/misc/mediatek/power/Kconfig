@@ -1,0 +1,4 @@
+config MTK_DUMMY_BATTERY
+	tristate "MediaTek Dummy Battery Support"
+	help
+	  MediaTek Dummy Battery Driver

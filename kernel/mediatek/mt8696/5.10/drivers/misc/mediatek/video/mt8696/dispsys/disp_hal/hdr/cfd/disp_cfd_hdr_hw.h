@@ -1,0 +1,3367 @@
+/*
+ * Copyright (C) 2017 MediaTek Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
+
+#ifndef __DISP_CFD_HDR_HW_H__
+#define __DISP_CFD_HDR_HW_H__
+
+//M_HDR_VDO_FE base address 0x15012000
+
+//HDR_SW_DRIVER
+#define VDO_0004_SW_DRIVER (0x004)
+#define VDO_0004_SW_DRIVER_01 (0xFFFF << 0)
+
+#define VDO_0008_SW_DRIVER (0x008)
+#define VDO_0008_SW_DRIVER_02 (0xFFFF << 0)
+
+#define VDO_000C_SW_DRIVER (0x00C)
+#define VDO_000C_SW_DRIVER_03 (0xFFFF << 0)
+
+#define VDO_0010_SW_DRIVER (0x010)
+#define VDO_0010_SW_DRIVER_04 (0xFFFF << 0)
+
+#define VDO_0014_SW_DRIVER (0x014)
+#define VDO_0014_SW_DRIVER_05 (0xFFFF << 0)
+
+#define VDO_0018_SW_DRIVER (0x018)
+#define VDO_0018_SW_DRIVER_06 (0xFFFF << 0)
+
+#define VDO_001C_SW_DRIVER (0x01C)
+#define VDO_001C_SW_DRIVER_07 (0xFFFF << 0)
+
+#define VDO_0020_SW_DRIVER (0x020)
+#define VDO_0020_SW_DRIVER_08 (0xFFFF << 0)
+
+#define VDO_0024_SW_DRIVER (0x024)
+#define VDO_0024_SW_DRIVER_09 (0xFFFF << 0)
+
+#define VDO_0028_SW_DRIVER (0x028)
+#define VDO_0028_SW_DRIVER_0A (0xFFFF << 0)
+
+#define VDO_002C_SW_DRIVER (0x02C)
+#define VDO_002C_SW_DRIVER_0B (0xFFFF << 0)
+
+#define VDO_0030_SW_DRIVER (0x030)
+#define VDO_0030_SW_DRIVER_0C (0xFFFF << 0)
+
+#define VDO_0034_SW_DRIVER (0x034)
+#define VDO_0034_SW_DRIVER_0D (0xFFFF << 0)
+
+#define VDO_0038_SW_DRIVER (0x038)
+#define VDO_0038_SW_DRIVER_0E (0xFFFF << 0)
+
+#define VDO_003C_SW_DRIVER (0x03C)
+#define VDO_003C_SW_DRIVER_0F (0xFFFF << 0)
+
+#define VDO_0040_SW_DRIVER (0x040)
+#define VDO_0040_SW_DRIVER_10 (0xFFFF << 0)
+
+#define VDO_0044_SW_DRIVER (0x044)
+#define VDO_0044_SW_DRIVER_11 (0xFFFF << 0)
+
+#define VDO_0048_SW_DRIVER (0x048)
+#define VDO_0048_SW_DRIVER_12 (0xFFFF << 0)
+
+#define VDO_004C_SW_DRIVER (0x04C)
+#define VDO_004C_SW_DRIVER_13 (0xFFFF << 0)
+
+#define VDO_0050_SW_DRIVER (0x050)
+#define VDO_0050_SW_DRIVER_14 (0xFFFF << 0)
+
+#define VDO_0054_SW_DRIVER (0x054)
+#define VDO_0054_SW_DRIVER_15 (0xFFFF << 0)
+
+#define VDO_0058_SW_DRIVER (0x058)
+#define VDO_0058_SW_DRIVER_16 (0xFFFF << 0)
+
+#define VDO_005C_SW_DRIVER (0x05C)
+#define VDO_005C_SW_DRIVER_17 (0xFFFF << 0)
+
+#define VDO_0060_SW_DRIVER (0x060)
+#define VDO_0060_SW_DRIVER_18 (0xFFFF << 0)
+
+#define VDO_0064_SW_DRIVER (0x064)
+#define VDO_0064_SW_DRIVER_19 (0xFFFF << 0)
+
+#define VDO_0068_SW_DRIVER (0x068)
+#define VDO_0068_SW_DRIVER_1A (0xFFFF << 0)
+
+#define VDO_006C_SW_DRIVER (0x06C)
+#define VDO_006C_SW_DRIVER_1B (0xFFFF << 0)
+
+#define VDO_0070_SW_DRIVER (0x070)
+#define VDO_0070_SW_DRIVER_1C (0xFFFF << 0)
+
+#define VDO_0074_SW_DRIVER (0x074)
+#define VDO_0074_SW_DRIVER_1D (0xFFFF << 0)
+
+#define VDO_0078_SW_DRIVER (0x078)
+#define VDO_0078_SW_DRIVER_1E (0xFFFF << 0)
+
+#define VDO_007C_SW_DRIVER (0x07C)
+#define VDO_007C_SW_DRIVER_1F (0xFFFF << 0)
+
+#define VDO_0080_SW_DRIVER (0x080)
+#define VDO_0080_SW_DRIVER_20 (0xFFFF << 0)
+
+#define VDO_0084_SW_DRIVER (0x084)
+#define VDO_0084_SW_DRIVER_21 (0xFFFF << 0)
+
+#define VDO_0088_SW_DRIVER (0x088)
+#define VDO_0088_SW_DRIVER_22 (0xFFFF << 0)
+
+#define VDO_008C_SW_DRIVER (0x08C)
+#define VDO_008C_SW_DRIVER_23 (0xFFFF << 0)
+
+#define VDO_0090_SW_DRIVER (0x090)
+#define VDO_0090_SW_DRIVER_24 (0xFFFF << 0)
+
+#define VDO_0094_SW_DRIVER (0x094)
+#define VDO_0094_SW_DRIVER_25 (0xFFFF << 0)
+
+#define VDO_0098_SW_DRIVER (0x098)
+#define VDO_0098_SW_DRIVER_26 (0xFFFF << 0)
+
+#define VDO_009C_SW_DRIVER (0x09C)
+#define VDO_009C_SW_DRIVER_27 (0xFFFF << 0)
+
+#define VDO_00A0_SW_DRIVER (0x0A0)
+#define VDO_00A0_SW_DRIVER_28 (0xFFFF << 0)
+
+#define VDO_00A4_SW_DRIVER (0x0A4)
+#define VDO_00A4_SW_DRIVER_29 (0xFFFF << 0)
+
+#define VDO_00A8_SW_DRIVER (0x0A8)
+#define VDO_00A8_SW_DRIVER_2A (0xFFFF << 0)
+
+#define VDO_00AC_SW_DRIVER (0x0AC)
+#define VDO_00AC_SW_DRIVER_2B (0xFFFF << 0)
+
+#define VDO_00B0_SW_DRIVER (0x0B0)
+#define VDO_00B0_SW_DRIVER_2C (0xFFFF << 0)
+
+#define VDO_00B4_SW_DRIVER (0x0B4)
+#define VDO_00B4_SW_DRIVER_2D (0xFFFF << 0)
+
+#define VDO_00B8_SW_DRIVER (0x0B8)
+#define VDO_00B8_SW_DRIVER_2E (0xFFFF << 0)
+
+#define VDO_00BC_SW_DRIVER (0x0BC)
+#define VDO_00BC_SW_DRIVER_2F (0xFFFF << 0)
+
+#define VDO_00C0_SW_DRIVER (0x0C0)
+#define VDO_00C0_SW_DRIVER_30 (0xFFFF << 0)
+
+#define VDO_00C4_SW_DRIVER (0x0C4)
+#define VDO_00C4_SW_DRIVER_31 (0xFFFF << 0)
+
+#define VDO_00C8_SW_DRIVER (0x0C8)
+#define VDO_00C8_SW_DRIVER_32 (0xFFFF << 0)
+
+#define VDO_00CC_SW_DRIVER (0x0CC)
+#define VDO_00CC_SW_DRIVER_33 (0xFFFF << 0)
+
+#define VDO_00D0_SW_DRIVER (0x0D0)
+#define VDO_00D0_SW_DRIVER_34 (0xFFFF << 0)
+
+#define VDO_00D4_SW_DRIVER (0x0D4)
+#define VDO_00D4_SW_DRIVER_35 (0xFFFF << 0)
+
+#define VDO_00D8_SW_DRIVER (0x0D8)
+#define VDO_00D8_SW_DRIVER_36 (0xFFFF << 0)
+
+#define VDO_00DC_SW_DRIVER (0x0DC)
+#define VDO_00DC_SW_DRIVER_37 (0xFFFF << 0)
+
+#define VDO_00E0_SW_DRIVER (0x0E0)
+#define VDO_00E0_SW_DRIVER_38 (0xFFFF << 0)
+
+#define VDO_00E4_SW_DRIVER (0x0E4)
+#define VDO_00E4_SW_DRIVER_39 (0xFFFF << 0)
+
+#define VDO_00E8_SW_DRIVER (0x0E8)
+#define VDO_00E8_SW_DRIVER_3A (0xFFFF << 0)
+
+#define VDO_00EC_SW_DRIVER (0x0EC)
+#define VDO_00EC_SW_DRIVER_3B (0xFFFF << 0)
+
+#define VDO_00F0_SW_DRIVER (0x0F0)
+#define VDO_00F0_SW_DRIVER_3C (0xFFFF << 0)
+
+#define VDO_00F4_SW_DRIVER (0x0F4)
+#define VDO_00F4_SW_DRIVER_3D (0xFFFF << 0)
+
+#define VDO_00F8_SW_DRIVER (0x0F8)
+#define VDO_00F8_SW_DRIVER_3E (0xFFFF << 0)
+
+#define VDO_00FC_SW_DRIVER (0x0FC)
+#define VDO_00FC_SW_DRIVER_3F (0xFFFF << 0)
+
+#define VDO_0100_SW_DRIVER (0x100)
+#define VDO_0100_SW_DRIVER_40 (0xFFFF << 0)
+
+#define VDO_0104_SW_DRIVER (0x104)
+#define VDO_0104_SW_DRIVER_41 (0xFFFF << 0)
+
+#define VDO_0108_SW_DRIVER (0x108)
+#define VDO_0108_SW_DRIVER_42 (0xFFFF << 0)
+
+#define VDO_010C_SW_DRIVER (0x10C)
+#define VDO_010C_SW_DRIVER_43 (0xFFFF << 0)
+
+#define VDO_0110_SW_DRIVER (0x110)
+#define VDO_0110_SW_DRIVER_44 (0xFFFF << 0)
+
+#define VDO_0114_SW_DRIVER (0x114)
+#define VDO_0114_SW_DRIVER_45 (0xFFFF << 0)
+
+#define VDO_0118_SW_DRIVER (0x118)
+#define VDO_0118_SW_DRIVER_46 (0xFFFF << 0)
+
+#define VDO_011C_SW_DRIVER (0x11C)
+#define VDO_011C_SW_DRIVER_47 (0xFFFF << 0)
+
+#define VDO_0120_SW_DRIVER (0x120)
+#define VDO_0120_SW_DRIVER_48 (0xFFFF << 0)
+
+#define VDO_0124_SW_DRIVER (0x124)
+#define VDO_0124_SW_DRIVER_49 (0xFFFF << 0)
+
+#define VDO_0128_SW_DRIVER (0x128)
+#define VDO_0128_SW_DRIVER_4A (0xFFFF << 0)
+
+#define VDO_012C_SW_DRIVER (0x12C)
+#define VDO_012C_SW_DRIVER_4B (0xFFFF << 0)
+
+#define VDO_0130_SW_DRIVER (0x130)
+#define VDO_0130_SW_DRIVER_4C (0xFFFF << 0)
+
+#define VDO_0134_SW_DRIVER (0x134)
+#define VDO_0134_SW_DRIVER_4D (0xFFFF << 0)
+
+#define VDO_0138_SW_DRIVER (0x138)
+#define VDO_0138_SW_DRIVER_4E (0xFFFF << 0)
+
+#define VDO_013C_SW_DRIVER (0x13C)
+#define VDO_013C_SW_DRIVER_4F (0xFFFF << 0)
+
+#define VDO_0140_SW_DRIVER (0x140)
+#define VDO_0140_SW_DRIVER_50 (0xFFFF << 0)
+
+#define VDO_0144_SW_DRIVER (0x144)
+#define VDO_0144_SW_DRIVER_51 (0xFFFF << 0)
+
+#define VDO_0148_SW_DRIVER (0x148)
+#define VDO_0148_SW_DRIVER_52 (0xFFFF << 0)
+
+#define VDO_014C_SW_DRIVER (0x14C)
+#define VDO_014C_SW_DRIVER_53 (0xFFFF << 0)
+
+#define VDO_0150_SW_DRIVER (0x150)
+#define VDO_0150_SW_DRIVER_54 (0xFFFF << 0)
+
+#define VDO_0154_SW_DRIVER (0x154)
+#define VDO_0154_SW_DRIVER_55 (0xFFFF << 0)
+
+#define VDO_0158_SW_DRIVER (0x158)
+#define VDO_0158_SW_DRIVER_56 (0xFFFF << 0)
+
+#define VDO_015C_SW_DRIVER (0x15C)
+#define VDO_015C_SW_DRIVER_57 (0xFFFF << 0)
+
+#define VDO_0160_SW_DRIVER (0x160)
+#define VDO_0160_SW_DRIVER_58 (0xFFFF << 0)
+
+#define VDO_0164_SW_DRIVER (0x164)
+#define VDO_0164_SW_DRIVER_59 (0xFFFF << 0)
+
+#define VDO_0168_SW_DRIVER (0x168)
+#define VDO_0168_SW_DRIVER_5A (0xFFFF << 0)
+
+#define VDO_016C_SW_DRIVER (0x16C)
+#define VDO_016C_SW_DRIVER_5B (0xFFFF << 0)
+
+#define VDO_0170_SW_DRIVER (0x170)
+#define VDO_0170_SW_DRIVER_5C (0xFFFF << 0)
+
+#define VDO_0174_SW_DRIVER (0x174)
+#define VDO_0174_SW_DRIVER_5D (0xFFFF << 0)
+
+#define VDO_0178_SW_DRIVER (0x178)
+#define VDO_0178_SW_DRIVER_5E (0xFFFF << 0)
+
+#define VDO_017C_SW_DRIVER (0x17C)
+#define VDO_017C_SW_DRIVER_5F (0xFFFF << 0)
+
+#define VDO_0180_SW_DRIVER (0x180)
+#define VDO_0180_SW_DRIVER_60 (0xFFFF << 0)
+
+#define VDO_0184_SW_DRIVER (0x184)
+#define VDO_0184_SW_DRIVER_61 (0xFFFF << 0)
+
+#define VDO_0188_SW_DRIVER (0x188)
+#define VDO_0188_SW_DRIVER_62 (0xFFFF << 0)
+
+#define VDO_018C_SW_DRIVER (0x18C)
+#define VDO_018C_SW_DRIVER_63 (0xFFFF << 0)
+
+#define VDO_0190_SW_DRIVER (0x190)
+#define VDO_0190_SW_DRIVER_64 (0xFFFF << 0)
+
+#define VDO_0194_SW_DRIVER (0x194)
+#define VDO_0194_SW_DRIVER_65 (0xFFFF << 0)
+
+#define VDO_0198_SW_DRIVER (0x198)
+#define VDO_0198_SW_DRIVER_66 (0xFFFF << 0)
+
+#define VDO_019C_SW_DRIVER (0x19C)
+#define VDO_019C_SW_DRIVER_67 (0xFFFF << 0)
+
+#define VDO_01A0_SW_DRIVER (0x1A0)
+#define VDO_01A0_SW_DRIVER_68 (0xFFFF << 0)
+
+#define VDO_01A4_SW_DRIVER (0x1A4)
+#define VDO_01A4_SW_DRIVER_69 (0xFFFF << 0)
+
+#define VDO_01A8_SW_DRIVER (0x1A8)
+#define VDO_01A8_SW_DRIVER_6A (0xFFFF << 0)
+
+#define VDO_01AC_SW_DRIVER (0x1AC)
+#define VDO_01AC_SW_DRIVER_6B (0xFFFF << 0)
+
+#define VDO_01B0_SW_DRIVER (0x1B0)
+#define VDO_01B0_SW_DRIVER_6C (0xFFFF << 0)
+
+#define VDO_01B4_SW_DRIVER (0x1B4)
+#define VDO_01B4_SW_DRIVER_6D (0xFFFF << 0)
+
+#define VDO_01B8_SW_DRIVER (0x1B8)
+#define VDO_01B8_SW_DRIVER_6E (0xFFFF << 0)
+
+#define VDO_01BC_SW_DRIVER (0x1BC)
+#define VDO_01BC_SW_DRIVER_6F (0xFFFF << 0)
+
+#define VDO_01C0_SW_DRIVER (0x1C0)
+#define VDO_01C0_SW_DRIVER_70 (0xFFFF << 0)
+
+#define VDO_01C4_SW_DRIVER (0x1C4)
+#define VDO_01C4_SW_DRIVER_71 (0xFFFF << 0)
+
+#define VDO_01C8_SW_DRIVER (0x1C8)
+#define VDO_01C8_SW_DRIVER_72 (0xFFFF << 0)
+
+#define VDO_01CC_SW_DRIVER (0x1CC)
+#define VDO_01CC_SW_DRIVER_73 (0xFFFF << 0)
+
+#define VDO_01D0_SW_DRIVER (0x1D0)
+#define VDO_01D0_SW_DRIVER_74 (0xFFFF << 0)
+
+#define VDO_01D4_SW_DRIVER (0x1D4)
+#define VDO_01D4_SW_DRIVER_75 (0xFFFF << 0)
+
+#define VDO_01D8_SW_DRIVER (0x1D8)
+#define VDO_01D8_SW_DRIVER_76 (0xFFFF << 0)
+
+#define VDO_01DC_SW_DRIVER (0x1DC)
+#define VDO_01DC_SW_DRIVER_77 (0xFFFF << 0)
+
+#define VDO_01E0_SW_DRIVER (0x1E0)
+#define VDO_01E0_SW_DRIVER_78 (0xFFFF << 0)
+
+#define VDO_01E4_SW_DRIVER (0x1E4)
+#define VDO_01E4_SW_DRIVER_79 (0xFFFF << 0)
+
+#define VDO_01E8_SW_DRIVER (0x1E8)
+#define VDO_01E8_SW_DRIVER_7A (0xFFFF << 0)
+
+#define VDO_01EC_SW_DRIVER (0x1EC)
+#define VDO_01EC_SW_DRIVER_7B (0xFFFF << 0)
+
+#define VDO_01F0_SW_DRIVER (0x1F0)
+#define VDO_01F0_SW_DRIVER_7C (0xFFFF << 0)
+
+#define VDO_01F4_SW_DRIVER (0x1F4)
+#define VDO_01F4_SW_DRIVER_7D (0xFFFF << 0)
+
+#define VDO_01F8_SW_DRIVER (0x1F8)
+#define VDO_01F8_SW_DRIVER_7E (0xFFFF << 0)
+
+#define VDO_01FC_SW_DRIVER (0x1FC)
+#define VDO_01FC_SW_DRIVER_7F (0xFFFF << 0)
+
+
+//HDR_POLY_BK40
+#define VDO_0204_POLY_BK40 (0x204)
+#define VDO_0204_MAPPING_IDC_U_FLD (0x1 << 0)
+#define VDO_0204_MAPPING_IDC_V_FLD (0x1 << 1)
+
+#define VDO_0220_POLY_BK40 (0x220)
+#define VDO_0220_BL_PIVOT_Y0 (0x3FF << 0)
+
+#define VDO_0224_POLY_BK40 (0x224)
+#define VDO_0224_BL_PIVOT_Y1 (0x3FF << 0)
+
+#define VDO_0228_POLY_BK40 (0x228)
+#define VDO_0228_BL_PIVOT_Y2 (0x3FF << 0)
+
+#define VDO_022C_POLY_BK40 (0x22C)
+#define VDO_022C_BL_PIVOT_Y3 (0x3FF << 0)
+
+#define VDO_0230_POLY_BK40 (0x230)
+#define VDO_0230_BL_PIVOT_Y4 (0x3FF << 0)
+
+#define VDO_0234_POLY_BK40 (0x234)
+#define VDO_0234_BL_PIVOT_Y5 (0x3FF << 0)
+
+#define VDO_0238_POLY_BK40 (0x238)
+#define VDO_0238_BL_PIVOT_Y6 (0x3FF << 0)
+
+#define VDO_023C_POLY_BK40 (0x23C)
+#define VDO_023C_BL_PIVOT_Y7 (0x3FF << 0)
+
+#define VDO_0240_POLY_BK40 (0x240)
+#define VDO_0240_BL_PIVOT_Y8 (0x3FF << 0)
+
+#define VDO_0248_POLY_BK40 (0x248)
+#define VDO_0248_BL_COEFF_Y00_0 (0xFFFF << 0)
+
+#define VDO_024C_POLY_BK40 (0x24C)
+#define VDO_024C_BL_COEFF_Y00_1 (0x3FFF << 0)
+
+#define VDO_0250_POLY_BK40 (0x250)
+#define VDO_0250_BL_COEFF_Y01_0 (0xFFFF << 0)
+
+#define VDO_0254_POLY_BK40 (0x254)
+#define VDO_0254_BL_COEFF_Y01_1 (0x3FFF << 0)
+
+#define VDO_0258_POLY_BK40 (0x258)
+#define VDO_0258_BL_COEFF_Y02_0 (0xFFFF << 0)
+
+#define VDO_025C_POLY_BK40 (0x25C)
+#define VDO_025C_BL_COEFF_Y02_1 (0x3FFF << 0)
+
+#define VDO_0260_POLY_BK40 (0x260)
+#define VDO_0260_BL_COEFF_Y10_0 (0xFFFF << 0)
+
+#define VDO_0264_POLY_BK40 (0x264)
+#define VDO_0264_BL_COEFF_Y10_1 (0x3FFF << 0)
+
+#define VDO_0268_POLY_BK40 (0x268)
+#define VDO_0268_BL_COEFF_Y11_0 (0xFFFF << 0)
+
+#define VDO_026C_POLY_BK40 (0x26C)
+#define VDO_026C_BL_COEFF_Y11_1 (0x3FFF << 0)
+
+#define VDO_0270_POLY_BK40 (0x270)
+#define VDO_0270_BL_COEFF_Y12_0 (0xFFFF << 0)
+
+#define VDO_0274_POLY_BK40 (0x274)
+#define VDO_0274_BL_COEFF_Y12_1 (0x3FFF << 0)
+
+#define VDO_0278_POLY_BK40 (0x278)
+#define VDO_0278_BL_COEFF_Y20_0 (0xFFFF << 0)
+
+#define VDO_027C_POLY_BK40 (0x27C)
+#define VDO_027C_BL_COEFF_Y20_1 (0x3FFF << 0)
+
+#define VDO_0280_POLY_BK40 (0x280)
+#define VDO_0280_BL_COEFF_Y21_0 (0xFFFF << 0)
+
+#define VDO_0284_POLY_BK40 (0x284)
+#define VDO_0284_BL_COEFF_Y21_1 (0x3FFF << 0)
+
+#define VDO_0288_POLY_BK40 (0x288)
+#define VDO_0288_BL_COEFF_Y22_0 (0xFFFF << 0)
+
+#define VDO_028C_POLY_BK40 (0x28C)
+#define VDO_028C_BL_COEFF_Y22_1 (0x3FFF << 0)
+
+#define VDO_0290_POLY_BK40 (0x290)
+#define VDO_0290_BL_COEFF_Y30_0 (0xFFFF << 0)
+
+#define VDO_0294_POLY_BK40 (0x294)
+#define VDO_0294_BL_COEFF_Y30_1 (0x3FFF << 0)
+
+#define VDO_0298_POLY_BK40 (0x298)
+#define VDO_0298_BL_COEFF_Y31_0 (0xFFFF << 0)
+
+#define VDO_029C_POLY_BK40 (0x29C)
+#define VDO_029C_BL_COEFF_Y31_1 (0x3FFF << 0)
+
+#define VDO_02A0_POLY_BK40 (0x2A0)
+#define VDO_02A0_BL_COEFF_Y32_0 (0xFFFF << 0)
+
+#define VDO_02A4_POLY_BK40 (0x2A4)
+#define VDO_02A4_BL_COEFF_Y32_1 (0x3FFF << 0)
+
+#define VDO_02A8_POLY_BK40 (0x2A8)
+#define VDO_02A8_BL_COEFF_Y40_0 (0xFFFF << 0)
+
+#define VDO_02AC_POLY_BK40 (0x2AC)
+#define VDO_02AC_BL_COEFF_Y40_1 (0x3FFF << 0)
+
+#define VDO_02B0_POLY_BK40 (0x2B0)
+#define VDO_02B0_BL_COEFF_Y41_0 (0xFFFF << 0)
+
+#define VDO_02B4_POLY_BK40 (0x2B4)
+#define VDO_02B4_BL_COEFF_Y41_1 (0x3FFF << 0)
+
+#define VDO_02B8_POLY_BK40 (0x2B8)
+#define VDO_02B8_BL_COEFF_Y42_0 (0xFFFF << 0)
+
+#define VDO_02BC_POLY_BK40 (0x2BC)
+#define VDO_02BC_BL_COEFF_Y42_1 (0x3FFF << 0)
+
+#define VDO_02C0_POLY_BK40 (0x2C0)
+#define VDO_02C0_BL_COEFF_Y50_0 (0xFFFF << 0)
+
+#define VDO_02C4_POLY_BK40 (0x2C4)
+#define VDO_02C4_BL_COEFF_Y50_1 (0x3FFF << 0)
+
+#define VDO_02C8_POLY_BK40 (0x2C8)
+#define VDO_02C8_BL_COEFF_Y51_0 (0xFFFF << 0)
+
+#define VDO_02CC_POLY_BK40 (0x2CC)
+#define VDO_02CC_BL_COEFF_Y51_1 (0x3FFF << 0)
+
+#define VDO_02D0_POLY_BK40 (0x2D0)
+#define VDO_02D0_BL_COEFF_Y52_0 (0xFFFF << 0)
+
+#define VDO_02D4_POLY_BK40 (0x2D4)
+#define VDO_02D4_BL_COEFF_Y52_1 (0x3FFF << 0)
+
+#define VDO_02D8_POLY_BK40 (0x2D8)
+#define VDO_02D8_BL_COEFF_Y60_0 (0xFFFF << 0)
+
+#define VDO_02DC_POLY_BK40 (0x2DC)
+#define VDO_02DC_BL_COEFF_Y60_1 (0x3FFF << 0)
+
+#define VDO_02E0_POLY_BK40 (0x2E0)
+#define VDO_02E0_BL_COEFF_Y61_0 (0xFFFF << 0)
+
+#define VDO_02E4_POLY_BK40 (0x2E4)
+#define VDO_02E4_BL_COEFF_Y61_1 (0x3FFF << 0)
+
+#define VDO_02E8_POLY_BK40 (0x2E8)
+#define VDO_02E8_BL_COEFF_Y62_0 (0xFFFF << 0)
+
+#define VDO_02EC_POLY_BK40 (0x2EC)
+#define VDO_02EC_BL_COEFF_Y62_1 (0x3FFF << 0)
+
+#define VDO_02F0_POLY_BK40 (0x2F0)
+#define VDO_02F0_BL_COEFF_Y70_0 (0xFFFF << 0)
+
+#define VDO_02F4_POLY_BK40 (0x2F4)
+#define VDO_02F4_BL_COEFF_Y70_1 (0x3FFF << 0)
+
+#define VDO_02F8_POLY_BK40 (0x2F8)
+#define VDO_02F8_BL_COEFF_Y71_0 (0xFFFF << 0)
+
+#define VDO_02FC_POLY_BK40 (0x2FC)
+#define VDO_02FC_BL_COEFF_Y71_1 (0x3FFF << 0)
+
+#define VDO_0300_POLY_BK40 (0x300)
+#define VDO_0300_BL_COEFF_Y72_0 (0xFFFF << 0)
+
+#define VDO_0304_POLY_BK40 (0x304)
+#define VDO_0304_BL_COEFF_Y72_1 (0x3FFF << 0)
+
+#define VDO_0308_POLY_BK40 (0x308)
+#define VDO_0308_BL_PIVOT_U0 (0x3FF << 0)
+
+#define VDO_030C_POLY_BK40 (0x30C)
+#define VDO_030C_BL_PIVOT_U1 (0x3FF << 0)
+
+#define VDO_0310_POLY_BK40 (0x310)
+#define VDO_0310_BL_PIVOT_U2 (0x3FF << 0)
+
+#define VDO_0314_POLY_BK40 (0x314)
+#define VDO_0314_BL_PIVOT_U3 (0x3FF << 0)
+
+#define VDO_0318_POLY_BK40 (0x318)
+#define VDO_0318_BL_PIVOT_U4 (0x3FF << 0)
+
+#define VDO_0320_POLY_BK40 (0x320)
+#define VDO_0320_BL_COEFF_U00_0 (0xFFFF << 0)
+
+#define VDO_0324_POLY_BK40 (0x324)
+#define VDO_0324_BL_COEFF_U00_1 (0x3FFF << 0)
+
+#define VDO_0328_POLY_BK40 (0x328)
+#define VDO_0328_BL_COEFF_U01_0 (0xFFFF << 0)
+
+#define VDO_032C_POLY_BK40 (0x32C)
+#define VDO_032C_BL_COEFF_U01_1 (0x3FFF << 0)
+
+#define VDO_0330_POLY_BK40 (0x330)
+#define VDO_0330_BL_COEFF_U02_0 (0xFFFF << 0)
+
+#define VDO_0334_POLY_BK40 (0x334)
+#define VDO_0334_BL_COEFF_U02_1 (0x3FFF << 0)
+
+#define VDO_0338_POLY_BK40 (0x338)
+#define VDO_0338_BL_COEFF_U10_0 (0xFFFF << 0)
+
+#define VDO_033C_POLY_BK40 (0x33C)
+#define VDO_033C_BL_COEFF_U10_1 (0x3FFF << 0)
+
+#define VDO_0340_POLY_BK40 (0x340)
+#define VDO_0340_BL_COEFF_U11_0 (0xFFFF << 0)
+
+#define VDO_0344_POLY_BK40 (0x344)
+#define VDO_0344_BL_COEFF_U11_1 (0x3FFF << 0)
+
+#define VDO_0348_POLY_BK40 (0x348)
+#define VDO_0348_BL_COEFF_U12_0 (0xFFFF << 0)
+
+#define VDO_034C_POLY_BK40 (0x34C)
+#define VDO_034C_BL_COEFF_U12_1 (0x3FFF << 0)
+
+#define VDO_0350_POLY_BK40 (0x350)
+#define VDO_0350_BL_COEFF_U20_0 (0xFFFF << 0)
+
+#define VDO_0354_POLY_BK40 (0x354)
+#define VDO_0354_BL_COEFF_U20_1 (0x3FFF << 0)
+
+#define VDO_0358_POLY_BK40 (0x358)
+#define VDO_0358_BL_COEFF_U21_0 (0xFFFF << 0)
+
+#define VDO_035C_POLY_BK40 (0x35C)
+#define VDO_035C_BL_COEFF_U21_1 (0x3FFF << 0)
+
+#define VDO_0360_POLY_BK40 (0x360)
+#define VDO_0360_BL_COEFF_U22_0 (0xFFFF << 0)
+
+#define VDO_0364_POLY_BK40 (0x364)
+#define VDO_0364_BL_COEFF_U22_1 (0x3FFF << 0)
+
+#define VDO_0368_POLY_BK40 (0x368)
+#define VDO_0368_BL_COEFF_U30_0 (0xFFFF << 0)
+
+#define VDO_036C_POLY_BK40 (0x36C)
+#define VDO_036C_BL_COEFF_U30_1 (0x3FFF << 0)
+
+#define VDO_0370_POLY_BK40 (0x370)
+#define VDO_0370_BL_COEFF_U31_0 (0xFFFF << 0)
+
+#define VDO_0374_POLY_BK40 (0x374)
+#define VDO_0374_BL_COEFF_U31_1 (0x3FFF << 0)
+
+#define VDO_0378_POLY_BK40 (0x378)
+#define VDO_0378_BL_COEFF_U32_0 (0xFFFF << 0)
+
+#define VDO_037C_POLY_BK40 (0x37C)
+#define VDO_037C_BL_COEFF_U32_1 (0x3FFF << 0)
+
+#define VDO_0380_POLY_BK40 (0x380)
+#define VDO_0380_BL_PIVOT_V0 (0x3FF << 0)
+
+#define VDO_0384_POLY_BK40 (0x384)
+#define VDO_0384_BL_PIVOT_V1 (0x3FF << 0)
+
+#define VDO_0388_POLY_BK40 (0x388)
+#define VDO_0388_BL_PIVOT_V2 (0x3FF << 0)
+
+#define VDO_038C_POLY_BK40 (0x38C)
+#define VDO_038C_BL_PIVOT_V3 (0x3FF << 0)
+
+#define VDO_0390_POLY_BK40 (0x390)
+#define VDO_0390_BL_PIVOT_V4 (0x3FF << 0)
+
+#define VDO_0398_POLY_BK40 (0x398)
+#define VDO_0398_BL_COEFF_V00_0 (0xFFFF << 0)
+
+#define VDO_039C_POLY_BK40 (0x39C)
+#define VDO_039C_BL_COEFF_V00_1 (0x3FFF << 0)
+
+#define VDO_03A0_POLY_BK40 (0x3A0)
+#define VDO_03A0_BL_COEFF_V01_0 (0xFFFF << 0)
+
+#define VDO_03A4_POLY_BK40 (0x3A4)
+#define VDO_03A4_BL_COEFF_V01_1 (0x3FFF << 0)
+
+#define VDO_03A8_POLY_BK40 (0x3A8)
+#define VDO_03A8_BL_COEFF_V02_0 (0xFFFF << 0)
+
+#define VDO_03AC_POLY_BK40 (0x3AC)
+#define VDO_03AC_BL_COEFF_V02_1 (0x3FFF << 0)
+
+#define VDO_03B0_POLY_BK40 (0x3B0)
+#define VDO_03B0_BL_COEFF_V10_0 (0xFFFF << 0)
+
+#define VDO_03B4_POLY_BK40 (0x3B4)
+#define VDO_03B4_BL_COEFF_V10_1 (0x3FFF << 0)
+
+#define VDO_03B8_POLY_BK40 (0x3B8)
+#define VDO_03B8_BL_COEFF_V11_0 (0xFFFF << 0)
+
+#define VDO_03BC_POLY_BK40 (0x3BC)
+#define VDO_03BC_BL_COEFF_V11_1 (0x3FFF << 0)
+
+#define VDO_03C0_POLY_BK40 (0x3C0)
+#define VDO_03C0_BL_COEFF_V12_0 (0xFFFF << 0)
+
+#define VDO_03C4_POLY_BK40 (0x3C4)
+#define VDO_03C4_BL_COEFF_V12_1 (0x3FFF << 0)
+
+#define VDO_03C8_POLY_BK40 (0x3C8)
+#define VDO_03C8_BL_COEFF_V20_0 (0xFFFF << 0)
+
+#define VDO_03CC_POLY_BK40 (0x3CC)
+#define VDO_03CC_BL_COEFF_V20_1 (0x3FFF << 0)
+
+#define VDO_03D0_POLY_BK40 (0x3D0)
+#define VDO_03D0_BL_COEFF_V21_0 (0xFFFF << 0)
+
+#define VDO_03D4_POLY_BK40 (0x3D4)
+#define VDO_03D4_BL_COEFF_V21_1 (0x3FFF << 0)
+
+#define VDO_03D8_POLY_BK40 (0x3D8)
+#define VDO_03D8_BL_COEFF_V22_0 (0xFFFF << 0)
+
+#define VDO_03DC_POLY_BK40 (0x3DC)
+#define VDO_03DC_BL_COEFF_V22_1 (0x3FFF << 0)
+
+#define VDO_03E0_POLY_BK40 (0x3E0)
+#define VDO_03E0_BL_COEFF_V30_0 (0xFFFF << 0)
+
+#define VDO_03E4_POLY_BK40 (0x3E4)
+#define VDO_03E4_BL_COEFF_V30_1 (0x3FFF << 0)
+
+#define VDO_03E8_POLY_BK40 (0x3E8)
+#define VDO_03E8_BL_COEFF_V31_0 (0xFFFF << 0)
+
+#define VDO_03EC_POLY_BK40 (0x3EC)
+#define VDO_03EC_BL_COEFF_V31_1 (0x3FFF << 0)
+
+#define VDO_03F0_POLY_BK40 (0x3F0)
+#define VDO_03F0_BL_COEFF_V32_0 (0xFFFF << 0)
+
+#define VDO_03F4_POLY_BK40 (0x3F4)
+#define VDO_03F4_BL_COEFF_V32_1 (0x3FFF << 0)
+
+
+//HDR_MMR_BK41
+#define VDO_0420_MMR_BK41 (0x420)
+#define VDO_0420_MMR_COEFF_U0_0 (0xFFFF << 0)
+
+#define VDO_0424_MMR_BK41 (0x424)
+#define VDO_0424_MMR_COEFF_U0_1 (0xFFFF << 0)
+
+#define VDO_0428_MMR_BK41 (0x428)
+#define VDO_0428_MMR_COEFF_U0_2_FLD (0xFF << 0)
+#define VDO_0428_MMR_COEFF_U1_0_FLD (0xFF << 8)
+
+#define VDO_042C_MMR_BK41 (0x42C)
+#define VDO_042C_MMR_COEFF_U1_1 (0xFFFF << 0)
+
+#define VDO_0430_MMR_BK41 (0x430)
+#define VDO_0430_MMR_COEFF_U1_2 (0xFFFF << 0)
+
+#define VDO_0434_MMR_BK41 (0x434)
+#define VDO_0434_MMR_COEFF_U2_0 (0xFFFF << 0)
+
+#define VDO_0438_MMR_BK41 (0x438)
+#define VDO_0438_MMR_COEFF_U2_1 (0xFFFF << 0)
+
+#define VDO_043C_MMR_BK41 (0x43C)
+#define VDO_043C_MMR_COEFF_U2_2 (0xFF << 0)
+
+#define VDO_0440_MMR_BK41 (0x440)
+#define VDO_0440_MMR_COEFF_U3_0 (0xFFFF << 0)
+
+#define VDO_0444_MMR_BK41 (0x444)
+#define VDO_0444_MMR_COEFF_U3_1 (0xFFFF << 0)
+
+#define VDO_0448_MMR_BK41 (0x448)
+#define VDO_0448_MMR_COEFF_U3_2_FLD (0xFF << 0)
+#define VDO_0448_MMR_COEFF_U4_0_FLD (0xFF << 8)
+
+#define VDO_044C_MMR_BK41 (0x44C)
+#define VDO_044C_MMR_COEFF_U4_1 (0xFFFF << 0)
+
+#define VDO_0450_MMR_BK41 (0x450)
+#define VDO_0450_MMR_COEFF_U4_2 (0xFFFF << 0)
+
+#define VDO_0454_MMR_BK41 (0x454)
+#define VDO_0454_MMR_COEFF_U5_0 (0xFFFF << 0)
+
+#define VDO_0458_MMR_BK41 (0x458)
+#define VDO_0458_MMR_COEFF_U5_1 (0xFFFF << 0)
+
+#define VDO_045C_MMR_BK41 (0x45C)
+#define VDO_045C_MMR_COEFF_U5_2 (0xFF << 0)
+
+#define VDO_0460_MMR_BK41 (0x460)
+#define VDO_0460_MMR_COEFF_U6_0 (0xFFFF << 0)
+
+#define VDO_0464_MMR_BK41 (0x464)
+#define VDO_0464_MMR_COEFF_U6_1 (0xFFFF << 0)
+
+#define VDO_0468_MMR_BK41 (0x468)
+#define VDO_0468_MMR_COEFF_U6_2_FLD (0xFF << 0)
+#define VDO_0468_MMR_COEFF_U7_0_FLD (0xFF << 8)
+
+#define VDO_046C_MMR_BK41 (0x46C)
+#define VDO_046C_MMR_COEFF_U7_1 (0xFFFF << 0)
+
+#define VDO_0470_MMR_BK41 (0x470)
+#define VDO_0470_MMR_COEFF_U7_2 (0xFFFF << 0)
+
+#define VDO_0474_MMR_BK41 (0x474)
+#define VDO_0474_MMR_COEFF_U8_0 (0xFFFF << 0)
+
+#define VDO_0478_MMR_BK41 (0x478)
+#define VDO_0478_MMR_COEFF_U8_1 (0xFFFF << 0)
+
+#define VDO_047C_MMR_BK41 (0x47C)
+#define VDO_047C_MMR_COEFF_U8_2 (0xFF << 0)
+
+#define VDO_0480_MMR_BK41 (0x480)
+#define VDO_0480_MMR_COEFF_U9_0 (0xFFFF << 0)
+
+#define VDO_0484_MMR_BK41 (0x484)
+#define VDO_0484_MMR_COEFF_U9_1 (0xFFFF << 0)
+
+#define VDO_0488_MMR_BK41 (0x488)
+#define VDO_0488_MMR_COEFF_U9_2_FLD (0xFF << 0)
+#define VDO_0488_MMR_COEFF_U10_0_FLD (0xFF << 8)
+
+#define VDO_048C_MMR_BK41 (0x48C)
+#define VDO_048C_MMR_COEFF_U10_1 (0xFFFF << 0)
+
+#define VDO_0490_MMR_BK41 (0x490)
+#define VDO_0490_MMR_COEFF_U10_2 (0xFFFF << 0)
+
+#define VDO_0494_MMR_BK41 (0x494)
+#define VDO_0494_MMR_COEFF_U11_0 (0xFFFF << 0)
+
+#define VDO_0498_MMR_BK41 (0x498)
+#define VDO_0498_MMR_COEFF_U11_1 (0xFFFF << 0)
+
+#define VDO_049C_MMR_BK41 (0x49C)
+#define VDO_049C_MMR_COEFF_U11_2 (0xFF << 0)
+
+#define VDO_04A0_MMR_BK41 (0x4A0)
+#define VDO_04A0_MMR_COEFF_U12_0 (0xFFFF << 0)
+
+#define VDO_04A4_MMR_BK41 (0x4A4)
+#define VDO_04A4_MMR_COEFF_U12_1 (0xFFFF << 0)
+
+#define VDO_04A8_MMR_BK41 (0x4A8)
+#define VDO_04A8_MMR_COEFF_U12_2_FLD (0xFF << 0)
+#define VDO_04A8_MMR_COEFF_U13_0_FLD (0xFF << 8)
+
+#define VDO_04AC_MMR_BK41 (0x4AC)
+#define VDO_04AC_MMR_COEFF_U13_1 (0xFFFF << 0)
+
+#define VDO_04B0_MMR_BK41 (0x4B0)
+#define VDO_04B0_MMR_COEFF_U13_2 (0xFFFF << 0)
+
+#define VDO_04B4_MMR_BK41 (0x4B4)
+#define VDO_04B4_MMR_COEFF_U14_0 (0xFFFF << 0)
+
+#define VDO_04B8_MMR_BK41 (0x4B8)
+#define VDO_04B8_MMR_COEFF_U14_1 (0xFFFF << 0)
+
+#define VDO_04BC_MMR_BK41 (0x4BC)
+#define VDO_04BC_MMR_COEFF_U14_2 (0xFF << 0)
+
+#define VDO_04C0_MMR_BK41 (0x4C0)
+#define VDO_04C0_MMR_COEFF_U15_0 (0xFFFF << 0)
+
+#define VDO_04C4_MMR_BK41 (0x4C4)
+#define VDO_04C4_MMR_COEFF_U15_1 (0xFFFF << 0)
+
+#define VDO_04C8_MMR_BK41 (0x4C8)
+#define VDO_04C8_MMR_COEFF_U15_2_FLD (0xFF << 0)
+#define VDO_04C8_MMR_COEFF_U16_0_FLD (0xFF << 8)
+
+#define VDO_04CC_MMR_BK41 (0x4CC)
+#define VDO_04CC_MMR_COEFF_U16_1 (0xFFFF << 0)
+
+#define VDO_04D0_MMR_BK41 (0x4D0)
+#define VDO_04D0_MMR_COEFF_U16_2 (0xFFFF << 0)
+
+#define VDO_04D4_MMR_BK41 (0x4D4)
+#define VDO_04D4_MMR_COEFF_U17_0 (0xFFFF << 0)
+
+#define VDO_04D8_MMR_BK41 (0x4D8)
+#define VDO_04D8_MMR_COEFF_U17_1 (0xFFFF << 0)
+
+#define VDO_04DC_MMR_BK41 (0x4DC)
+#define VDO_04DC_MMR_COEFF_U17_2 (0xFF << 0)
+
+#define VDO_04E0_MMR_BK41 (0x4E0)
+#define VDO_04E0_MMR_COEFF_U18_0 (0xFFFF << 0)
+
+#define VDO_04E4_MMR_BK41 (0x4E4)
+#define VDO_04E4_MMR_COEFF_U18_1 (0xFFFF << 0)
+
+#define VDO_04E8_MMR_BK41 (0x4E8)
+#define VDO_04E8_MMR_COEFF_U18_2_FLD (0xFF << 0)
+#define VDO_04E8_MMR_COEFF_U19_0_FLD (0xFF << 8)
+
+#define VDO_04EC_MMR_BK41 (0x4EC)
+#define VDO_04EC_MMR_COEFF_U19_1 (0xFFFF << 0)
+
+#define VDO_04F0_MMR_BK41 (0x4F0)
+#define VDO_04F0_MMR_COEFF_U19_2 (0xFFFF << 0)
+
+#define VDO_04F4_MMR_BK41 (0x4F4)
+#define VDO_04F4_MMR_COEFF_U20_0 (0xFFFF << 0)
+
+#define VDO_04F8_MMR_BK41 (0x4F8)
+#define VDO_04F8_MMR_COEFF_U20_1 (0xFFFF << 0)
+
+#define VDO_04FC_MMR_BK41 (0x4FC)
+#define VDO_04FC_MMR_COEFF_U20_2 (0xFF << 0)
+
+#define VDO_0500_MMR_BK41 (0x500)
+#define VDO_0500_MMR_COEFF_U21_0 (0xFFFF << 0)
+
+#define VDO_0504_MMR_BK41 (0x504)
+#define VDO_0504_MMR_COEFF_U21_1 (0xFFFF << 0)
+
+#define VDO_0508_MMR_BK41 (0x508)
+#define VDO_0508_MMR_COEFF_U21_2_FLD (0xFF << 0)
+#define VDO_0508_MMR_COEFF_V0_0_FLD (0xFF << 8)
+
+#define VDO_050C_MMR_BK41 (0x50C)
+#define VDO_050C_MMR_COEFF_V0_1 (0xFFFF << 0)
+
+#define VDO_0510_MMR_BK41 (0x510)
+#define VDO_0510_MMR_COEFF_V0_2 (0xFFFF << 0)
+
+#define VDO_0514_MMR_BK41 (0x514)
+#define VDO_0514_MMR_COEFF_V1_0 (0xFFFF << 0)
+
+#define VDO_0518_MMR_BK41 (0x518)
+#define VDO_0518_MMR_COEFF_V1_1 (0xFFFF << 0)
+
+#define VDO_051C_MMR_BK41 (0x51C)
+#define VDO_051C_MMR_COEFF_V1_2 (0xFF << 0)
+
+#define VDO_0520_MMR_BK41 (0x520)
+#define VDO_0520_MMR_COEFF_V2_0 (0xFFFF << 0)
+
+#define VDO_0524_MMR_BK41 (0x524)
+#define VDO_0524_MMR_COEFF_V2_1 (0xFFFF << 0)
+
+#define VDO_0528_MMR_BK41 (0x528)
+#define VDO_0528_MMR_COEFF_V2_2_FLD (0xFF << 0)
+#define VDO_0528_MMR_COEFF_V3_0_FLD (0xFF << 8)
+
+#define VDO_052C_MMR_BK41 (0x52C)
+#define VDO_052C_MMR_COEFF_V3_1 (0xFFFF << 0)
+
+#define VDO_0530_MMR_BK41 (0x530)
+#define VDO_0530_MMR_COEFF_V3_2 (0xFFFF << 0)
+
+#define VDO_0534_MMR_BK41 (0x534)
+#define VDO_0534_MMR_COEFF_V4_0 (0xFFFF << 0)
+
+#define VDO_0538_MMR_BK41 (0x538)
+#define VDO_0538_MMR_COEFF_V4_1 (0xFFFF << 0)
+
+#define VDO_053C_MMR_BK41 (0x53C)
+#define VDO_053C_MMR_COEFF_V4_2 (0xFF << 0)
+
+#define VDO_0540_MMR_BK41 (0x540)
+#define VDO_0540_MMR_COEFF_V5_0 (0xFFFF << 0)
+
+#define VDO_0544_MMR_BK41 (0x544)
+#define VDO_0544_MMR_COEFF_V5_1 (0xFFFF << 0)
+
+#define VDO_0548_MMR_BK41 (0x548)
+#define VDO_0548_MMR_COEFF_V5_2_FLD (0xFF << 0)
+#define VDO_0548_MMR_COEFF_V6_0_FLD (0xFF << 8)
+
+#define VDO_054C_MMR_BK41 (0x54C)
+#define VDO_054C_MMR_COEFF_V6_1 (0xFFFF << 0)
+
+#define VDO_0550_MMR_BK41 (0x550)
+#define VDO_0550_MMR_COEFF_V6_2 (0xFFFF << 0)
+
+#define VDO_0554_MMR_BK41 (0x554)
+#define VDO_0554_MMR_COEFF_V7_0 (0xFFFF << 0)
+
+#define VDO_0558_MMR_BK41 (0x558)
+#define VDO_0558_MMR_COEFF_V7_1 (0xFFFF << 0)
+
+#define VDO_055C_MMR_BK41 (0x55C)
+#define VDO_055C_MMR_COEFF_V7_2 (0xFF << 0)
+
+#define VDO_0560_MMR_BK41 (0x560)
+#define VDO_0560_MMR_COEFF_V8_0 (0xFFFF << 0)
+
+#define VDO_0564_MMR_BK41 (0x564)
+#define VDO_0564_MMR_COEFF_V8_1 (0xFFFF << 0)
+
+#define VDO_0568_MMR_BK41 (0x568)
+#define VDO_0568_MMR_COEFF_V8_2_FLD (0xFF << 0)
+#define VDO_0568_MMR_COEFF_V9_0_FLD (0xFF << 8)
+
+#define VDO_056C_MMR_BK41 (0x56C)
+#define VDO_056C_MMR_COEFF_V9_1 (0xFFFF << 0)
+
+#define VDO_0570_MMR_BK41 (0x570)
+#define VDO_0570_MMR_COEFF_V9_2 (0xFFFF << 0)
+
+#define VDO_0574_MMR_BK41 (0x574)
+#define VDO_0574_MMR_COEFF_V10_0 (0xFFFF << 0)
+
+#define VDO_0578_MMR_BK41 (0x578)
+#define VDO_0578_MMR_COEFF_V10_1 (0xFFFF << 0)
+
+#define VDO_057C_MMR_BK41 (0x57C)
+#define VDO_057C_MMR_COEFF_V10_2 (0xFF << 0)
+
+#define VDO_0580_MMR_BK41 (0x580)
+#define VDO_0580_MMR_COEFF_V11_0 (0xFFFF << 0)
+
+#define VDO_0584_MMR_BK41 (0x584)
+#define VDO_0584_MMR_COEFF_V11_1 (0xFFFF << 0)
+
+#define VDO_0588_MMR_BK41 (0x588)
+#define VDO_0588_MMR_COEFF_V11_2_FLD (0xFF << 0)
+#define VDO_0588_MMR_COEFF_V12_0_FLD (0xFF << 8)
+
+#define VDO_058C_MMR_BK41 (0x58C)
+#define VDO_058C_MMR_COEFF_V12_1 (0xFFFF << 0)
+
+#define VDO_0590_MMR_BK41 (0x590)
+#define VDO_0590_MMR_COEFF_V12_2 (0xFFFF << 0)
+
+#define VDO_0594_MMR_BK41 (0x594)
+#define VDO_0594_MMR_COEFF_V13_0 (0xFFFF << 0)
+
+#define VDO_0598_MMR_BK41 (0x598)
+#define VDO_0598_MMR_COEFF_V13_1 (0xFFFF << 0)
+
+#define VDO_059C_MMR_BK41 (0x59C)
+#define VDO_059C_MMR_COEFF_V13_2 (0xFF << 0)
+
+#define VDO_05A0_MMR_BK41 (0x5A0)
+#define VDO_05A0_MMR_COEFF_V14_0 (0xFFFF << 0)
+
+#define VDO_05A4_MMR_BK41 (0x5A4)
+#define VDO_05A4_MMR_COEFF_V14_1 (0xFFFF << 0)
+
+#define VDO_05A8_MMR_BK41 (0x5A8)
+#define VDO_05A8_MMR_COEFF_V14_2_FLD (0xFF << 0)
+#define VDO_05A8_MMR_COEFF_V15_0_FLD (0xFF << 8)
+
+#define VDO_05AC_MMR_BK41 (0x5AC)
+#define VDO_05AC_MMR_COEFF_V15_1 (0xFFFF << 0)
+
+#define VDO_05B0_MMR_BK41 (0x5B0)
+#define VDO_05B0_MMR_COEFF_V15_2 (0xFFFF << 0)
+
+#define VDO_05B4_MMR_BK41 (0x5B4)
+#define VDO_05B4_MMR_COEFF_V16_0 (0xFFFF << 0)
+
+#define VDO_05B8_MMR_BK41 (0x5B8)
+#define VDO_05B8_MMR_COEFF_V16_1 (0xFFFF << 0)
+
+#define VDO_05BC_MMR_BK41 (0x5BC)
+#define VDO_05BC_MMR_COEFF_V16_2 (0xFF << 0)
+
+#define VDO_05C0_MMR_BK41 (0x5C0)
+#define VDO_05C0_MMR_COEFF_V17_0 (0xFFFF << 0)
+
+#define VDO_05C4_MMR_BK41 (0x5C4)
+#define VDO_05C4_MMR_COEFF_V17_1 (0xFFFF << 0)
+
+#define VDO_05C8_MMR_BK41 (0x5C8)
+#define VDO_05C8_MMR_COEFF_V17_2_FLD (0xFF << 0)
+#define VDO_05C8_MMR_COEFF_V18_0_FLD (0xFF << 8)
+
+#define VDO_05CC_MMR_BK41 (0x5CC)
+#define VDO_05CC_MMR_COEFF_V18_1 (0xFFFF << 0)
+
+#define VDO_05D0_MMR_BK41 (0x5D0)
+#define VDO_05D0_MMR_COEFF_V18_2 (0xFFFF << 0)
+
+#define VDO_05D4_MMR_BK41 (0x5D4)
+#define VDO_05D4_MMR_COEFF_V19_0 (0xFFFF << 0)
+
+#define VDO_05D8_MMR_BK41 (0x5D8)
+#define VDO_05D8_MMR_COEFF_V19_1 (0xFFFF << 0)
+
+#define VDO_05DC_MMR_BK41 (0x5DC)
+#define VDO_05DC_MMR_COEFF_V19_2 (0xFF << 0)
+
+#define VDO_05E0_MMR_BK41 (0x5E0)
+#define VDO_05E0_MMR_COEFF_V20_0 (0xFFFF << 0)
+
+#define VDO_05E4_MMR_BK41 (0x5E4)
+#define VDO_05E4_MMR_COEFF_V20_1 (0xFFFF << 0)
+
+#define VDO_05E8_MMR_BK41 (0x5E8)
+#define VDO_05E8_MMR_COEFF_V20_2_FLD (0xFF << 0)
+#define VDO_05E8_MMR_COEFF_V21_0_FLD (0xFF << 8)
+
+#define VDO_05EC_MMR_BK41 (0x5EC)
+#define VDO_05EC_MMR_COEFF_V21_1 (0xFFFF << 0)
+
+#define VDO_05F0_MMR_BK41 (0x5F0)
+#define VDO_05F0_MMR_COEFF_V21_2 (0xFFFF << 0)
+
+
+//HDR_TOP_FE
+#define VDO_0604_TOP_FE (0x604)
+#define VDO_0604_MCLK_SW_RST_FLD (0x1 << 0)
+#define VDO_0604_ERROR_FLAG_12B_PATH_FLD (0x1 << 1)
+#define VDO_0604_CLR_ERROR_FLAG_PULSE_FLD (0x1 << 4)
+
+#define VDO_060C_TOP_FE (0x60C)
+#define VDO_060C_HDR_PQ_BYP_SW_FLD (0x1 << 0)
+#define VDO_060C_HDR2CSC_BYP_SW_FLD (0x1 << 6)
+#define VDO_060C_HDR2CSC_BYP_AUTO_EN_FLD (0x1 << 7)
+
+#define VDO_0618_TOP_FE (0x618)
+#define VDO_0618_HDR2IP_FORCE_ACK (0x1 << 15)
+
+#define VDO_061C_TOP_FE (0x61C)
+#define VDO_061C_HDR2IP_PATH_EN (0x1 << 1)
+
+#define VDO_0634_TOP_FE (0x634)
+#define VDO_0634_HDR_IN_PATH_AUTO_EN (0x1 << 15)
+
+#define VDO_0680_TOP_FE (0x680)
+#define VDO_0680_AUTOD_RIU_ERR_POLY_FLD (0x1 << 0)
+#define VDO_0680_AUTOD_RIU_ERR_MMR_FLD (0x1 << 1)
+#define VDO_0680_AUTOD_RIU_ERR_CLR_COM_FLD (0x1 << 8)
+#define VDO_0680_COM_CLK_SEL_MASK_FLD (0x1 << 14)
+#define VDO_0680_RIU_IN_MD_COM_FLD (0x1 << 15)
+
+#define VDO_0684_TOP_FE (0x684)
+#define VDO_0684_TRIG_MD0_DELAY_COM_FLD (0x7FFF << 0)
+#define VDO_0684_TRIG_MD_COM_FLD (0x1 << 15)
+
+#define VDO_0688_TOP_FE (0x688)
+#define VDO_0688_RIU_PROTECT_COM_FLD (0xFF << 0)
+#define VDO_0688_SW_MD_PULSE_COM_FLD (0x1 << 14)
+#define VDO_0688_SW_MD_COM_FLD (0x1 << 15)
+
+#define VDO_068C_TOP_FE (0x68C)
+#define VDO_068C_TCHLUT_B_FLD (0x1 << 0)
+#define VDO_068C_TCHLUT_G_FLD (0x1 << 1)
+#define VDO_068C_TCHLUT_R_FLD (0x1 << 2)
+#define VDO_068C_TCHLUT_S_FLD (0x1 << 3)
+#define VDO_068C_TCHLUT_I_FLD (0x1 << 4)
+#define VDO_068C_TCHLUT_P_FLD (0x1 << 5)
+#define VDO_068C_TCHLUT_C_FLD (0x1 << 6)
+#define VDO_068C_RIU_ERR_HDRTCH_FLD (0x1 << 7)
+#define VDO_068C_RIU_ERR_CLR_THDR_FLD (0x1 << 8)
+#define VDO_068C_THDR_CLK_SEL_MASK_FLD (0x1 << 14)
+#define VDO_068C_RIU_IN_MD_THDR_FLD (0x1 << 15)
+
+#define VDO_0690_TOP_FE (0x690)
+#define VDO_0690_MD0_DELAY_THDR_FLD (0x7FFF << 0)
+#define VDO_0690_MD_THDR_FLD (0x1 << 15)
+
+#define VDO_0694_TOP_FE (0x694)
+#define VDO_0694_RIU_PROTECT_THDR_FLD (0xFF << 0)
+#define VDO_0694_SW_MD_PULSE_THDR_FLD (0x1 << 14)
+#define VDO_0694_SW_MD_THDR_FLD (0x1 << 15)
+
+#define VDO_0698_TOP_FE (0x698)
+#define VDO_0698_EXTEND_CNT_COM_FLD (0xFF << 0)
+#define VDO_0698_FORCE_CLK_ON_COM_FLD (0x1 << 15)
+
+#define VDO_069C_TOP_FE (0x69C)
+#define VDO_069C_EXTEND_CNT_TCH_FLD (0xFF << 0)
+#define VDO_069C_FORCE_CLK_ON_TCH_FLD (0x1 << 15)
+
+#define VDO_06B8_TOP_FE (0x6B8)
+#define VDO_06B8_STATUS_RB_0 (0xFFFF << 0)
+
+#define VDO_06BC_TOP_FE (0x6BC)
+#define VDO_06BC_STATUS_RB_1 (0xFFFF << 0)
+
+#define VDO_06C4_TOP_FE (0x6C4)
+#define VDO_06C4_IDK_REP_EN_FLD (0x1 << 14)
+#define VDO_06C4_IDK_H_CROP_EN_FLD (0x1 << 15)
+
+#define VDO_06C8_TOP_FE (0x6C8)
+#define VDO_06C8_IDK_H_CROP_ST (0x3FFF << 0)
+
+#define VDO_06CC_TOP_FE (0x6CC)
+#define VDO_06CC_IDK_H_CROP_END (0x3FFF << 0)
+
+#define VDO_06D0_TOP_FE (0x6D0)
+#define VDO_06D0_COMP_IN_444TO422_EN_FLD (0x1 << 0)
+#define VDO_06D0_12B_PATH_SW_EN_FLD (0x1 << 14)
+#define VDO_06D0_12B_PATH_AUTO_EN_FLD (0x1 << 15)
+
+#define VDO_06D4_TOP_FE (0x6D4)
+#define VDO_06D4_DBG_SEL_FLD (0x3 << 0)
+#define VDO_06D4_DBG_EVEN_FLD (0x1 << 2)
+#define VDO_06D4_DBG_HDR_SEL_FLD (0x7 << 4)
+#define VDO_06D4_DBG_HDR_EN_FLD (0x1 << 7)
+
+#define VDO_06D8_TOP_FE (0x6D8)
+#define VDO_06D8_H_TOTAL (0x1FFF << 0)
+
+#define VDO_06DC_TOP_FE (0x6DC)
+#define VDO_06DC_V_TOTAL (0x1FFF << 0)
+
+#define VDO_06E0_TOP_FE (0x6E0)
+#define VDO_06E0_H_BLOCK (0xFF << 0)
+
+#define VDO_06E4_TOP_FE (0x6E4)
+#define VDO_06E4_V_BLOCK (0xFF << 0)
+
+#define VDO_0700_TOP_FE (0x700)
+#define VDO_0700_RANDOM_SEL_FLD (0x3 << 0)
+#define VDO_0700_PAT_TIMING_SEL_FLD (0x1 << 2)
+#define VDO_0700_PAT_DATA_SEL_FLD (0x1 << 3)
+#define VDO_0700_SHIFT_EN_FLD (0x1 << 15)
+
+#define VDO_0704_TOP_FE (0x704)
+#define VDO_0704_SHIFT_TIME_FLD (0xFF << 0)
+#define VDO_0704_PATGEN_VALID_FLD (0x3 << 14)
+
+#define VDO_0710_TOP_FE (0x710)
+#define VDO_0710_OOT_SHIFT_FLD (0x7 << 0)
+#define VDO_0710_OOT_END_DIFF_0_SBIT_FLD (0x1 << 4)
+#define VDO_0710_OOT_BLD_ALPHA_FLD (0x1F << 8)
+#define VDO_0710_OOT_ROUND_FLD (0x1 << 14)
+#define VDO_0710_OOTF_EN_FLD (0x1 << 15)
+
+#define VDO_0714_TOP_FE (0x714)
+#define VDO_0714_OOT_3X1_M0 (0xFFFF << 0)
+
+#define VDO_0718_TOP_FE (0x718)
+#define VDO_0718_OOT_3X1_M1 (0xFFFF << 0)
+
+#define VDO_071C_TOP_FE (0x71C)
+#define VDO_071C_OOT_3X1_M2 (0xFFFF << 0)
+
+#define VDO_0728_TOP_FE (0x728)
+#define VDO_0728_OOT_SP_0 (0xFFFF << 0)
+
+#define VDO_072C_TOP_FE (0x72C)
+#define VDO_072C_OOT_SP_1 (0xFFFF << 0)
+
+#define VDO_0730_TOP_FE (0x730)
+#define VDO_0730_OOT_END_DIFF_0 (0xFFFF << 0)
+
+#define VDO_0738_TOP_FE (0x738)
+#define VDO_0738_OOT_OUTPUT_LIMIT_0 (0xFFFF << 0)
+
+#define VDO_0740_TOP_FE (0x740)
+#define VDO_0740_OOT_EIDB_00_FLD (0xF << 0)
+#define VDO_0740_OOT_EIDB_01_FLD (0xF << 8)
+
+#define VDO_0744_TOP_FE (0x744)
+#define VDO_0744_OOT_EIDB_02_FLD (0xF << 0)
+#define VDO_0744_OOT_EIDB_03_FLD (0xF << 8)
+
+#define VDO_0748_TOP_FE (0x748)
+#define VDO_0748_OOT_EIDB_04_FLD (0xF << 0)
+#define VDO_0748_OOT_EIDB_05_FLD (0xF << 8)
+
+#define VDO_074C_TOP_FE (0x74C)
+#define VDO_074C_OOT_EIDB_06_FLD (0xF << 0)
+#define VDO_074C_OOT_EIDB_07_FLD (0xF << 8)
+
+#define VDO_0750_TOP_FE (0x750)
+#define VDO_0750_OOT_EIDB_08_FLD (0xF << 0)
+#define VDO_0750_OOT_EIDB_09_FLD (0xF << 8)
+
+#define VDO_0754_TOP_FE (0x754)
+#define VDO_0754_OOT_EIDB_10_FLD (0xF << 0)
+#define VDO_0754_OOT_EIDB_11_FLD (0xF << 8)
+
+#define VDO_0758_TOP_FE (0x758)
+#define VDO_0758_OOT_EIDB_12_FLD (0xF << 0)
+#define VDO_0758_OOT_EIDB_13_FLD (0xF << 8)
+
+#define VDO_075C_TOP_FE (0x75C)
+#define VDO_075C_OOT_EIDB_14_FLD (0xF << 0)
+#define VDO_075C_OOT_EIDB_15_FLD (0xF << 8)
+
+#define VDO_0760_TOP_FE (0x760)
+#define VDO_0760_OOT_EIDB_16_FLD (0xF << 0)
+#define VDO_0760_OOT_EIDB_17_FLD (0xF << 8)
+
+#define VDO_0764_TOP_FE (0x764)
+#define VDO_0764_OOT_EIDB_18_FLD (0xF << 0)
+#define VDO_0764_OOT_EIDB_19_FLD (0xF << 8)
+
+#define VDO_0768_TOP_FE (0x768)
+#define VDO_0768_OOT_EIDB_20_FLD (0xF << 0)
+#define VDO_0768_OOT_EIDB_21_FLD (0xF << 8)
+
+#define VDO_076C_TOP_FE (0x76C)
+#define VDO_076C_OOT_EIDB_22_FLD (0xF << 0)
+#define VDO_076C_OOT_EIDB_23_FLD (0xF << 8)
+
+#define VDO_0770_TOP_FE (0x770)
+#define VDO_0770_OOT_EIDB_24_FLD (0xF << 0)
+#define VDO_0770_OOT_EIDB_25_FLD (0xF << 8)
+
+#define VDO_0774_TOP_FE (0x774)
+#define VDO_0774_OOT_EIDB_26_FLD (0xF << 0)
+#define VDO_0774_OOT_EIDB_27_FLD (0xF << 8)
+
+#define VDO_0778_TOP_FE (0x778)
+#define VDO_0778_OOT_EIDB_28_FLD (0xF << 0)
+#define VDO_0778_OOT_EIDB_29_FLD (0xF << 8)
+
+#define VDO_077C_TOP_FE (0x77C)
+#define VDO_077C_OOT_EIDB_30_FLD (0xF << 0)
+#define VDO_077C_OOT_EIDB_31_FLD (0xF << 8)
+
+#define VDO_0780_TOP_FE (0x780)
+#define VDO_0780_OOT_EAOFF_00 (0x1FF << 0)
+
+#define VDO_0784_TOP_FE (0x784)
+#define VDO_0784_OOT_EAOFF_01 (0x1FF << 0)
+
+#define VDO_0788_TOP_FE (0x788)
+#define VDO_0788_OOT_EAOFF_02 (0x1FF << 0)
+
+#define VDO_078C_TOP_FE (0x78C)
+#define VDO_078C_OOT_EAOFF_03 (0x1FF << 0)
+
+#define VDO_0790_TOP_FE (0x790)
+#define VDO_0790_OOT_EAOFF_04 (0x1FF << 0)
+
+#define VDO_0794_TOP_FE (0x794)
+#define VDO_0794_OOT_EAOFF_05 (0x1FF << 0)
+
+#define VDO_0798_TOP_FE (0x798)
+#define VDO_0798_OOT_EAOFF_06 (0x1FF << 0)
+
+#define VDO_079C_TOP_FE (0x79C)
+#define VDO_079C_OOT_EAOFF_07 (0x1FF << 0)
+
+#define VDO_07A0_TOP_FE (0x7A0)
+#define VDO_07A0_OOT_EAOFF_08 (0x1FF << 0)
+
+#define VDO_07A4_TOP_FE (0x7A4)
+#define VDO_07A4_OOT_EAOFF_09 (0x1FF << 0)
+
+#define VDO_07A8_TOP_FE (0x7A8)
+#define VDO_07A8_OOT_EAOFF_10 (0x1FF << 0)
+
+#define VDO_07AC_TOP_FE (0x7AC)
+#define VDO_07AC_OOT_EAOFF_11 (0x1FF << 0)
+
+#define VDO_07B0_TOP_FE (0x7B0)
+#define VDO_07B0_OOT_EAOFF_12 (0x1FF << 0)
+
+#define VDO_07B4_TOP_FE (0x7B4)
+#define VDO_07B4_OOT_EAOFF_13 (0x1FF << 0)
+
+#define VDO_07B8_TOP_FE (0x7B8)
+#define VDO_07B8_OOT_EAOFF_14 (0x1FF << 0)
+
+#define VDO_07BC_TOP_FE (0x7BC)
+#define VDO_07BC_OOT_EAOFF_15 (0x1FF << 0)
+
+#define VDO_07C0_TOP_FE (0x7C0)
+#define VDO_07C0_OOT_EAOFF_16 (0x1FF << 0)
+
+#define VDO_07C4_TOP_FE (0x7C4)
+#define VDO_07C4_OOT_EAOFF_17 (0x1FF << 0)
+
+#define VDO_07C8_TOP_FE (0x7C8)
+#define VDO_07C8_OOT_EAOFF_18 (0x1FF << 0)
+
+#define VDO_07CC_TOP_FE (0x7CC)
+#define VDO_07CC_OOT_EAOFF_19 (0x1FF << 0)
+
+#define VDO_07D0_TOP_FE (0x7D0)
+#define VDO_07D0_OOT_EAOFF_20 (0x1FF << 0)
+
+#define VDO_07D4_TOP_FE (0x7D4)
+#define VDO_07D4_OOT_EAOFF_21 (0x1FF << 0)
+
+#define VDO_07D8_TOP_FE (0x7D8)
+#define VDO_07D8_OOT_EAOFF_22 (0x1FF << 0)
+
+#define VDO_07DC_TOP_FE (0x7DC)
+#define VDO_07DC_OOT_EAOFF_23 (0x1FF << 0)
+
+#define VDO_07E0_TOP_FE (0x7E0)
+#define VDO_07E0_OOT_EAOFF_24 (0x1FF << 0)
+
+#define VDO_07E4_TOP_FE (0x7E4)
+#define VDO_07E4_OOT_EAOFF_25 (0x1FF << 0)
+
+#define VDO_07E8_TOP_FE (0x7E8)
+#define VDO_07E8_OOT_EAOFF_26 (0x1FF << 0)
+
+#define VDO_07EC_TOP_FE (0x7EC)
+#define VDO_07EC_OOT_EAOFF_27 (0x1FF << 0)
+
+#define VDO_07F0_TOP_FE (0x7F0)
+#define VDO_07F0_OOT_EAOFF_28 (0x1FF << 0)
+
+#define VDO_07F4_TOP_FE (0x7F4)
+#define VDO_07F4_OOT_EAOFF_29 (0x1FF << 0)
+
+#define VDO_07F8_TOP_FE (0x7F8)
+#define VDO_07F8_OOT_EAOFF_30 (0x1FF << 0)
+
+#define VDO_07FC_TOP_FE (0x7FC)
+#define VDO_07FC_OOT_EAOFF_31 (0x1FF << 0)
+
+//HDR_DM_FE
+#define VDO_0804_DM_FE (0x804)
+#define VDO_0804_B0202_BYP_CLAMP_EN_FLD (0x1 << 0)
+#define VDO_0804_B0102_BYP_EN_FLD (0x1 << 2)
+#define VDO_0804_B0103_BYP_EN_FLD (0x1 << 3)
+#define VDO_0804_B0104_BYP_EN_FLD (0x1 << 4)
+#define VDO_0804_B0105_BYP_EN_FLD (0x1 << 5)
+#define VDO_0804_B0106_BYP_EN_FLD (0x1 << 6)
+#define VDO_0804_B02_BYP_EN_FLD (0x1 << 7)
+#define VDO_0804_420REPEAT_EN_FLD (0x1 << 12)
+#define VDO_0804_CUP420_EN_FLD (0x1 << 13)
+#define VDO_0804_CUP420_EN_VS_FLD (0x1 << 14)
+#define VDO_0804_422TO444_EN_FLD (0x1 << 15)
+
+#define VDO_0808_DM_FE (0x808)
+#define VDO_0808_CUP420_43MODE_FLD (0x1 << 0)
+#define VDO_0808_CUP420_CBCR_CROSS_EN_FLD (0x1 << 1)
+#define VDO_0808_CUP420_0101MODE_FLD (0x1 << 2)
+#define VDO_0808_CUP420_LA_MD_FLD (0x1 << 3)
+#define VDO_0808_CUP420_TB_MD_FLD (0x1 << 4)
+#define VDO_0808_CUP420_C_IN_R_CH_FLD (0x1 << 5)
+
+#define VDO_080C_DM_FE (0x80C)
+#define VDO_080C_CUP420_VLEN_FLD (0x1FFF << 0)
+#define VDO_080C_CUP420_VLEN_HALF_EN_FLD (0x1 << 14)
+#define VDO_080C_CUP420_VLEN_USRMD_FLD (0x1 << 15)
+
+#define VDO_0810_DM_FE (0x810)
+#define VDO_0810_422TO444_CBCR_CROSS_EN_FLD (0x1 << 0)
+#define VDO_0810_422TO444_C_IN_R_CH_FLD (0x1 << 1)
+#define VDO_0810_422TO444_MD_FLD (0x1 << 2)
+
+#define VDO_081C_DM_FE (0x81C)
+#define VDO_081C_B0103_EOTF_MODE_FLD (0x1 << 0)
+#define VDO_081C_B0102_Y2R_BYP_EN_FLD (0x1 << 1)
+#define VDO_081C_B0102_Y2R_SHIFT_FLD (0x3 << 2)
+#define VDO_081C_B0105_GAM_EN_FLD (0x1 << 4)
+#define VDO_081C_DM_MSB_ALIGN_EN_FLD (0x1 << 5)
+#define VDO_081C_Y2R_RGB_IN_EN_FLD (0x1 << 6)
+#define VDO_081C_YCBCR_SHIFT_FLD (0x7 << 7)
+#define VDO_081C_CSA2CSB_SHIFT_FLD (0x3 << 10)
+#define VDO_081C_CSC2IPT_SHIFT_FLD (0x3 << 12)
+
+#define VDO_0820_DM_FE (0x820)
+#define VDO_0820_YCBCR_M0 (0xFFFF << 0)
+
+#define VDO_0824_DM_FE (0x824)
+#define VDO_0824_YCBCR_M1 (0xFFFF << 0)
+
+#define VDO_0828_DM_FE (0x828)
+#define VDO_0828_YCBCR_M2 (0xFFFF << 0)
+
+#define VDO_082C_DM_FE (0x82C)
+#define VDO_082C_YCBCR_M3 (0xFFFF << 0)
+
+#define VDO_0830_DM_FE (0x830)
+#define VDO_0830_YCBCR_M4 (0xFFFF << 0)
+
+#define VDO_0834_DM_FE (0x834)
+#define VDO_0834_YCBCR_M5 (0xFFFF << 0)
+
+#define VDO_0838_DM_FE (0x838)
+#define VDO_0838_YCBCR_M6 (0xFFFF << 0)
+
+#define VDO_083C_DM_FE (0x83C)
+#define VDO_083C_YCBCR_M7 (0xFFFF << 0)
+
+#define VDO_0840_DM_FE (0x840)
+#define VDO_0840_YCBCR_M8 (0xFFFF << 0)
+
+#define VDO_0844_DM_FE (0x844)
+#define VDO_0844_YCBCR_OFFSET_00 (0xFFFF << 0)
+
+#define VDO_0848_DM_FE (0x848)
+#define VDO_0848_YCBCR_OFFSET_01 (0xFFFF << 0)
+
+#define VDO_084C_DM_FE (0x84C)
+#define VDO_084C_YCBCR_OFFSET_10 (0xFFFF << 0)
+
+#define VDO_0850_DM_FE (0x850)
+#define VDO_0850_YCBCR_OFFSET_11 (0xFFFF << 0)
+
+#define VDO_0854_DM_FE (0x854)
+#define VDO_0854_YCBCR_OFFSET_20 (0xFFFF << 0)
+
+#define VDO_0858_DM_FE (0x858)
+#define VDO_0858_YCBCR_OFFSET_21 (0xFFFF << 0)
+
+#define VDO_085C_DM_FE (0x85C)
+#define VDO_085C_RANGE_MIN (0xFFFF << 0)
+
+#define VDO_0860_DM_FE (0x860)
+#define VDO_0860_RANGE_MAX (0xFFFF << 0)
+
+#define VDO_0864_DM_FE (0x864)
+#define VDO_0864_RANGE_INV_0 (0xFFFF << 0)
+
+#define VDO_0868_DM_FE (0x868)
+#define VDO_0868_RANGE_INV_1 (0x1 << 0)
+
+#define VDO_086C_DM_FE (0x86C)
+#define VDO_086C_CLIP_MAX_0 (0xFFFF << 0)
+
+#define VDO_0870_DM_FE (0x870)
+#define VDO_0870_CLIP_MAX_1 (0xFFFF << 0)
+
+#define VDO_087C_DM_FE (0x87C)
+#define VDO_087C_422TO444_CLP_SEL (0x7 << 0)
+
+#define VDO_0880_DM_FE (0x880)
+#define VDO_0880_CSA2CSB_M0 (0xFFFF << 0)
+
+#define VDO_0884_DM_FE (0x884)
+#define VDO_0884_CSA2CSB_M1 (0xFFFF << 0)
+
+#define VDO_0888_DM_FE (0x888)
+#define VDO_0888_CSA2CSB_M2 (0xFFFF << 0)
+
+#define VDO_088C_DM_FE (0x88C)
+#define VDO_088C_CSA2CSB_M3 (0xFFFF << 0)
+
+#define VDO_0890_DM_FE (0x890)
+#define VDO_0890_CSA2CSB_M4 (0xFFFF << 0)
+
+#define VDO_0894_DM_FE (0x894)
+#define VDO_0894_CSA2CSB_M5 (0xFFFF << 0)
+
+#define VDO_0898_DM_FE (0x898)
+#define VDO_0898_CSA2CSB_M6 (0xFFFF << 0)
+
+#define VDO_089C_DM_FE (0x89C)
+#define VDO_089C_CSA2CSB_M7 (0xFFFF << 0)
+
+#define VDO_08A0_DM_FE (0x8A0)
+#define VDO_08A0_CSA2CSB_M8 (0xFFFF << 0)
+
+#define VDO_08A4_DM_FE (0x8A4)
+#define VDO_08A4_CSC2IPT_M0 (0xFFFF << 0)
+
+#define VDO_08A8_DM_FE (0x8A8)
+#define VDO_08A8_CSC2IPT_M1 (0xFFFF << 0)
+
+#define VDO_08AC_DM_FE (0x8AC)
+#define VDO_08AC_CSC2IPT_M2 (0xFFFF << 0)
+
+#define VDO_08B0_DM_FE (0x8B0)
+#define VDO_08B0_CSC2IPT_M3 (0xFFFF << 0)
+
+#define VDO_08B4_DM_FE (0x8B4)
+#define VDO_08B4_CSC2IPT_M4 (0xFFFF << 0)
+
+#define VDO_08B8_DM_FE (0x8B8)
+#define VDO_08B8_CSC2IPT_M5 (0xFFFF << 0)
+
+#define VDO_08BC_DM_FE (0x8BC)
+#define VDO_08BC_CSC2IPT_M6 (0xFFFF << 0)
+
+#define VDO_08C0_DM_FE (0x8C0)
+#define VDO_08C0_CSC2IPT_M7 (0xFFFF << 0)
+
+#define VDO_08C4_DM_FE (0x8C4)
+#define VDO_08C4_CSC2IPT_M8 (0xFFFF << 0)
+
+#define VDO_08C8_DM_FE (0x8C8)
+#define VDO_08C8_CSC2IPT_PQ_12BITS_EN (0x1 << 0)
+
+#define VDO_08CC_DM_FE (0x8CC)
+#define VDO_08CC_BIST_FAIL_DM_FE_0 (0xFFFF << 0)
+
+#define VDO_08D0_DM_FE (0x8D0)
+#define VDO_08D0_BIST_FAIL_DM_FE_1 (0xFFFF << 0)
+
+#define VDO_08D4_DM_FE (0x8D4)
+#define VDO_08D4_BIST_FAIL_DM_FE_2 (0x3FFF << 0)
+
+#define VDO_08D8_DM_FE (0x8D8)
+#define VDO_08D8_MST_GAMMA_SP_0 (0xFFFF << 0)
+
+#define VDO_08DC_DM_FE (0x8DC)
+#define VDO_08DC_MST_GAMMA_SP_1 (0xFFFF << 0)
+
+#define VDO_08E0_DM_FE (0x8E0)
+#define VDO_08E0_GAMMA_END_DIFF_0 (0xFFFF << 0)
+
+#define VDO_08E4_DM_FE (0x8E4)
+#define VDO_08E4_GAMMA_OUTPUT_LIMIT_0 (0xFFFF << 0)
+
+#define VDO_08E8_DM_FE (0x8E8)
+#define VDO_08E8_GAMMA_END_DIFF_1 (0xFFFF << 0)
+
+#define VDO_08EC_DM_FE (0x8EC)
+#define VDO_08EC_GAMMA_OUTPUT_LIMIT_1 (0xFFFF << 0)
+
+#define VDO_08F0_DM_FE (0x8F0)
+#define VDO_08F0_GAMMA_END_DIFF_2 (0xFFFF << 0)
+
+#define VDO_08F4_DM_FE (0x8F4)
+#define VDO_08F4_GAMMA_OUTPUT_LIMIT_2 (0xFFFF << 0)
+
+#define VDO_08F8_DM_FE (0x8F8)
+#define VDO_08F8_GAMMA_EIDB_00_FLD (0xF << 0)
+#define VDO_08F8_GAMMA_EIDB_01_FLD (0xF << 4)
+#define VDO_08F8_GAMMA_EIDB_02_FLD (0xF << 8)
+#define VDO_08F8_GAMMA_EIDB_03_FLD (0xF << 12)
+
+#define VDO_08FC_DM_FE (0x8FC)
+#define VDO_08FC_GAMMA_EIDB_04_FLD (0xF << 0)
+#define VDO_08FC_GAMMA_EIDB_05_FLD (0xF << 4)
+#define VDO_08FC_GAMMA_EIDB_06_FLD (0xF << 8)
+#define VDO_08FC_GAMMA_EIDB_07_FLD (0xF << 12)
+
+#define VDO_0900_DM_FE (0x900)
+#define VDO_0900_GAMMA_EIDB_08_FLD (0xF << 0)
+#define VDO_0900_GAMMA_EIDB_09_FLD (0xF << 4)
+#define VDO_0900_GAMMA_EIDB_10_FLD (0xF << 8)
+#define VDO_0900_GAMMA_EIDB_11_FLD (0xF << 12)
+
+#define VDO_0904_DM_FE (0x904)
+#define VDO_0904_GAMMA_EIDB_12_FLD (0xF << 0)
+#define VDO_0904_GAMMA_EIDB_13_FLD (0xF << 4)
+#define VDO_0904_GAMMA_EIDB_14_FLD (0xF << 8)
+#define VDO_0904_GAMMA_EIDB_15_FLD (0xF << 12)
+
+#define VDO_0908_DM_FE (0x908)
+#define VDO_0908_GAMMA_EIDB_16_FLD (0xF << 0)
+#define VDO_0908_GAMMA_EIDB_17_FLD (0xF << 4)
+#define VDO_0908_GAMMA_EIDB_18_FLD (0xF << 8)
+#define VDO_0908_GAMMA_EIDB_19_FLD (0xF << 12)
+
+#define VDO_090C_DM_FE (0x90C)
+#define VDO_090C_GAMMA_EIDB_20_FLD (0xF << 0)
+#define VDO_090C_GAMMA_EIDB_21_FLD (0xF << 4)
+#define VDO_090C_GAMMA_EIDB_22_FLD (0xF << 8)
+#define VDO_090C_GAMMA_EIDB_23_FLD (0xF << 12)
+
+#define VDO_0910_DM_FE (0x910)
+#define VDO_0910_GAMMA_EIDB_24_FLD (0xF << 0)
+#define VDO_0910_GAMMA_EIDB_25_FLD (0xF << 4)
+#define VDO_0910_GAMMA_EIDB_26_FLD (0xF << 8)
+#define VDO_0910_GAMMA_EIDB_27_FLD (0xF << 12)
+
+#define VDO_0914_DM_FE (0x914)
+#define VDO_0914_GAMMA_EIDB_28_FLD (0xF << 0)
+#define VDO_0914_GAMMA_EIDB_29_FLD (0xF << 4)
+#define VDO_0914_GAMMA_EIDB_30_FLD (0xF << 8)
+#define VDO_0914_GAMMA_EIDB_31_FLD (0xF << 12)
+
+#define VDO_0918_DM_FE (0x918)
+#define VDO_0918_GAMMA_EAOFF_00_FLD (0x1FF << 0)
+#define VDO_0918_GAMMA_EAOFF_01_0_FLD (0x7F << 9)
+
+#define VDO_091C_DM_FE (0x91C)
+#define VDO_091C_GAMMA_EAOFF_01_1_FLD (0x3 << 0)
+#define VDO_091C_GAMMA_EAOFF_02_FLD (0x1FF << 2)
+
+#define VDO_0920_DM_FE (0x920)
+#define VDO_0920_GAMMA_EAOFF_03_FLD (0x1FF << 0)
+#define VDO_0920_GAMMA_EAOFF_04_0_FLD (0x7F << 9)
+
+#define VDO_0924_DM_FE (0x924)
+#define VDO_0924_GAMMA_EAOFF_04_1_FLD (0x3 << 0)
+#define VDO_0924_GAMMA_EAOFF_05_FLD (0x1FF << 2)
+
+#define VDO_0928_DM_FE (0x928)
+#define VDO_0928_GAMMA_EAOFF_06_FLD (0x1FF << 0)
+#define VDO_0928_GAMMA_EAOFF_07_0_FLD (0x7F << 9)
+
+#define VDO_092C_DM_FE (0x92C)
+#define VDO_092C_GAMMA_EAOFF_07_1_FLD (0x3 << 0)
+#define VDO_092C_GAMMA_EAOFF_08_FLD (0x1FF << 2)
+
+#define VDO_0930_DM_FE (0x930)
+#define VDO_0930_GAMMA_EAOFF_09_FLD (0x1FF << 0)
+#define VDO_0930_GAMMA_EAOFF_10_0_FLD (0x7F << 9)
+
+#define VDO_0934_DM_FE (0x934)
+#define VDO_0934_GAMMA_EAOFF_10_1_FLD (0x3 << 0)
+#define VDO_0934_GAMMA_EAOFF_11_FLD (0x1FF << 2)
+
+#define VDO_0938_DM_FE (0x938)
+#define VDO_0938_GAMMA_EAOFF_12_FLD (0x1FF << 0)
+#define VDO_0938_GAMMA_EAOFF_13_0_FLD (0x7F << 9)
+
+#define VDO_093C_DM_FE (0x93C)
+#define VDO_093C_GAMMA_EAOFF_13_1_FLD (0x3 << 0)
+#define VDO_093C_GAMMA_EAOFF_14_FLD (0x1FF << 2)
+
+#define VDO_0940_DM_FE (0x940)
+#define VDO_0940_GAMMA_EAOFF_15_FLD (0x1FF << 0)
+#define VDO_0940_GAMMA_EAOFF_16_0_FLD (0x7F << 9)
+
+#define VDO_0944_DM_FE (0x944)
+#define VDO_0944_GAMMA_EAOFF_16_1_FLD (0x3 << 0)
+#define VDO_0944_GAMMA_EAOFF_17_FLD (0x1FF << 2)
+
+#define VDO_0948_DM_FE (0x948)
+#define VDO_0948_GAMMA_EAOFF_18_FLD (0x1FF << 0)
+#define VDO_0948_GAMMA_EAOFF_19_0_FLD (0x7F << 9)
+
+#define VDO_094C_DM_FE (0x94C)
+#define VDO_094C_GAMMA_EAOFF_19_1_FLD (0x3 << 0)
+#define VDO_094C_GAMMA_EAOFF_20_FLD (0x1FF << 2)
+
+#define VDO_0950_DM_FE (0x950)
+#define VDO_0950_GAMMA_EAOFF_21_FLD (0x1FF << 0)
+#define VDO_0950_GAMMA_EAOFF_22_0_FLD (0x7F << 9)
+
+#define VDO_0954_DM_FE (0x954)
+#define VDO_0954_GAMMA_EAOFF_22_1_FLD (0x3 << 0)
+#define VDO_0954_GAMMA_EAOFF_23_FLD (0x1FF << 2)
+
+#define VDO_0958_DM_FE (0x958)
+#define VDO_0958_GAMMA_EAOFF_24_FLD (0x1FF << 0)
+#define VDO_0958_GAMMA_EAOFF_25_0_FLD (0x7F << 9)
+
+#define VDO_095C_DM_FE (0x95C)
+#define VDO_095C_GAMMA_EAOFF_25_1_FLD (0x3 << 0)
+#define VDO_095C_GAMMA_EAOFF_26_FLD (0x1FF << 2)
+
+#define VDO_0960_DM_FE (0x960)
+#define VDO_0960_GAMMA_EAOFF_27_FLD (0x1FF << 0)
+#define VDO_0960_GAMMA_EAOFF_28_0_FLD (0x7F << 9)
+
+#define VDO_0964_DM_FE (0x964)
+#define VDO_0964_GAMMA_EAOFF_28_1_FLD (0x3 << 0)
+#define VDO_0964_GAMMA_EAOFF_29_FLD (0x1FF << 2)
+
+#define VDO_0968_DM_FE (0x968)
+#define VDO_0968_GAMMA_EAOFF_30_FLD (0x1FF << 0)
+#define VDO_0968_GAMMA_EAOFF_31_0_FLD (0x7F << 9)
+
+#define VDO_096C_DM_FE (0x96C)
+#define VDO_096C_GAMMA_EAOFF_31_1 (0x3 << 0)
+
+#define VDO_0974_DM_FE (0x974)
+#define VDO_0974_TI_BYP_EN_FLD (0x1 << 0)
+#define VDO_0974_TS_BYP_EN_FLD (0x1 << 1)
+#define VDO_0974_SI_BYP_EN_FLD (0x1 << 2)
+#define VDO_0974_SS_BYP_EN_FLD (0x1 << 3)
+
+#define VDO_0978_DM_FE (0x978)
+#define VDO_0978_LUT_RD3 (0x7FFF << 0)
+
+#define VDO_097C_DM_FE (0x97C)
+#define VDO_097C_LUT_WD3 (0x7FFF << 0)
+
+#define VDO_0980_DM_FE (0x980)
+#define VDO_0980_LUT_SEL_FLD (0x3 << 0)
+#define VDO_0980_LUT_W_PULSE_FLD (0x1 << 4)
+#define VDO_0980_W_FLAG_RB_FLD (0x1 << 8)
+#define VDO_0980_W_FLAG_CLR_FLD (0x1 << 9)
+#define VDO_0980_LUT_FAST_MD_FLD (0x1 << 12)
+#define VDO_0980_LUT_WD_DUP_MD_FLD (0x1 << 13)
+#define VDO_0980_LUT_RB_EN_FLD (0x1 << 14)
+#define VDO_0980_LUT_LOAD_EN_FLD (0x1 << 15)
+
+#define VDO_0984_DM_FE (0x984)
+#define VDO_0984_LUT_ADDR (0x1FF << 0)
+
+#define VDO_0988_DM_FE (0x988)
+#define VDO_0988_LUT_WD00 (0xFFFF << 0)
+
+#define VDO_098C_DM_FE (0x98C)
+#define VDO_098C_LUT_WD01 (0xFFFF << 0)
+
+#define VDO_0990_DM_FE (0x990)
+#define VDO_0990_LUT_WD10 (0xFFFF << 0)
+
+#define VDO_0994_DM_FE (0x994)
+#define VDO_0994_LUT_WD11 (0xFFFF << 0)
+
+#define VDO_0998_DM_FE (0x998)
+#define VDO_0998_LUT_WD20 (0xFFFF << 0)
+
+#define VDO_099C_DM_FE (0x99C)
+#define VDO_099C_LUT_WD21 (0xFFFF << 0)
+
+#define VDO_09A0_DM_FE (0x9A0)
+#define VDO_09A0_LUT_SEL_IP (0x3 << 0)
+
+#define VDO_09A4_DM_FE (0x9A4)
+#define VDO_09A4_LUT_INIT_ADDR (0x1FF << 0)
+
+#define VDO_09A8_DM_FE (0x9A8)
+#define VDO_09A8_LUT_RD00 (0xFFFF << 0)
+
+#define VDO_09AC_DM_FE (0x9AC)
+#define VDO_09AC_LUT_RD01 (0xFFFF << 0)
+
+#define VDO_09B0_DM_FE (0x9B0)
+#define VDO_09B0_LUT_RD10 (0xFFFF << 0)
+
+#define VDO_09B4_DM_FE (0x9B4)
+#define VDO_09B4_LUT_RD11 (0xFFFF << 0)
+
+#define VDO_09B8_DM_FE (0x9B8)
+#define VDO_09B8_LUT_RD20 (0xFFFF << 0)
+
+#define VDO_09BC_DM_FE (0x9BC)
+#define VDO_09BC_LUT_RD21 (0xFFFF << 0)
+
+#define VDO_09C0_DM_FE (0x9C0)
+#define VDO_09C0_AUTOD_PROTECT_FLD (0xF << 0)
+#define VDO_09C0_AUTOD_ERR_FLD (0x1 << 8)
+#define VDO_09C0_AUTOD_ERR_CLR_FLD (0x1 << 9)
+#define VDO_09C0_AUTOD_LUT_MD_FLD (0x1 << 15)
+
+#define VDO_09C4_DM_FE (0x9C4)
+#define VDO_09C4_TRIG_MD0_DELAY_FLD (0x7FFF << 0)
+#define VDO_09C4_TRIG_MD_FLD (0xFFFF)
+
+#define VDO_09C8_DM_FE (0x9C8)
+#define VDO_09C8_DM_B0202_SHIFT_FLD (0x3 << 0)
+#define VDO_09C8_AOI_EN_FLD (0x1 << 15)
+
+#define VDO_09CC_DM_FE (0x9CC)
+#define VDO_09CC_H_SIZE (0x3FFF << 0)
+
+#define VDO_09D0_DM_FE (0x9D0)
+#define VDO_09D0_V_SIZE (0x1FFF << 0)
+
+#define VDO_09D4_DM_FE (0x9D4)
+#define VDO_09D4_AOI_H_THRESHOLD_HIG (0x1FFF << 0)
+
+#define VDO_09D8_DM_FE (0x9D8)
+#define VDO_09D8_AOI_H_THRESHOLD_LOW (0x1FFF << 0)
+
+#define VDO_09DC_DM_FE (0x9DC)
+#define VDO_09DC_AOI_V_THRESHOLD_HIG (0xFFF << 0)
+
+#define VDO_09E0_DM_FE (0x9E0)
+#define VDO_09E0_AOI_V_THRESHOLD_LOW (0xFFF << 0)
+
+#define VDO_09E4_DM_FE (0x9E4)
+#define VDO_09E4_EDCLK_EN_FLD (0x1 << 0)
+#define VDO_09E4_ADL_CLK_SEL_MASK_FLD (0x3 << 1)
+#define VDO_09E4_IP_CLK_LIVE_FLD (0x1 << 3)
+#define VDO_09E4_IN_SRC_SEL_FLD (0x7 << 8)
+#define VDO_09E4_DC0_TO_DST_SEL_FLD (0x3 << 12)
+#define VDO_09E4_DC1_TO_DST_SEL_FLD (0x3 << 14)
+
+#define VDO_09E8_DM_FE (0x9E8)
+#define VDO_09E8_SW_RST_FLD (0xFF << 0)
+#define VDO_09E8_ADL2RIU_SW_RST_FLD (0x1 << 8)
+#define VDO_09E8_1PTO2P_BYP_EN_FLD (0x1 << 12)
+#define VDO_09E8_ID_VS_INV_FLD (0x1 << 13)
+#define VDO_09E8_DC_VS_INV_FLD (0x1 << 14)
+#define VDO_09E8_DCSUB_VS_INV_FLD (0x1 << 15)
+
+#define VDO_09EC_DM_FE (0x9EC)
+#define VDO_09EC_HDRIN_SHIFT_BL_FLD (0x3 << 0)
+#define VDO_09EC_HDRIN_SHIFT_EL_FLD (0x3 << 2)
+#define VDO_09EC_HDRIN_C_CH_SWAP_FLD (0x1 << 4)
+#define VDO_09EC_PROTECT_DATA_MODE_FLD (0x1 << 5)
+#define VDO_09EC_DM_SRC_422_CBCR_SWAP_FLD (0x1 << 6)
+#define VDO_09EC_DM_SRC_SEL_FLD (0x1 << 7)
+#define VDO_09EC_HDRIN_SHIFT_FLD (0x3 << 8)
+#define VDO_09EC_HDROUT_SHIFT_FLD (0x3 << 10)
+#define VDO_09EC_HDRIN_Y2R_REORDER_DISABLE_FLD (0x1 << 12)
+
+#define VDO_09F0_DM_FE (0x9F0)
+#define VDO_09F0_PSEUDO_STOP_FLD (0x1 << 0)
+#define VDO_09F0_DM_DITH_EN_FLD (0x1 << 1)
+
+#define VDO_09F4_DM_FE (0x9F4)
+#define VDO_09F4_SRAM_PD_EN (0xFFFF << 0)
+
+#define VDO_09F8_DM_FE (0x9F8)
+#define VDO_09F8_DE_GEN_LAST_EN_FLD (0x1 << 0)
+#define VDO_09F8_CKG_IDCLK_USR_EN_FLD (0x1 << 1)
+#define VDO_09F8_IDCLK_GATE_MASK_FLD (0x1 << 2)
+#define VDO_09F8_FORCE_DST2HDR_ACK_FLD (0x1 << 3)
+#define VDO_09F8_FORCE_DST2HDRSUB_ACK_FLD (0x1 << 4)
+
+
+//HDR_HVSU_BK7D
+#define VDO_0A04_HVSU_BK7D (0xA04)
+#define VDO_0A04_EL_RESAMPLING_FILTER_FLAG_FLD (0x1 << 1)
+#define VDO_0A04_BL_DAT_8B_FLD (0x1 << 2)
+#define VDO_0A04_EL_DAT_8B_FLD (0x1 << 3)
+#define VDO_0A04_RESAMPLING_MODE_FLD (0x1 << 4)
+#define VDO_0A04_RESAMPLING_MODE_VER_FLD (0x3 << 8)
+
+#define VDO_0A08_HVSU_BK7D (0xA08)
+#define VDO_0A08_VSU_IN_SIZE_FLD (0xFFF << 0)
+#define VDO_0A08_VSU_IN_SIZE_USRMD_FLD (0x1 << 15)
+
+#define VDO_0A0C_HVSU_BK7D (0xA0C)
+#define VDO_0A0C_VSU_IN_HSIZE_FLD (0x1FFF << 0)
+#define VDO_0A0C_VSU_IN_HSIZE_USRMD_FLD (0x1 << 15)
+
+#define VDO_0A20_HVSU_BK7D (0xA20)
+#define VDO_0A20_COEFF_HOR_00_FLD (0x1FFF << 0)
+#define VDO_0A20_COEFF_HOR_PROG_FLD (0x1 << 15)
+
+#define VDO_0A24_HVSU_BK7D (0xA24)
+#define VDO_0A24_COEFF_HOR_01 (0x1FFF << 0)
+
+#define VDO_0A28_HVSU_BK7D (0xA28)
+#define VDO_0A28_COEFF_HOR_02 (0x1FFF << 0)
+
+#define VDO_0A2C_HVSU_BK7D (0xA2C)
+#define VDO_0A2C_COEFF_HOR_03 (0x1FFF << 0)
+
+#define VDO_0A30_HVSU_BK7D (0xA30)
+#define VDO_0A30_COEFF_HOR_04 (0x1FFF << 0)
+
+#define VDO_0A34_HVSU_BK7D (0xA34)
+#define VDO_0A34_COEFF_HOR_05 (0x1FFF << 0)
+
+#define VDO_0A38_HVSU_BK7D (0xA38)
+#define VDO_0A38_COEFF_HOR_06 (0x1FFF << 0)
+
+#define VDO_0A3C_HVSU_BK7D (0xA3C)
+#define VDO_0A3C_COEFF_HOR_07 (0x1FFF << 0)
+
+#define VDO_0A40_HVSU_BK7D (0xA40)
+#define VDO_0A40_COEFF_VER_001_FLD (0xFF << 0)
+#define VDO_0A40_COEFF_VER_PROG_FLD (0x1 << 15)
+
+#define VDO_0A44_HVSU_BK7D (0xA44)
+#define VDO_0A44_COEFF_VER_002 (0xFF << 0)
+
+#define VDO_0A48_HVSU_BK7D (0xA48)
+#define VDO_0A48_COEFF_VER_003 (0xFF << 0)
+
+#define VDO_0A4C_HVSU_BK7D (0xA4C)
+#define VDO_0A4C_COEFF_VER_004 (0xFF << 0)
+
+#define VDO_0A50_HVSU_BK7D (0xA50)
+#define VDO_0A50_COEFF_VER_101 (0xFF << 0)
+
+#define VDO_0A54_HVSU_BK7D (0xA54)
+#define VDO_0A54_COEFF_VER_102 (0xFF << 0)
+
+#define VDO_0A58_HVSU_BK7D (0xA58)
+#define VDO_0A58_COEFF_VER_103 (0xFF << 0)
+
+#define VDO_0A5C_HVSU_BK7D (0xA5C)
+#define VDO_0A5C_COEFF_VER_104 (0xFF << 0)
+
+#define VDO_0A60_HVSU_BK7D (0xA40)
+#define VDO_0A60_COEFF_VER_002_UV_FLD (0x3 << 0)
+#define VDO_0A60_COEFF_VER_003_UV_FLD (0x3 << 8)
+#define VDO_0A60_COEFF_VER_PROG_UV_FLD (0x1 << 15)
+
+#define VDO_0A64_HVSU_BK7D (0xA64)
+#define VDO_0A64_COEFF_VER_102_UV_FLD (0x3 << 0)
+#define VDO_0A64_COEFF_VER_103_UV_FLD (0x3 << 8)
+
+#define VDO_0B00_HVSU_BK7D (0xB00)
+#define VDO_0B00_UVC_NEW_EN_FLD (0x1 << 0)
+#define VDO_0B00_CLOSE_TO_ORI_EN_FLD (0x1 << 1)
+#define VDO_0B00_CLOSE_TO_ONE_EN_FLD (0x1 << 2)
+#define VDO_0B00_SAT_PROT_EN_FLD (0x1 << 3)
+#define VDO_0B00_MIN_STRENGTH_FLD (0xF << 4)
+#define VDO_0B00_PROT_THRD_FLD (0xFF << 8)
+
+#define VDO_0B04_HVSU_BK7D (0xB04)
+#define VDO_0B04_PROT_SLOPE_FLD (0x3F << 0)
+#define VDO_0B04_CLOSE_TO_ORI_SLOPE_FLD (0x3F << 8)
+
+#define VDO_0B08_HVSU_BK7D (0xB08)
+#define VDO_0B08_CLOSE_TO_ORI_TH_UP_FLD (0xFF << 0)
+#define VDO_0B08_CLOSE_TO_ORI_TH_DOWN_FLD (0xFF << 8)
+
+#define VDO_0B0C_HVSU_BK7D (0xB0C)
+#define VDO_0B0C_CLOSE_TO_ORI_SLOPE_UP_FLD (0x3F << 0)
+#define VDO_0B0C_SAT_PROT_SLOPE_FLD (0x3F << 8)
+
+#define VDO_0B10_HVSU_BK7D (0xB10)
+#define VDO_0B10_LINEAR_RATIO (0x7FFF << 0)
+
+#define VDO_0B14_HVSU_BK7D (0xB14)
+#define VDO_0B14_SAT_MIN_STRENGTH_FLD (0xF << 0)
+#define VDO_0B14_SAT_PROT_THRD_FLD (0xFF << 8)
+
+#define VDO_0B18_HVSU_BK7D (0xB18)
+#define VDO_0B18_ONE_SLOPE_DOWN_FLD (0x3F << 0)
+#define VDO_0B18_ONE_SLOPE_UP_FLD (0x3F << 8)
+
+#define VDO_0B1C_HVSU_BK7D (0xB1C)
+#define VDO_0B1C_CLOSE_TO_ONE_TH_DOWN_FLD (0xFF << 0)
+#define VDO_0B1C_CLOSE_TO_ONE_TH_UP_FLD (0xFF << 8)
+
+#define VDO_0B20_HVSU_BK7D (0xB20)
+#define VDO_0B20_BOUNDARY_C13 (0x1FFF << 0)
+
+#define VDO_0B24_HVSU_BK7D (0xB24)
+#define VDO_0B24_BOUNDARY_C22 (0x1FFF << 0)
+
+#define VDO_0B28_HVSU_BK7D (0xB28)
+#define VDO_0B28_BOUNDARY_C23 (0x1FFF << 0)
+
+#define VDO_0B2C_HVSU_BK7D (0xB2C)
+#define VDO_0B2C_BOUNDARY_C32 (0x1FFF << 0)
+
+#define VDO_0B30_HVSU_BK7D (0xB30)
+#define VDO_0B30_BOUNDARY_ALPHA (0x3F << 0)
+
+#define VDO_0B34_HVSU_BK7D (0xB34)
+#define VDO_0B34_UVC_HIGH_TH_0 (0xFFFF << 0)
+
+#define VDO_0B38_HVSU_BK7D (0xB38)
+#define VDO_0B38_UVC_HIGH_TH_1 (0xF << 0)
+
+#define VDO_0B3C_HVSU_BK7D (0xB3C)
+#define VDO_0B3C_UVC_LOW_TH_0 (0xFFFF << 0)
+
+#define VDO_0B40_HVSU_BK7D (0xB40)
+#define VDO_0B40_UVC_LOW_TH_1 (0xF << 0)
+
+#define VDO_0B44_HVSU_BK7D (0xB44)
+#define VDO_0B44_UVC_0_TH_0 (0xFFFF << 0)
+
+#define VDO_0B48_HVSU_BK7D (0xB48)
+#define VDO_0B48_UVC_0_TH_1 (0xF << 0)
+
+#define VDO_0B4C_HVSU_BK7D (0xB4C)
+#define VDO_0B4C_DM_B0202_TMO_I_ONLY_EN_FLD (0x1 << 0)
+#define VDO_0B4C_DM_B0202_OPEN_UVC_EN_FLD (0x1 << 1)
+
+#define VDO_0B50_HVSU_BK7D (0xB50)
+#define VDO_0B50_UVC_SAT_GAIN (0xFFFF << 0)
+
+
+//HDR_BE_BK7E
+#define VDO_0C04_BE_BK7E (0xC04)
+#define VDO_0C04_EL_NLQ_OFFSET_Y_FLD (0x3FF << 0)
+#define VDO_0C04_MODE_FLD (0x1 << 15)
+
+#define VDO_0C08_BE_BK7E (0xC08)
+#define VDO_0C08_EL_COEFF_Y00 (0xFFFF << 0)
+
+#define VDO_0C0C_BE_BK7E (0xC0C)
+#define VDO_0C0C_EL_COEFF_Y01 (0xFF << 0)
+
+#define VDO_0C10_BE_BK7E (0xC10)
+#define VDO_0C10_EL_COEFF_Y10 (0xFFFF << 0)
+
+#define VDO_0C14_BE_BK7E (0xC14)
+#define VDO_0C14_EL_COEFF_Y11 (0xFF << 0)
+
+#define VDO_0C18_BE_BK7E (0xC18)
+#define VDO_0C18_EL_COEFF_Y20 (0xFFFF << 0)
+
+#define VDO_0C1C_BE_BK7E (0xC1C)
+#define VDO_0C1C_EL_COEFF_Y21 (0xFF << 0)
+
+#define VDO_0C24_BE_BK7E (0xC24)
+#define VDO_0C24_EL_NLQ_OFFSET_U (0x3FF << 0)
+
+#define VDO_0C28_BE_BK7E (0xC28)
+#define VDO_0C28_EL_COEFF_U00 (0xFFFF << 0)
+
+#define VDO_0C2C_BE_BK7E (0xC2C)
+#define VDO_0C2C_EL_COEFF_U01 (0xFF << 0)
+
+#define VDO_0C30_BE_BK7E (0xC30)
+#define VDO_0C30_EL_COEFF_U10 (0xFFFF << 0)
+
+#define VDO_0C34_BE_BK7E (0xC34)
+#define VDO_0C34_EL_COEFF_U11 (0xFF << 0)
+
+#define VDO_0C38_BE_BK7E (0xC38)
+#define VDO_0C38_EL_COEFF_U20 (0xFFFF << 0)
+
+#define VDO_0C3C_BE_BK7E (0xC3C)
+#define VDO_0C3C_EL_COEFF_U21 (0xFF << 0)
+
+#define VDO_0C44_BE_BK7E (0xC44)
+#define VDO_0C44_EL_NLQ_OFFSET_V (0x3FF << 0)
+
+#define VDO_0C48_BE_BK7E (0xC48)
+#define VDO_0C48_EL_COEFF_V00 (0xFFFF << 0)
+
+#define VDO_0C4C_BE_BK7E (0xC4C)
+#define VDO_0C4C_EL_COEFF_V01 (0xFF << 0)
+
+#define VDO_0C50_BE_BK7E (0xC50)
+#define VDO_0C50_EL_COEFF_V10 (0xFFFF << 0)
+
+#define VDO_0C54_BE_BK7E (0xC54)
+#define VDO_0C54_EL_COEFF_V11 (0xFF << 0)
+
+#define VDO_0C58_BE_BK7E (0xC58)
+#define VDO_0C58_EL_COEFF_V20 (0xFFFF << 0)
+
+#define VDO_0C5C_BE_BK7E (0xC5C)
+#define VDO_0C5C_EL_COEFF_V21 (0xFF << 0)
+
+#define VDO_0C60_BE_BK7E (0xC60)
+#define VDO_0C60_VDR_BIT_DEPTH (0x3 << 0)
+
+#define VDO_0D00_BE_BK7E (0xD00)
+#define VDO_0D00_COMPOSER_SRAM_BIST_FAIL_0 (0xFFFF << 0)
+
+#define VDO_0D04_BE_BK7E (0xD04)
+#define VDO_0D04_COMPOSER_SRAM_BIST_FAIL_1 (0x7FF << 0)
+
+
+//VDO_FE_DV_WP
+#define VDO_0E98_FE_DV_WP (0xE98)
+#define VDO_0E98_INPUT_SHIFT_MD (0x3 << 0)
+
+#define VDO_0E9C_FE_DV_WP (0xE9C)
+#define VDO_0E9C_SW_RST_EN (0x1 << 0)
+
+#define VDO_0EA0_FE_DV_WP (0xEA0)
+#define VDO_0EA0_CLK_DB_EN_FLD (0xF << 0)
+#define VDO_0EA0_CLK_SW_MD_EN_FLD (0xF << 4)
+#define VDO_0EA0_CLK_EN_FLD (0xF << 8)
+#define VDO_0EA0_ALL_AUTO_CLK_EN_FLD (0x1 << 15)
+
+#define VDO_0EA8_FE_DV_WP (0xEA8)
+#define VDO_0EA8_PSEUDO_STOP_FLD (0x1 << 0)
+#define VDO_0EA8_MAIN_R2Y_OUT_BYPASS_EN_FLD (0x1 << 15)
+
+#define VDO_0EAC_FE_DV_WP (0xEAC)
+#define VDO_0EAC_R2Y_RANGE3_FLD (0x1 << 0)
+#define VDO_0EAC_R2Y_RANGE2_FLD (0x1 << 1)
+#define VDO_0EAC_R2Y_RANGE1_FLD (0x1 << 2)
+#define VDO_0EAC_R2Y_Y_SUB16_EN_FLD (0x1 << 3)
+#define VDO_0EAC_R2Y_CLO3X3_EN_FLD (0x1 << 4)
+#define VDO_0EAC_R2Y_COL3X3_DITHER_EN_FLD (0x1 << 5)
+#define VDO_0EAC_R2Y_COL3X3_ROUNDING_TRUNCATE_FLD (0x1 << 6)
+#define VDO_0EAC_R2Y_B_SUB16_EN_FLD (0x1 << 9)
+#define VDO_0EAC_R2Y_R_SUB16_EN_FLD (0x1 << 10)
+#define VDO_0EAC_R2Y_B_ADD16_POST_EN_FLD (0x1 << 11)
+#define VDO_0EAC_R2Y_R_ADD16_POST_EN_FLD (0x1 << 12)
+#define VDO_0EAC_R2Y_CR_ADD128_POST_EN_FLD (0x1 << 13)
+#define VDO_0EAC_R2Y_CB_ADD128_POST_EN_FLD (0x1 << 14)
+#define VDO_0EAC_R2Y_Y_ADD16_POST_EN_FLD (0x1 << 15)
+
+#define VDO_0EB4_FE_DV_WP (0xEB4)
+#define VDO_0EB4_MAIN_R2Y_SRGB11 (0x1FFF << 0)
+
+#define VDO_0EB8_FE_DV_WP (0xEB8)
+#define VDO_0EB8_MAIN_R2Y_SRGB12 (0x1FFF << 0)
+
+#define VDO_0EBC_FE_DV_WP (0xEBC)
+#define VDO_0EBC_MAIN_R2Y_SRGB13 (0x1FFF << 0)
+
+#define VDO_0EC0_FE_DV_WP (0xEC0)
+#define VDO_0EC0_MAIN_R2Y_SRGB21 (0x1FFF << 0)
+
+#define VDO_0EC4_FE_DV_WP (0xEC4)
+#define VDO_0EC4_MAIN_R2Y_SRGB22 (0x1FFF << 0)
+
+#define VDO_0EC8_FE_DV_WP (0xEC8)
+#define VDO_0EC8_MAIN_R2Y_SRGB23 (0x1FFF << 0)
+
+#define VDO_0ECC_FE_DV_WP (0xECC)
+#define VDO_0ECC_MAIN_R2Y_SRGB31 (0x1FFF << 0)
+
+#define VDO_0ED0_FE_DV_WP (0xED0)
+#define VDO_0ED0_MAIN_R2Y_SRGB32 (0x1FFF << 0)
+
+#define VDO_0ED4_FE_DV_WP (0xED4)
+#define VDO_0ED4_MAIN_R2Y_SRGB33 (0x1FFF << 0)
+
+
+//0x14009000
+
+
+#define GFX_0100_DV_WP (0x100)
+#define GFX_0100_CLK_ON_FLD (0x1 << 0)
+#define GFX_0100_PATH_SEL_FLD (0x1 << 15)
+
+#define GFX_011C_DV_WP (0x11C)
+#define GFX_011C_SW_RST_EN (0x1 << 0)
+
+#define GFX_0120_DV_WP (0x120)
+#define GFX_0120_CLK_DB_EN_FLD (0xF << 0)
+#define GFX_0120_CLK_SW_MD_EN_FLD (0xF << 4)
+#define GFX_0120_CLK_EN_FLD (0xF << 8)
+#define GFX_0120_ALL_AUTO_CLK_EN_FLD (0x1 << 15)
+
+#define GFX_0128_DV_WP (0x128)
+#define GFX_0128_PSEUDO_STOP (0x1 << 0)
+#define GFX_0128_MAIN_R2Y_OUT_BYPASS_EN_FLD (0x1 << 15)
+
+#define GFX_012C_DV_WP (0x12C)
+//MAIN_R2Y_*
+#define GFX_012C_RANGE3_FLD (0x1 << 0)
+#define GFX_012C_RANGE2_FLD (0x1 << 1)
+#define GFX_012C_RANGE1_FLD (0x1 << 2)
+#define GFX_012C_Y_SUB16_EN_FLD (0x1 << 3)
+#define GFX_012C_COL3X3_EN_FLD (0x1 << 4)
+#define GFX_012C_COL3X3_DITHER_EN_FLD (0x1 << 5)
+#define GFX_012C_COL3X3_ROUNDING_TRUNCATE_FLD (0x1 << 6)
+#define GFX_012C_B_SUB16_EN_FLD (0x1 << 9)
+#define GFX_012C_R_SUB16_EN_FLD (0x1 << 10)
+#define GFX_012C_B_ADD16_POST_EN_FLD (0x1 << 11)
+#define GFX_012C_R_ADD16_POST_EN_FLD (0x1 << 12)
+#define GFX_012C_CR_ADD128_POST_EN_FLD (0x1 << 13)
+#define GFX_012C_CB_ADD128_POST_EN_FLD (0x1 << 14)
+#define GFX_012C_Y_ADD16_POST_EN_FLD (0x1 << 15)
+
+#define GFX_0134_DV_WP (0x134)
+#define GFX_0134_MAIN_R2Y_SRGB11 (0x1FFF << 0)
+
+#define GFX_0138_DV_WP (0x138)
+#define GFX_0138_MAIN_R2Y_SRGB12 (0x1FFF << 0)
+
+#define GFX_013C_DV_WP (0x13C)
+#define GFX_013C_MAIN_R2Y_SRGB13 (0x1FFF << 0)
+
+#define GFX_0140_DV_WP (0x140)
+#define GFX_0140_MAIN_R2Y_SRGB21 (0x1FFF << 0)
+
+#define GFX_0144_DV_WP (0x144)
+#define GFX_0144_MAIN_R2Y_SRGB22 (0x1FFF << 0)
+
+#define GFX_0148_DV_WP (0x148)
+#define GFX_0148_MAIN_R2Y_SRGB23 (0x1FFF << 0)
+
+#define GFX_014C_DV_WP (0x14C)
+#define GFX_014C_MAIN_R2Y_SRGB31 (0x1FFF << 0)
+
+#define GFX_0150_DV_WP (0x150)
+#define GFX_0150_MAIN_R2Y_SRGB32 (0x1FFF << 0)
+
+#define GFX_0154_DV_WP (0x154)
+#define GFX_0154_MAIN_R2Y_SRGB33 (0x1FFF << 0)
+
+
+#define GFX_0204_HDR_FE (0x204)
+#define GFX_0204_TMO_BYP_CLAMP_EN_FLD (0x1 << 0)
+#define GFX_0204_Y2R_BYP_EN_FLD (0x1 << 2)
+#define GFX_0204_EOTF_BYP_EN_FLD (0x1 << 3)
+#define GFX_0204_CSC_BYP_EN_FLD (0x1 << 4)
+#define GFX_0204_OETF_BYP_EN_FLD (0x1 << 5)
+#define GFX_0204_R2Y_BYP_EN_FLD (0x1 << 6)
+#define GFX_0204_TMO_BYP_EN_FLD (0x1 << 7)
+
+#define GFX_021C_HDR_FE (0x21C)
+#define GFX_021C_EOTF_MODE_FLD (0x1 << 0)
+#define GFX_021C_Y2R_CSC_BYP_EN_FLD (0x1 << 1)
+#define GFX_021C_Y2R_CSC_BYP_SHIFT_FLD (0x3 << 2)
+#define GFX_021C_HDR_PROC_MSB_ALIGN_EN_FLD (0x1 << 5)
+#define GFX_021C_Y2R_RGB_IN_EN_FLD (0x1 << 6)
+#define GFX_021C_Y2R_SHIFT_FLD (0x7 << 7)
+#define GFX_021C_CSC_SHIFT_FLD (0x3 << 10)
+#define GFX_021C_R2Y_SHIFT_FLD (0x3 << 12)
+
+#define GFX_0220_HDR_FE (0x220)
+#define GFX_0220_Y2R_M0 (0xFFFF << 0)
+
+#define GFX_0224_HDR_FE (0x224)
+#define GFX_0224_Y2R_M1 (0xFFFF << 0)
+
+#define GFX_0228_HDR_FE (0x228)
+#define GFX_0228_Y2R_M2 (0xFFFF << 0)
+
+#define GFX_022C_HDR_FE (0x22C)
+#define GFX_022C_Y2R_M3 (0xFFFF << 0)
+
+#define GFX_0230_HDR_FE (0x230)
+#define GFX_0230_Y2R_M4 (0xFFFF << 0)
+
+#define GFX_0234_HDR_FE (0x234)
+#define GFX_0234_Y2R_M5 (0xFFFF << 0)
+
+#define GFX_0238_HDR_FE (0x238)
+#define GFX_0238_Y2R_M6 (0xFFFF << 0)
+
+#define GFX_023C_HDR_FE (0x23C)
+#define GFX_023C_Y2R_M7 (0xFFFF << 0)
+
+#define GFX_0240_HDR_FE (0x240)
+#define GFX_0240_Y2R_M8 (0xFFFF << 0)
+
+#define GFX_0244_HDR_FE (0x244)
+#define GFX_0244_Y2R_OFFEST_00 (0xFFFF << 0)
+
+#define GFX_0248_HDR_FE (0x248)
+#define GFX_0248_Y2R_OFFEST_01 (0xFFFF << 0)
+
+#define GFX_024C_HDR_FE (0x24C)
+#define GFX_024C_Y2R_OFFEST_10 (0xFFFF << 0)
+
+#define GFX_0250_HDR_FE (0x250)
+#define GFX_0250_Y2R_OFFEST_11 (0xFFFF << 0)
+
+#define GFX_0254_HDR_FE (0x254)
+#define GFX_0254_Y2R_OFFEST_20 (0xFFFF << 0)
+
+#define GFX_0258_HDR_FE (0x258)
+#define GFX_0258_Y2R_OFFEST_21 (0xFFFF << 0)
+
+#define GFX_025C_HDR_FE (0x25C)
+#define GFX_025C_RANGE_MIN (0xFFFF << 0)
+
+#define GFX_0260_HDR_FE (0x260)
+#define GFX_0260_RANGE_MAX (0xFFFF << 0)
+
+#define GFX_0264_HDR_FE (0x264)
+#define GFX_0264_RANGE_INV_0 (0xFFFF << 0)
+
+#define GFX_0268_HDR_FE (0x268)
+#define GFX_0268_RANGE_INV_1 (0xFFFF << 0)
+
+#define GFX_026C_HDR_FE (0x26C)
+#define GFX_026C_CLIP_MAX_0 (0xFFFF << 0)
+
+#define GFX_0270_HDR_FE (0x270)
+#define GFX_0270_CLIP_MAX_1 (0xFFFF << 0)
+
+
+#define GFX_0280_HDR_FE (0x280)
+#define GFX_0280_CSC_M0 (0xFFFF << 0)
+
+#define GFX_0284_HDR_FE (0x284)
+#define GFX_0284_CSC_M1 (0xFFFF << 0)
+
+#define GFX_0288_HDR_FE (0x288)
+#define GFX_0288_CSC_M2 (0xFFFF << 0)
+
+#define GFX_028C_HDR_FE (0x28C)
+#define GFX_028C_CSC_M3 (0xFFFF << 0)
+
+#define GFX_0290_HDR_FE (0x290)
+#define GFX_0290_CSC_M4 (0xFFFF << 0)
+
+#define GFX_0294_HDR_FE (0x294)
+#define GFX_0294_CSC_M5 (0xFFFF << 0)
+
+#define GFX_0298_HDR_FE (0x298)
+#define GFX_0298_CSC_M6 (0xFFFF << 0)
+
+#define GFX_029C_HDR_FE (0x29C)
+#define GFX_029C_CSC_M7 (0xFFFF << 0)
+
+#define GFX_02A0_HDR_FE (0x2A0)
+#define GFX_02A0_CSC_M8 (0xFFFF << 0)
+
+#define GFX_02A4_HDR_FE (0x2A4)
+#define GFX_02A4_R2Y_M0 (0xFFFF << 0)
+
+#define GFX_02A8_HDR_FE (0x2A8)
+#define GFX_02A8_R2Y_M1 (0xFFFF << 0)
+
+#define GFX_02AC_HDR_FE (0x2AC)
+#define GFX_02AC_R2Y_M2 (0xFFFF << 0)
+
+#define GFX_02B0_HDR_FE (0x2B0)
+#define GFX_02B0_R2Y_M3 (0xFFFF << 0)
+
+#define GFX_02B4_HDR_FE (0x2B4)
+#define GFX_02B4_R2Y_M4 (0xFFFF << 0)
+
+#define GFX_02B8_HDR_FE (0x2B8)
+#define GFX_02B8_R2Y_M5 (0xFFFF << 0)
+
+#define GFX_02BC_HDR_FE (0x2BC)
+#define GFX_02BC_R2Y_M6 (0xFFFF << 0)
+
+#define GFX_02C0_HDR_FE (0x2C0)
+#define GFX_02C0_R2Y_M7 (0xFFFF << 0)
+
+#define GFX_02C4_HDR_FE (0x2C4)
+#define GFX_02C4_R2Y_M8 (0xFFFF << 0)
+
+#define GFX_02C8_HDR_FE (0x2C8)
+#define GFX_02C8_R2Y_PQ_12BITS_EN (0x1 << 0)
+
+#define GFX_02CC_HDR_FE (0x2CC)
+#define GFX_02CC_BIST_FAIL_VDO_HDR_PROC_FE_0 (0xFFFF << 0)
+
+#define GFX_02D0_HDR_FE (0x2D0)
+#define GFX_02D0_BIST_FAIL_VDO_HDR_PROC_FE_1 (0xFFF << 0)
+
+#define GFX_02D4_HDR_FE (0x2D4)
+#define GFX_02D4_DBG_SEL_FLD (0x3 << 0)
+#define GFX_02D4_DBG_EVEN_FLD (0x1 << 2)
+#define GFX_02D4_DBG_OHDR_SEL_FLD (0x1 << 3)
+#define GFX_02D4_DBG_OHDR_EN_FLD (0x1 << 7)
+
+
+#define GFX_0370_HDR_FE (0x370)
+#define GFX_0370_PRELOAD_MASK_ACK_EN (0x1 << 15)
+
+#define GFX_0374_HDR_FE (0x374)
+#define GFX_0374_TI_BYP_EN_FLD (0x1 << 0)
+#define GFX_0374_TS_BYP_EN_FLD (0x1 << 1)
+#define GFX_0374_SI_BYP_EN_FLD (0x1 << 2)
+#define GFX_0374_SS_BYP_EN_FLD (0x1 << 3)
+
+#define GFX_0378_HDR_FE (0x378)
+#define GFX_0378_LUT_RD3 (0x7FFF << 0)
+
+#define GFX_037C_HDR_FE (0x37C)
+#define GFX_037C_LUT_WD3 (0x7FFF << 0)
+
+
+#define GFX_0380_HDR_FE (0x380)
+#define GFX_0380_LUT_SEL_FLD (0x3 << 0)
+#define GFX_0380_LUT_W_PULSE_FLD (0x1 << 4)
+#define GFX_0380_W_FLAG_RB_FLD (0x1 << 8)
+#define GFX_0380_W_FLAG_CLR_FLD (0x1 << 9)
+#define GFX_0380_LUT_FAST_MD_FLD (0x1 << 12)
+#define GFX_0380_LUT_WD_DUP_MD_FLD (0x1 << 13)
+#define GFX_0380_LUT_RB_EN_FLD (0x1 << 14)
+#define GFX_0380_LUT_LOAD_EN_FLD (0x1 << 15)
+
+#define GFX_0384_HDR_FE (0x384)
+#define GFX_0384_LUT_ADDR (0x1FF << 0)
+
+#define GFX_0388_HDR_FE (0x388)
+#define GFX_0388_LUT_WD00 (0xFFFF << 0)
+
+#define GFX_038C_HDR_FE (0x38C)
+#define GFX_038C_LUT_WD01 (0xFFFF << 0)
+
+#define GFX_0390_HDR_FE (0x390)
+#define GFX_0390_LUT_WD10 (0xFFFF << 0)
+
+#define GFX_0394_HDR_FE (0x394)
+#define GFX_0394_LUT_WD11 (0xFFFF << 0)
+
+#define GFX_0398_HDR_FE (0x398)
+#define GFX_0398_LUT_WD20 (0xFFFF << 0)
+
+#define GFX_039C_HDR_FE (0x39C)
+#define GFX_039C_LUT_WD21 (0xFFFF << 0)
+
+
+#define GFX_03A0_HDR_FE (0x3A0)
+#define GFX_03A0_LUT_SEL_IP (0x3 << 0)
+
+#define GFX_03A4_HDR_FE (0x3A4)
+#define GFX_03A4_LUT_INIT_ADDR (0x1FF << 0)
+
+#define GFX_03A8_HDR_FE (0x3A8)
+#define GFX_03A8_LUT_RD00 (0xFFFF << 0)
+
+#define GFX_03AC_HDR_FE (0x3AC)
+#define GFX_03AC_LUT_RD01 (0xFFFF << 0)
+
+#define GFX_03B0_HDR_FE (0x3B0)
+#define GFX_03B0_LUT_RD10 (0xFFFF << 0)
+
+#define GFX_03B4_HDR_FE (0x3B4)
+#define GFX_03B4_LUT_RD11 (0xFFFF << 0)
+
+#define GFX_03B8_HDR_FE (0x3B8)
+#define GFX_03B8_LUT_RD20 (0xFFFF << 0)
+
+#define GFX_03BC_HDR_FE (0x3BC)
+#define GFX_03BC_LUT_RD21 (0xFFFF << 0)
+
+
+#define GFX_03C0_HDR_FE (0x3C0)
+#define GFX_03C0_AUTOD_PROTECT_FLD (0x7 << 0)
+#define GFX_03C0_AUTOD_ERR_FLD (0x1 << 8)
+#define GFX_03C0_AUTOD_ERR_CLR_FLD (0x1 << 9)
+#define GFX_03C0_AUTOD_LUT_MD_FLD (0x1 << 15)
+
+#define GFX_03C4_HDR_FE (0x3C4)
+#define GFX_03C4_AUTOD_TRIG_MD0_DELAY_FLD (0x7FFF << 0)
+#define GFX_03C4_AUTOD_TRIG_MD_FLD (0x1 << 15)
+
+#define GFX_03C8_HDR_FE (0x3C8)
+#define GFX_03C8_TMO_SHIFT_FLD (0x3 << 0)
+#define GFX_03C8_AOI_EN_FLD (0x1 << 15)
+
+#define GFX_03D0_HDR_FE (0x3D0)
+#define GFX_03D0_HDR_V_SIZE (0x1FFF << 0)
+
+#define GFX_03D4_HDR_FE (0x3D4)
+#define GFX_03D4_AOI_H_THRESHOLD_HIG (0x1FFF << 0)
+
+#define GFX_03D8_HDR_FE (0x3D8)
+#define GFX_03D8_AOI_H_THRESHOLD_LOW (0x1FFF << 0)
+
+#define GFX_03DC_HDR_FE (0x3DC)
+#define GFX_03DC_AOI_V_THRESHOLD_HIG (0xFFF << 0)
+
+#define GFX_03E0_HDR_FE (0x3E0)
+#define GFX_03E0_AOI_V_THRESHOLD_LOW (0xFFF << 0)
+
+#define GFX_03E4_HDR_FE (0x3E4)
+#define GFX_03E4_EDCLK_EN_FLD (0x1 << 0)
+#define GFX_03E4_HDR_GFX_ADL_CLK_SEL_MASK_FLD (0x3 << 1)
+#define GFX_03E4_HDR_GFX_CLK_LIVE_FLD (0x1 << 3)
+
+#define GFX_03E8_HDR_FE (0x3E8)
+#define GFX_03E8_HDR_GFX_SW_RST (0x3 << 2)
+
+#define GFX_03F4_HDR_FE (0x3F4)
+#define GFX_03F4_HDR_GFX_SRAM_PD_EN (0xFF << 0)
+
+
+
+#define GFX_0404_TCH_OSD_UVC (0x404)
+#define GFX_0404_SLUT_00 (0x7F << 0)
+
+#define GFX_0408_TCH_OSD_UVC (0x408)
+#define GFX_0408_SLUT_01 (0x7F << 0)
+
+#define GFX_040C_TCH_OSD_UVC (0x40C)
+#define GFX_040C_SLUT_02 (0x7F << 0)
+
+#define GFX_0410_TCH_OSD_UVC (0x410)
+#define GFX_0410_SLUT_03 (0x7F << 0)
+
+#define GFX_0414_TCH_OSD_UVC (0x414)
+#define GFX_0414_SLUT_04 (0x7F << 0)
+
+#define GFX_0418_TCH_OSD_UVC (0x418)
+#define GFX_0418_SLUT_05 (0x7F << 0)
+
+#define GFX_041C_TCH_OSD_UVC (0x41C)
+#define GFX_041C_SLUT_06 (0x7F << 0)
+
+#define GFX_0420_TCH_OSD_UVC (0x420)
+#define GFX_0420_SLUT_07 (0x7F << 0)
+
+#define GFX_0424_TCH_OSD_UVC (0x424)
+#define GFX_0424_SLUT_08 (0x7F << 0)
+
+#define GFX_0428_TCH_OSD_UVC (0x428)
+#define GFX_0428_LUT_S_DBF_TRIG_FLD (0x1 << 0)
+#define GFX_0428_LUT_S_DBF_MD_FLD (0x1 << 14)
+#define GFX_0428_LUT_S_DBF_EN_FLD (0x1 << 15)
+
+#define GFX_042C_TCH_OSD_UVC (0x42C)
+#define GFX_042C_Y_ADP_C_GAIN_FINAL_GAIN (0x7F << 0)
+
+
+#define GFX_0430_TCH_OSD_UVC (0x430)
+#define GFX_0430_LINEAR_GAIN (0x7FF << 0)
+
+#define GFX_0434_TCH_OSD_UVC (0x434)
+#define GFX_0434_LINEAR_GAIN_BYP_EN_FLD (0x1 << 0)
+#define GFX_0434_SAT_MODE_FLD (0x1 << 1)
+#define GFX_0434_SAT_BYP_EN_FLD (0x1 << 2)
+#define GFX_0434_DEGAMMA_MODE_FLD (0x1 << 3)
+
+#define GFX_0438_TCH_OSD_UVC (0x438)
+#define GFX_0438_LUT_W_PULSE_FLD (0x1 << 4)
+#define GFX_0438_W_FLAG_RB_FLD (0x1 << 8)
+#define GFX_0438_W_FLAG_CLR_FLD (0x1 << 9)
+#define GFX_0438_LUT_FAST_MD_FLD (0x1 << 12)
+#define GFX_0438_LUT_WD_DUP_MD_FLD (0x1 << 13)
+#define GFX_0438_LUT_RB_EN_FLD (0x1 << 14)
+#define GFX_0438_LUT_LOAD_EN_FLD (0x1 << 15)
+
+#define GFX_043C_TCH_OSD_UVC (0x43C)
+#define GFX_043C_LUT_ADDR (0xFF << 0)
+
+#define GFX_0444_TCH_OSD_UVC (0x444)
+#define GFX_0444_LUT_WD0 (0xFFF << 0)
+
+#define GFX_0448_TCH_OSD_UVC (0x448)
+#define GFX_0448_LUT_WD1 (0xFFF << 0)
+
+#define GFX_044C_TCH_OSD_UVC (0x44C)
+#define GFX_044C_LUT_WD2 (0xFFF << 0)
+
+#define GFX_0450_TCH_OSD_UVC (0x450)
+#define GFX_0450_LUT_INIT_ADDR (0xFF << 0)
+
+#define GFX_0454_TCH_OSD_UVC (0x454)
+#define GFX_0454_LUT_RD0 (0xFFF << 0)
+
+#define GFX_0458_TCH_OSD_UVC (0x458)
+#define GFX_0458_LUT_RD1 (0xFFF << 0)
+
+#define GFX_045C_TCH_OSD_UVC (0x45C)
+#define GFX_045C_LUT_RD2 (0xFFF << 0)
+
+#define GFX_0460_TCH_OSD_UVC (0x460)
+#define GFX_0460_AUTOD_PROTECT_FLD (0x1 << 0)
+#define GFX_0460_AUTOD_ERR_FLD (0x1 << 8)
+#define GFX_0460_AUTOD_ERR_CLR_FLD (0x1 << 9)
+#define GFX_0460_AUTOD_LUT_MD_FLD (0x1 << 15)
+
+#define GFX_0464_TCH_OSD_UVC (0x464)
+#define GFX_0464_AUTOD_TRIG_MD0_DELAY_FLD (0x7FFF << 0)
+#define GFX_0464_AUTOD_TRIG_MD_FLD (0x1 << 15)
+
+#define GFX_0468_TCH_OSD_UVC (0x468)
+#define GFX_0468_VLEN (0x1FFF << 0)
+
+#define GFX_046C_TCH_OSD_UVC (0x46C)
+#define GFX_046C_BIST_FAIL (0x3F << 0)
+
+#define GFX_0470_TCH_OSD_UVC (0x470)
+#define GFX_0470_AUTOD_CLK_SET_MASK (0x3 << 0)
+
+
+#define GFX_05F4_TCH_OSD_UVC (0x5F4)
+#define GFX_05F4_LUT_D_DBF_TRIG_FLD (0x1 << 0)
+#define GFX_05F4_LUT_D_DBF_MD_FLD (0x1 << 14)
+#define GFX_05F4_LUT_D_DBF_EN_FLD (0x1 << 15)
+
+
+#define GFX_0604_TCH_OSD_UVC (0x604)
+#define GFX_0604_OD_SW_RST_FLD (0x1 << 0)
+#define GFX_0604_LUT_SW_RST_FLD (0x1 << 1)
+
+#define GFX_060C_TCH_OSD_UVC (0x60C)
+#define GFX_060C_OSD_R2Y_ROUND_FLD (0x1 << 0)
+#define GFX_060C_OSD_R2R_ROUND_FLD (0x1 << 1)
+#define GFX_060C_RGB_SQUARE_ROUNDING_EN_FLD (0x1 << 2)
+#define GFX_060C_PLUT_ROUNDING_EN_FLD (0x1 << 3)
+#define GFX_060C_YGAIN_ROUNDING_EN_FLD (0x1 << 4)
+#define GFX_060C_SAT_ROUNDING_EN_FLD (0x1 << 5)
+
+#define GFX_0610_TCH_OSD_UVC (0x610)
+#define GFX_0610_OSD_R2Y_COEF0 (0xFFF << 0)
+
+#define GFX_0614_TCH_OSD_UVC (0x614)
+#define GFX_0614_OSD_R2Y_COEF1 (0xFFF << 0)
+
+#define GFX_0618_TCH_OSD_UVC (0x618)
+#define GFX_0618_OSD_R2Y_COEF2 (0xFFF << 0)
+
+#define GFX_061C_TCH_OSD_UVC (0x61C)
+#define GFX_061C_OSD_R2R_COEF00 (0xFFFF << 0)
+
+#define GFX_0620_TCH_OSD_UVC (0x620)
+#define GFX_0620_OSD_R2R_COEF01 (0xFFFF << 0)
+
+#define GFX_0624_TCH_OSD_UVC (0x624)
+#define GFX_0624_OSD_R2R_COEF02 (0xFFFF << 0)
+
+#define GFX_0628_TCH_OSD_UVC (0x628)
+#define GFX_0628_OSD_R2R_COEF10 (0xFFFF << 0)
+
+#define GFX_062C_TCH_OSD_UVC (0x62C)
+#define GFX_062C_OSD_R2R_COEF11 (0xFFFF << 0)
+
+#define GFX_0630_TCH_OSD_UVC (0x630)
+#define GFX_0630_OSD_R2R_COEF12 (0xFFFF << 0)
+
+#define GFX_0634_TCH_OSD_UVC (0x634)
+#define GFX_0634_OSD_R2R_COEF20 (0xFFFF << 0)
+
+#define GFX_0638_TCH_OSD_UVC (0x638)
+#define GFX_0638_OSD_R2R_COEF21 (0xFFFF << 0)
+
+#define GFX_063C_TCH_OSD_UVC (0x63C)
+#define GFX_063C_OSD_R2R_COEF22 (0xFFFF << 0)
+
+#define GFX_0640_TCH_OSD_UVC (0x640)
+#define GFX_0640_R2R_MATRIX_SIGNED_BITS (0x1FF << 0)
+
+#define GFX_0644_TCH_OSD_UVC (0x644)
+#define GFX_0644_OSDR2Y_YOFFSET (0xFF << 0)
+
+#define GFX_0648_TCH_OSD_UVC (0x648)
+#define GFX_0648_OSD_SAT_BASE (0x7F << 0)
+
+#define GFX_064C_TCH_OSD_UVC (0x64C)
+#define GFX_064C_THDR_OSD_CLK_EN_FLD (0x1 << 0)
+#define GFX_064C_THDR_OSD_CLK_EN_SEL_FLD (0x1 << 1)
+
+#define GFX_0650_TCH_OSD_UVC (0x650)
+#define GFX_0650_DBG_EN_FLD (0x1 << 0)
+#define GFX_0650_DBG_SEL_FLD (0x1 << 1)
+#define GFX_0650_DBG_GAIN_SEL_FLD (0x1 << 2)
+#define GFX_0650_DBG_SAT_IO_SEL_FLD (0x1 << 3)
+#define GFX_0650_DBG_DS_SEL_FLD (0x1 << 4)
+#define GFX_0650_DBG_DG_SEL_FLD (0x1 << 5)
+
+#define GFX_0660_TCH_OSD_UVC (0x660)
+#define GFX_0660_P_DBF_TRIG_FLD (0x1 << 0)
+#define GFX_0660_P_DBF_MD_FLD (0x1 << 14)
+#define GFX_0660_P_DBF_EN_FLD (0x1 << 15)
+
+#define GFX_0680_TCH_OSD_UVC (0x680)
+#define GFX_0680_LUT_P00 (0xFFF << 0)
+
+#define GFX_0684_TCH_OSD_UVC (0x684)
+#define GFX_0684_LUT_P01 (0xFFF << 0)
+
+#define GFX_0688_TCH_OSD_UVC (0x688)
+#define GFX_0688_LUT_P02 (0xFFF << 0)
+
+#define GFX_068C_TCH_OSD_UVC (0x68C)
+#define GFX_068C_LUT_P03 (0xFFF << 0)
+
+#define GFX_0690_TCH_OSD_UVC (0x690)
+#define GFX_0690_LUT_P04 (0xFFF << 0)
+
+#define GFX_0694_TCH_OSD_UVC (0x694)
+#define GFX_0694_LUT_P05 (0xFFF << 0)
+
+#define GFX_0698_TCH_OSD_UVC (0x698)
+#define GFX_0698_LUT_P06 (0xFFF << 0)
+
+#define GFX_069C_TCH_OSD_UVC (0x69C)
+#define GFX_069C_LUT_P07 (0xFFF << 0)
+
+#define GFX_06A0_TCH_OSD_UVC (0x6A0)
+#define GFX_06A0_LUT_P08 (0xFFF << 0)
+
+#define GFX_06A4_TCH_OSD_UVC (0x6A4)
+#define GFX_06A4_LUT_P09 (0xFFF << 0)
+
+#define GFX_06A8_TCH_OSD_UVC (0x6A8)
+#define GFX_06A8_LUT_P10 (0xFFF << 0)
+
+#define GFX_06AC_TCH_OSD_UVC (0x6AC)
+#define GFX_06AC_LUT_P11 (0xFFF << 0)
+
+#define GFX_06B0_TCH_OSD_UVC (0x6B0)
+#define GFX_06B0_LUT_P12 (0xFFF << 0)
+
+#define GFX_06B4_TCH_OSD_UVC (0x6B4)
+#define GFX_06B4_LUT_P13 (0xFFF << 0)
+
+#define GFX_06B8_TCH_OSD_UVC (0x6B8)
+#define GFX_06B8_LUT_P14 (0xFFF << 0)
+
+#define GFX_06BC_TCH_OSD_UVC (0x6BC)
+#define GFX_06BC_LUT_P15 (0xFFF << 0)
+
+#define GFX_06C0_TCH_OSD_UVC (0x6C0)
+#define GFX_06C0_LUT_P16 (0xFFF << 0)
+
+#define GFX_06C4_TCH_OSD_UVC (0x6C4)
+#define GFX_06C4_LUT_P17 (0xFFF << 0)
+
+#define GFX_06C8_TCH_OSD_UVC (0x6C8)
+#define GFX_06C8_LUT_P18 (0xFFF << 0)
+
+#define GFX_06CC_TCH_OSD_UVC (0x6CC)
+#define GFX_06CC_LUT_P19 (0xFFF << 0)
+
+#define GFX_06D0_TCH_OSD_UVC (0x6D0)
+#define GFX_06D0_LUT_P20 (0xFFF << 0)
+
+#define GFX_06D4_TCH_OSD_UVC (0x6D4)
+#define GFX_06D4_LUT_P21 (0xFFF << 0)
+
+#define GFX_06D8_TCH_OSD_UVC (0x6D8)
+#define GFX_06D8_LUT_P22 (0xFFF << 0)
+
+#define GFX_06DC_TCH_OSD_UVC (0x6DC)
+#define GFX_06DC_LUT_P23 (0xFFF << 0)
+
+#define GFX_06E0_TCH_OSD_UVC (0x6E0)
+#define GFX_06E0_LUT_P24 (0xFFF << 0)
+
+#define GFX_06E4_TCH_OSD_UVC (0x6E4)
+#define GFX_06E4_LUT_P25 (0xFFF << 0)
+
+#define GFX_06E8_TCH_OSD_UVC (0x6E8)
+#define GFX_06E8_LUT_P26 (0xFFF << 0)
+
+#define GFX_06EC_TCH_OSD_UVC (0x6EC)
+#define GFX_06EC_LUT_P27 (0xFFF << 0)
+
+#define GFX_06F0_TCH_OSD_UVC (0x6F0)
+#define GFX_06F0_LUT_P28 (0xFFF << 0)
+
+#define GFX_06F4_TCH_OSD_UVC (0x6F4)
+#define GFX_06F4_LUT_P29 (0xFFF << 0)
+
+#define GFX_06F8_TCH_OSD_UVC (0x6F8)
+#define GFX_06F8_LUT_P30 (0xFFF << 0)
+
+#define GFX_06FC_TCH_OSD_UVC (0x6FC)
+#define GFX_06FC_LUT_P31 (0xFFF << 0)
+
+#define GFX_0700_TCH_OSD_UVC (0x700)
+#define GFX_0700_LUT_P32 (0xFFF << 0)
+
+#define GFX_0704_TCH_OSD_UVC (0x704)
+#define GFX_0704_LUT_P33 (0xFFF << 0)
+
+#define GFX_0708_TCH_OSD_UVC (0x708)
+#define GFX_0708_LUT_P34 (0xFFF << 0)
+
+#define GFX_070C_TCH_OSD_UVC (0x70C)
+#define GFX_070C_LUT_P35 (0xFFF << 0)
+
+#define GFX_0710_TCH_OSD_UVC (0x710)
+#define GFX_0710_LUT_P36 (0xFFF << 0)
+
+#define GFX_0714_TCH_OSD_UVC (0x714)
+#define GFX_0714_LUT_P37 (0xFFF << 0)
+
+#define GFX_0718_TCH_OSD_UVC (0x718)
+#define GFX_0718_LUT_P38 (0xFFF << 0)
+
+#define GFX_071C_TCH_OSD_UVC (0x71C)
+#define GFX_071C_LUT_P39 (0xFFF << 0)
+
+#define GFX_0720_TCH_OSD_UVC (0x720)
+#define GFX_0720_LUT_P40 (0xFFF << 0)
+
+#define GFX_0724_TCH_OSD_UVC (0x724)
+#define GFX_0724_LUT_P41 (0xFFF << 0)
+
+#define GFX_0728_TCH_OSD_UVC (0x728)
+#define GFX_0728_LUT_P42 (0xFFF << 0)
+
+#define GFX_072C_TCH_OSD_UVC (0x72C)
+#define GFX_072C_LUT_P43 (0xFFF << 0)
+
+#define GFX_0730_TCH_OSD_UVC (0x730)
+#define GFX_0730_LUT_P44 (0xFFF << 0)
+
+#define GFX_0734_TCH_OSD_UVC (0x734)
+#define GFX_0734_LUT_P45 (0xFFF << 0)
+
+#define GFX_0738_TCH_OSD_UVC (0x738)
+#define GFX_0738_LUT_P46 (0xFFF << 0)
+
+#define GFX_073C_TCH_OSD_UVC (0x73C)
+#define GFX_073C_LUT_P47 (0xFFF << 0)
+
+#define GFX_0740_TCH_OSD_UVC (0x740)
+#define GFX_0740_LUT_P48 (0xFFF << 0)
+
+#define GFX_0744_TCH_OSD_UVC (0x744)
+#define GFX_0744_LUT_P49 (0xFFF << 0)
+
+#define GFX_0748_TCH_OSD_UVC (0x748)
+#define GFX_0748_LUT_P50 (0xFFF << 0)
+
+#define GFX_074C_TCH_OSD_UVC (0x74C)
+#define GFX_074C_LUT_P51 (0xFFF << 0)
+
+#define GFX_0750_TCH_OSD_UVC (0x750)
+#define GFX_0750_LUT_P52 (0xFFF << 0)
+
+#define GFX_0754_TCH_OSD_UVC (0x754)
+#define GFX_0754_LUT_P53 (0xFFF << 0)
+
+#define GFX_0758_TCH_OSD_UVC (0x758)
+#define GFX_0758_LUT_P54 (0xFFF << 0)
+
+#define GFX_075C_TCH_OSD_UVC (0x75C)
+#define GFX_075C_LUT_P55 (0xFFF << 0)
+
+#define GFX_0760_TCH_OSD_UVC (0x760)
+#define GFX_0760_LUT_P56 (0xFFF << 0)
+
+#define GFX_0764_TCH_OSD_UVC (0x764)
+#define GFX_0764_LUT_P57 (0xFFF << 0)
+
+#define GFX_0768_TCH_OSD_UVC (0x768)
+#define GFX_0768_LUT_P58 (0xFFF << 0)
+
+#define GFX_076C_TCH_OSD_UVC (0x76C)
+#define GFX_076C_LUT_P59 (0xFFF << 0)
+
+#define GFX_0770_TCH_OSD_UVC (0x770)
+#define GFX_0770_LUT_P60 (0xFFF << 0)
+
+#define GFX_0774_TCH_OSD_UVC (0x774)
+#define GFX_0774_LUT_P61 (0xFFF << 0)
+
+#define GFX_0778_TCH_OSD_UVC (0x778)
+#define GFX_0778_LUT_P62 (0xFFF << 0)
+
+#define GFX_077C_TCH_OSD_UVC (0x77C)
+#define GFX_077C_LUT_P63 (0xFFF << 0)
+
+#define GFX_0780_TCH_OSD_UVC (0x780)
+#define GFX_0780_LUT_P64 (0xFFF << 0)
+
+#define GFX_0784_TCH_OSD_UVC (0x784)
+#define GFX_0784_OSD_SAT_ADJUST (0x7F << 0)
+
+#define GFX_0788_TCH_OSD_UVC (0x788)
+#define GFX_0788_DLUT_TH00 (0xFFFF << 0)
+
+#define GFX_078C_TCH_OSD_UVC (0x78C)
+#define GFX_078C_DLUT_TH01 (0xF << 0)
+
+#define GFX_0790_TCH_OSD_UVC (0x790)
+#define GFX_0790_DLUT_TH10 (0xFFFF << 0)
+
+#define GFX_0794_TCH_OSD_UVC (0x794)
+#define GFX_0794_DLUT_TH11 (0xF << 0)
+
+#define GFX_0798_TCH_OSD_UVC (0x798)
+#define GFX_0798_DLUT_TH20 (0xFFFF << 0)
+
+#define GFX_079C_TCH_OSD_UVC (0x79C)
+#define GFX_079C_DLUT_TH21 (0xF << 0)
+
+#define GFX_07A0_TCH_OSD_UVC (0x7A0)
+#define GFX_07A0_DLUT_TH30 (0xFFFF << 0)
+
+#define GFX_07A4_TCH_OSD_UVC (0x7A4)
+#define GFX_07A4_DLUT_TH31 (0xF << 0)
+
+#define GFX_07A8_TCH_OSD_UVC (0x7A8)
+#define GFX_07A8_DLUT_TH40 (0xFFFF << 0)
+
+#define GFX_07AC_TCH_OSD_UVC (0x7AC)
+#define GFX_07AC_DLUT_TH41 (0xF << 0)
+
+#define GFX_07B0_TCH_OSD_UVC (0x7B0)
+#define GFX_07B0_DLUT_TH50 (0xFFFF << 0)
+
+#define GFX_07B4_TCH_OSD_UVC (0x7B4)
+#define GFX_07B4_DLUT_TH51 (0xF << 0)
+
+#define GFX_07B8_TCH_OSD_UVC (0x7B8)
+#define GFX_07B8_DLUT_TH60 (0xFFFF << 0)
+
+#define GFX_07BC_TCH_OSD_UVC (0x7BC)
+#define GFX_07BC_DLUT_TH61 (0xF << 0)
+
+#define GFX_07C0_TCH_OSD_UVC (0x7C0)
+#define GFX_07C0_DLUT_STEP0 (0x1F << 0)
+
+#define GFX_07C4_TCH_OSD_UVC (0x7C4)
+#define GFX_07C4_DLUT_STEP1 (0x1F << 0)
+
+#define GFX_07C8_TCH_OSD_UVC (0x7C8)
+#define GFX_07C8_DLUT_STEP2 (0x1F << 0)
+
+#define GFX_07CC_TCH_OSD_UVC (0x7CC)
+#define GFX_07CC_DLUT_STEP3 (0x1F << 0)
+
+#define GFX_07D0_TCH_OSD_UVC (0x7D0)
+#define GFX_07D0_DLUT_STEP4 (0x1F << 0)
+
+#define GFX_07D4_TCH_OSD_UVC (0x7D4)
+#define GFX_07D4_DLUT_STEP5 (0x1F << 0)
+
+#define GFX_07D8_TCH_OSD_UVC (0x7D8)
+#define GFX_07D8_DLUT_STEP6 (0x1F << 0)
+
+#define GFX_07DC_TCH_OSD_UVC (0x7DC)
+#define GFX_07DC_DLUT_STEP7 (0x1F << 0)
+
+#define GFX_07E0_TCH_OSD_UVC (0x7E0)
+#define GFX_07E0_DLUT_OFFSET0 (0x7F << 0)
+
+#define GFX_07E4_TCH_OSD_UVC (0x7E4)
+#define GFX_07E4_DLUT_OFFSET1 (0x7F << 0)
+
+#define GFX_07E8_TCH_OSD_UVC (0x7E8)
+#define GFX_07E8_DLUT_OFFSET2 (0x7F << 0)
+
+#define GFX_07EC_TCH_OSD_UVC (0x7EC)
+#define GFX_07EC_DLUT_OFFSET3 (0x7F << 0)
+
+#define GFX_07F0_TCH_OSD_UVC (0x7F0)
+#define GFX_07F0_DLUT_OFFSET4 (0x7F << 0)
+
+#define GFX_07F4_TCH_OSD_UVC (0x7F4)
+#define GFX_07F4_DLUT_OFFSET5 (0x7F << 0)
+
+#define GFX_07F8_TCH_OSD_UVC (0x7F8)
+#define GFX_07F8_DLUT_OFFSET6 (0x7F << 0)
+
+#define GFX_07FC_TCH_OSD_UVC (0x7FC)
+#define GFX_07FC_DLUT_OFFSET7 (0x7F << 0)
+
+
+#define GFX_0804_TCH_OSD_UVC (0x804)
+#define GFX_0804_LUT00 (0x3FF << 0)
+
+#define GFX_0808_TCH_OSD_UVC (0x808)
+#define GFX_0808_LUT01 (0x3FF << 0)
+
+#define GFX_080C_TCH_OSD_UVC (0x80C)
+#define GFX_080C_LUT02 (0x3FF << 0)
+
+#define GFX_0810_TCH_OSD_UVC (0x810)
+#define GFX_0810_LUT03 (0x3FF << 0)
+
+#define GFX_0814_TCH_OSD_UVC (0x814)
+#define GFX_0814_LUT04 (0x3FF << 0)
+
+#define GFX_0818_TCH_OSD_UVC (0x818)
+#define GFX_0818_LUT05 (0x3FF << 0)
+
+#define GFX_081C_TCH_OSD_UVC (0x81C)
+#define GFX_081C_LUT06 (0x3FF << 0)
+
+#define GFX_0820_TCH_OSD_UVC (0x820)
+#define GFX_0820_LUT07 (0x3FF << 0)
+
+#define GFX_0824_TCH_OSD_UVC (0x824)
+#define GFX_0824_LUT08 (0x3FF << 0)
+
+#define GFX_0828_TCH_OSD_UVC (0x828)
+#define GFX_0828_LUT09 (0x3FF << 0)
+
+#define GFX_082C_TCH_OSD_UVC (0x82C)
+#define GFX_082C_LUT10 (0x3FF << 0)
+
+#define GFX_0830_TCH_OSD_UVC (0x830)
+#define GFX_0830_LUT11 (0x3FF << 0)
+
+#define GFX_0834_TCH_OSD_UVC (0x834)
+#define GFX_0834_LUT12 (0x3FF << 0)
+
+#define GFX_0838_TCH_OSD_UVC (0x838)
+#define GFX_0838_LUT13 (0x3FF << 0)
+
+#define GFX_083C_TCH_OSD_UVC (0x83C)
+#define GFX_083C_LUT14 (0x3FF << 0)
+
+#define GFX_0840_TCH_OSD_UVC (0x840)
+#define GFX_0840_LUT15 (0x3FF << 0)
+
+#define GFX_0844_TCH_OSD_UVC (0x844)
+#define GFX_0844_LUT16 (0x3FF << 0)
+
+#define GFX_0848_TCH_OSD_UVC (0x848)
+#define GFX_0848_LUT17 (0x3FF << 0)
+
+#define GFX_084C_TCH_OSD_UVC (0x84C)
+#define GFX_084C_LUT18 (0x3FF << 0)
+
+#define GFX_0850_TCH_OSD_UVC (0x850)
+#define GFX_0850_LUT19 (0x3FF << 0)
+
+#define GFX_0854_TCH_OSD_UVC (0x854)
+#define GFX_0854_LUT20 (0x3FF << 0)
+
+#define GFX_0858_TCH_OSD_UVC (0x858)
+#define GFX_0858_LUT21 (0x3FF << 0)
+
+#define GFX_085C_TCH_OSD_UVC (0x85C)
+#define GFX_085C_LUT22 (0x3FF << 0)
+
+#define GFX_0860_TCH_OSD_UVC (0x860)
+#define GFX_0860_LUT23 (0x3FF << 0)
+
+#define GFX_0864_TCH_OSD_UVC (0x864)
+#define GFX_0864_LUT24 (0x3FF << 0)
+
+#define GFX_0868_TCH_OSD_UVC (0x868)
+#define GFX_0868_LUT25 (0x3FF << 0)
+
+#define GFX_086C_TCH_OSD_UVC (0x86C)
+#define GFX_086C_LUT26 (0x3FF << 0)
+
+#define GFX_0870_TCH_OSD_UVC (0x870)
+#define GFX_0870_LUT27 (0x3FF << 0)
+
+#define GFX_0874_TCH_OSD_UVC (0x874)
+#define GFX_0874_LUT28 (0x3FF << 0)
+
+#define GFX_0878_TCH_OSD_UVC (0x878)
+#define GFX_0878_LUT29 (0x3FF << 0)
+
+#define GFX_087C_TCH_OSD_UVC (0x87C)
+#define GFX_087C_LUT30 (0x3FF << 0)
+
+#define GFX_0880_TCH_OSD_UVC (0x880)
+#define GFX_0880_LUT31 (0x3FF << 0)
+
+#define GFX_0884_TCH_OSD_UVC (0x884)
+#define GFX_0884_LUT32 (0x3FF << 0)
+
+#define GFX_0888_TCH_OSD_UVC (0x888)
+#define GFX_0888_LUT33 (0x3FF << 0)
+
+#define GFX_088C_TCH_OSD_UVC (0x88C)
+#define GFX_088C_LUT34 (0x3FF << 0)
+
+#define GFX_0890_TCH_OSD_UVC (0x890)
+#define GFX_0890_LUT35 (0x3FF << 0)
+
+#define GFX_0894_TCH_OSD_UVC (0x894)
+#define GFX_0894_LUT36 (0x3FF << 0)
+
+#define GFX_0898_TCH_OSD_UVC (0x898)
+#define GFX_0898_LUT37 (0x3FF << 0)
+
+#define GFX_089C_TCH_OSD_UVC (0x89C)
+#define GFX_089C_LUT38 (0x3FF << 0)
+
+#define GFX_08A0_TCH_OSD_UVC (0x8A0)
+#define GFX_08A0_LUT39 (0x3FF << 0)
+
+#define GFX_08A4_TCH_OSD_UVC (0x8A4)
+#define GFX_08A4_LUT40 (0x3FF << 0)
+
+#define GFX_08A8_TCH_OSD_UVC (0x8A8)
+#define GFX_08A8_LUT41 (0x3FF << 0)
+
+#define GFX_08AC_TCH_OSD_UVC (0x8AC)
+#define GFX_08AC_LUT42 (0x3FF << 0)
+
+#define GFX_08B0_TCH_OSD_UVC (0x8B0)
+#define GFX_08B0_LUT43 (0x3FF << 0)
+
+#define GFX_08B4_TCH_OSD_UVC (0x8B4)
+#define GFX_08B4_LUT44 (0x3FF << 0)
+
+#define GFX_08B8_TCH_OSD_UVC (0x8B8)
+#define GFX_08B8_LUT45 (0x3FF << 0)
+
+#define GFX_08BC_TCH_OSD_UVC (0x8BC)
+#define GFX_08BC_LUT46 (0x3FF << 0)
+
+#define GFX_08C0_TCH_OSD_UVC (0x8C0)
+#define GFX_08C0_LUT47 (0x3FF << 0)
+
+#define GFX_08C4_TCH_OSD_UVC (0x8C4)
+#define GFX_08C4_LUT48 (0x3FF << 0)
+
+#define GFX_08C8_TCH_OSD_UVC (0x8C8)
+#define GFX_08C8_LUT49 (0x3FF << 0)
+
+#define GFX_08CC_TCH_OSD_UVC (0x8CC)
+#define GFX_08CC_LUT50 (0x3FF << 0)
+
+#define GFX_08D0_TCH_OSD_UVC (0x8D0)
+#define GFX_08D0_LUT51 (0x3FF << 0)
+
+#define GFX_08D4_TCH_OSD_UVC (0x8D4)
+#define GFX_08D4_LUT52 (0x3FF << 0)
+
+#define GFX_08D8_TCH_OSD_UVC (0x8D8)
+#define GFX_08D8_LUT53 (0x3FF << 0)
+
+#define GFX_08DC_TCH_OSD_UVC (0x8DC)
+#define GFX_08DC_LUT54 (0x3FF << 0)
+
+#define GFX_08E0_TCH_OSD_UVC (0x8E0)
+#define GFX_08E0_LUT55 (0x3FF << 0)
+
+#define GFX_08E4_TCH_OSD_UVC (0x8E4)
+#define GFX_08E4_LUT56 (0x3FF << 0)
+
+#define GFX_08E8_TCH_OSD_UVC (0x8E8)
+#define GFX_08E8_LUT57 (0x3FF << 0)
+
+#define GFX_08EC_TCH_OSD_UVC (0x8EC)
+#define GFX_08EC_LUT58 (0x3FF << 0)
+
+#define GFX_08F0_TCH_OSD_UVC (0x8F0)
+#define GFX_08F0_LUT59 (0x3FF << 0)
+
+#define GFX_08F4_TCH_OSD_UVC (0x8F4)
+#define GFX_08F4_LUT60 (0x3FF << 0)
+
+#define GFX_08F8_TCH_OSD_UVC (0x8F8)
+#define GFX_08F8_LUT61 (0x3FF << 0)
+
+#define GFX_08FC_TCH_OSD_UVC (0x8FC)
+#define GFX_08FC_LUT62 (0x3FF << 0)
+
+#define GFX_0900_TCH_OSD_UVC (0x900)
+#define GFX_0900_LUT63 (0x3FF << 0)
+
+#define GFX_0904_TCH_OSD_UVC (0x904)
+#define GFX_0904_LUT64 (0x3FF << 0)
+
+#define GFX_0908_TCH_OSD_UVC (0x908)
+#define GFX_0908_LUT65 (0x3FF << 0)
+
+#define GFX_090C_TCH_OSD_UVC (0x90C)
+#define GFX_090C_LUT66 (0x3FF << 0)
+
+#define GFX_0910_TCH_OSD_UVC (0x910)
+#define GFX_0910_LUT67 (0x3FF << 0)
+
+#define GFX_0914_TCH_OSD_UVC (0x914)
+#define GFX_0914_LUT68 (0x3FF << 0)
+
+#define GFX_0918_TCH_OSD_UVC (0x918)
+#define GFX_0918_LUT69 (0x3FF << 0)
+
+#define GFX_091C_TCH_OSD_UVC (0x91C)
+#define GFX_091C_LUT70 (0x3FF << 0)
+
+#define GFX_0920_TCH_OSD_UVC (0x920)
+#define GFX_0920_LUT71 (0x3FF << 0)
+
+#define GFX_0924_TCH_OSD_UVC (0x924)
+#define GFX_0924_LUT72 (0x3FF << 0)
+
+#define GFX_0928_TCH_OSD_UVC (0x928)
+#define GFX_0928_LUT73 (0x3FF << 0)
+
+#define GFX_092C_TCH_OSD_UVC (0x92C)
+#define GFX_092C_LUT74 (0x3FF << 0)
+
+#define GFX_0930_TCH_OSD_UVC (0x930)
+#define GFX_0930_LUT75 (0x3FF << 0)
+
+#define GFX_0934_TCH_OSD_UVC (0x934)
+#define GFX_0934_LUT76 (0x3FF << 0)
+
+#define GFX_0938_TCH_OSD_UVC (0x938)
+#define GFX_0938_LUT77 (0x3FF << 0)
+
+#define GFX_093C_TCH_OSD_UVC (0x93C)
+#define GFX_093C_LUT78 (0x3FF << 0)
+
+#define GFX_0940_TCH_OSD_UVC (0x940)
+#define GFX_0940_LUT79 (0x3FF << 0)
+
+#define GFX_0944_TCH_OSD_UVC (0x944)
+#define GFX_0944_LUT80 (0x3FF << 0)
+
+#define GFX_0948_TCH_OSD_UVC (0x948)
+#define GFX_0948_LUT81 (0x3FF << 0)
+
+#define GFX_094C_TCH_OSD_UVC (0x94C)
+#define GFX_094C_LUT82 (0x3FF << 0)
+
+#define GFX_0950_TCH_OSD_UVC (0x950)
+#define GFX_0950_LUT83 (0x3FF << 0)
+
+#define GFX_0954_TCH_OSD_UVC (0x954)
+#define GFX_0954_LUT84 (0x3FF << 0)
+
+#define GFX_0958_TCH_OSD_UVC (0x958)
+#define GFX_0958_LUT85 (0x3FF << 0)
+
+#define GFX_095C_TCH_OSD_UVC (0x95C)
+#define GFX_095C_LUT86 (0x3FF << 0)
+
+#define GFX_0960_TCH_OSD_UVC (0x960)
+#define GFX_0960_LUT87 (0x3FF << 0)
+
+#define GFX_0964_TCH_OSD_UVC (0x964)
+#define GFX_0964_LUT88 (0x3FF << 0)
+
+#define GFX_0968_TCH_OSD_UVC (0x968)
+#define GFX_0968_LUT89 (0x3FF << 0)
+
+#define GFX_096C_TCH_OSD_UVC (0x96C)
+#define GFX_096C_LUT90 (0x3FF << 0)
+
+#define GFX_0970_TCH_OSD_UVC (0x970)
+#define GFX_0970_LUT91 (0x3FF << 0)
+
+#define GFX_0974_TCH_OSD_UVC (0x974)
+#define GFX_0974_LUT92 (0x3FF << 0)
+
+#define GFX_0978_TCH_OSD_UVC (0x978)
+#define GFX_0978_LUT93 (0x3FF << 0)
+
+#define GFX_097C_TCH_OSD_UVC (0x97C)
+#define GFX_097C_LUT94 (0x3FF << 0)
+
+#define GFX_0980_TCH_OSD_UVC (0x980)
+#define GFX_0980_LUT95 (0x3FF << 0)
+
+#define GFX_0984_TCH_OSD_UVC (0x984)
+#define GFX_0984_LUT96 (0x3FF << 0)
+
+#define GFX_0988_TCH_OSD_UVC (0x988)
+#define GFX_0988_LUT97 (0x3FF << 0)
+
+#define GFX_098C_TCH_OSD_UVC (0x98C)
+#define GFX_098C_LUT98 (0x3FF << 0)
+
+#define GFX_0990_TCH_OSD_UVC (0x990)
+#define GFX_0990_LUT99 (0x3FF << 0)
+
+#define GFX_0994_TCH_OSD_UVC (0x994)
+#define GFX_0994_LUT100 (0x3FF << 0)
+
+#define GFX_0998_TCH_OSD_UVC (0x998)
+#define GFX_0998_LUT101 (0x3FF << 0)
+
+#define GFX_099C_TCH_OSD_UVC (0x99C)
+#define GFX_099C_LUT102 (0x3FF << 0)
+
+#define GFX_09A0_TCH_OSD_UVC (0x9A0)
+#define GFX_09A0_LUT103 (0x3FF << 0)
+
+#define GFX_09A4_TCH_OSD_UVC (0x9A4)
+#define GFX_09A4_LUT104 (0x3FF << 0)
+
+#define GFX_09A8_TCH_OSD_UVC (0x9A8)
+#define GFX_09A8_LUT105 (0x3FF << 0)
+
+#define GFX_09AC_TCH_OSD_UVC (0x9AC)
+#define GFX_09AC_LUT106 (0x3FF << 0)
+
+#define GFX_09B0_TCH_OSD_UVC (0x9B0)
+#define GFX_09B0_LUT107 (0x3FF << 0)
+
+#define GFX_09B4_TCH_OSD_UVC (0x9B4)
+#define GFX_09B4_LUT108 (0x3FF << 0)
+
+#define GFX_09B8_TCH_OSD_UVC (0x9B8)
+#define GFX_09B8_LUT109 (0x3FF << 0)
+
+#define GFX_09BC_TCH_OSD_UVC (0x9BC)
+#define GFX_09BC_LUT110 (0x3FF << 0)
+
+#define GFX_09C0_TCH_OSD_UVC (0x9C0)
+#define GFX_09C0_LUT111 (0x3FF << 0)
+
+#define GFX_09C4_TCH_OSD_UVC (0x9C4)
+#define GFX_09C4_LUT112 (0x3FF << 0)
+
+#define GFX_09C8_TCH_OSD_UVC (0x9C8)
+#define GFX_09C8_LUT113 (0x3FF << 0)
+
+#define GFX_09CC_TCH_OSD_UVC (0x9CC)
+#define GFX_09CC_LUT114 (0x3FF << 0)
+
+#define GFX_09D0_TCH_OSD_UVC (0x9D0)
+#define GFX_09D0_LUT115 (0x3FF << 0)
+
+#define GFX_09D4_TCH_OSD_UVC (0x9D4)
+#define GFX_09D4_LUT116 (0x3FF << 0)
+
+#define GFX_09D8_TCH_OSD_UVC (0x9D8)
+#define GFX_09D8_LUT117 (0x3FF << 0)
+
+#define GFX_09DC_TCH_OSD_UVC (0x9DC)
+#define GFX_09DC_LUT118 (0x3FF << 0)
+
+#define GFX_09E0_TCH_OSD_UVC (0x9E0)
+#define GFX_09E0_LUT119 (0x3FF << 0)
+
+#define GFX_09E4_TCH_OSD_UVC (0x9E4)
+#define GFX_09E4_LUT120 (0x3FF << 0)
+
+#define GFX_09E8_TCH_OSD_UVC (0x9E8)
+#define GFX_09E8_LUT121 (0x3FF << 0)
+
+#define GFX_09EC_TCH_OSD_UVC (0x9EC)
+#define GFX_09EC_LUT122 (0x3FF << 0)
+
+#define GFX_09F0_TCH_OSD_UVC (0x9F0)
+#define GFX_09F0_LUT123 (0x3FF << 0)
+
+
+#define GFX_09F4_TCH_OSD_UVC (0x9F4)
+#define GFX_09F4_D_DBF_TRIG_FLD (0x1 << 0)
+#define GFX_09F4_D_DBF_MD_FLD (0x1 << 14)
+#define GFX_09F4_D_DBF_EN_FLD (0x1 << 15)
+
+#define XVYCC_TOP_CONTROL (0x204)
+
+#endif /* endof __DISP_CFD_HDR_HW_H__ */
