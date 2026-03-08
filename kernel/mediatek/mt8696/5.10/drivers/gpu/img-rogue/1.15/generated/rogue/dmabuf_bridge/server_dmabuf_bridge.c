@@ -289,8 +289,8 @@ static PVRSRV_ERROR _PhysmemImportSparseDmaBufpsPMRPtrIntRelease(void *pvData)
 	return eError;
 }
 
-static_assert(PMR_MAX_SUPPORTED_PAGE_COUNT <= IMG_UINT32_MAX,
-	      "PMR_MAX_SUPPORTED_PAGE_COUNT must not be larger than IMG_UINT32_MAX");
+static_assert(PMR_MAX_SUPPORTED_4K_PAGE_COUNT <= IMG_UINT32_MAX,
+	      "PMR_MAX_SUPPORTED_4K_PAGE_COUNT must not be larger than IMG_UINT32_MAX");
 static_assert(DEVMEM_ANNOTATION_MAX_LEN <= IMG_UINT32_MAX,
 	      "DEVMEM_ANNOTATION_MAX_LEN must not be larger than IMG_UINT32_MAX");
 
@@ -323,7 +323,7 @@ PVRSRVBridgePhysmemImportSparseDmaBuf(IMG_UINT32 ui32DispatchTableEntry,
 	    ((IMG_UINT64) psPhysmemImportSparseDmaBufIN->ui32NameSize * sizeof(IMG_CHAR)) + 0;
 
 	if (unlikely
-	    (psPhysmemImportSparseDmaBufIN->ui32NumPhysChunks > PMR_MAX_SUPPORTED_PAGE_COUNT))
+	    (psPhysmemImportSparseDmaBufIN->ui32NumPhysChunks > PMR_MAX_SUPPORTED_4K_PAGE_COUNT))
 	{
 		psPhysmemImportSparseDmaBufOUT->eError = PVRSRV_ERROR_BRIDGE_ARRAY_SIZE_TOO_BIG;
 		goto PhysmemImportSparseDmaBuf_exit;
@@ -661,16 +661,24 @@ PVRSRV_ERROR InitDMABUFBridge(void)
 {
 
 	SetDispatchTableEntry(PVRSRV_BRIDGE_DMABUF, PVRSRV_BRIDGE_DMABUF_PHYSMEMIMPORTDMABUF,
-			      PVRSRVBridgePhysmemImportDmaBuf, NULL);
+			      PVRSRVBridgePhysmemImportDmaBuf, NULL,
+			      sizeof(PVRSRV_BRIDGE_IN_PHYSMEMIMPORTDMABUF),
+			      sizeof(PVRSRV_BRIDGE_OUT_PHYSMEMIMPORTDMABUF));
 
 	SetDispatchTableEntry(PVRSRV_BRIDGE_DMABUF, PVRSRV_BRIDGE_DMABUF_PHYSMEMEXPORTDMABUF,
-			      PVRSRVBridgePhysmemExportDmaBuf, NULL);
+			      PVRSRVBridgePhysmemExportDmaBuf, NULL,
+			      sizeof(PVRSRV_BRIDGE_IN_PHYSMEMEXPORTDMABUF),
+			      sizeof(PVRSRV_BRIDGE_OUT_PHYSMEMEXPORTDMABUF));
 
 	SetDispatchTableEntry(PVRSRV_BRIDGE_DMABUF, PVRSRV_BRIDGE_DMABUF_PHYSMEMIMPORTSPARSEDMABUF,
-			      PVRSRVBridgePhysmemImportSparseDmaBuf, NULL);
+			      PVRSRVBridgePhysmemImportSparseDmaBuf, NULL,
+			      sizeof(PVRSRV_BRIDGE_IN_PHYSMEMIMPORTSPARSEDMABUF),
+			      sizeof(PVRSRV_BRIDGE_OUT_PHYSMEMIMPORTSPARSEDMABUF));
 
 	SetDispatchTableEntry(PVRSRV_BRIDGE_DMABUF, PVRSRV_BRIDGE_DMABUF_PHYSMEMIMPORTDMABUFLOCKED,
-			      PVRSRVBridgePhysmemImportDmaBufLocked, NULL);
+			      PVRSRVBridgePhysmemImportDmaBufLocked, NULL,
+			      sizeof(PVRSRV_BRIDGE_IN_PHYSMEMIMPORTDMABUFLOCKED),
+			      sizeof(PVRSRV_BRIDGE_OUT_PHYSMEMIMPORTDMABUFLOCKED));
 
 	return PVRSRV_OK;
 }
