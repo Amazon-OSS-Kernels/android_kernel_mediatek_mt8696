@@ -49,7 +49,7 @@ static void work_cod_handler(struct work_struct *work)
 	mv = get_hdmiv(COD_CHANNEL);
 
 	// Spec allows up to 50mA to be drawn by the sink
-	// Follow Mantis, Set threshold to 4.25V which is 2094.
+	// Follow abc123, Set threshold to 4.25V which is 2094.
 	if (state ? (mv >= COD_HDMIV_LIMIT) : (mv < COD_HDMIV_LIMIT))
 		det++;
 

@@ -66,6 +66,7 @@ static struct mutex disp_hdr_thread_mutex;
 struct mutex disp_hdr_path_mutex;
 struct mutex disp_hdr_stop_mutex;
 struct mutex disp_hdr_cfg_hdmi_mutex;
+struct mutex disp_hdr_gfx_allm_mutex;
 uint32_t vdp_start_st[V_G_LAYER_MAX];
 uint32_t disp_hdr_event;
 uint64_t disp_hdr_thread_cnt;
@@ -335,6 +336,7 @@ int disp_hdr_init(struct disp_hw_common_info *info)
 	mutex_init(&disp_hdr_path_mutex);
 	mutex_init(&disp_hdr_stop_mutex);
 	mutex_init(&disp_hdr_cfg_hdmi_mutex);
+	mutex_init(&disp_hdr_gfx_allm_mutex);
 	disp_hdr_thread_init();
 	/*enable hdr clk and path
 	 * fhd hdr always enable when init(rgb2yuv for osd)
