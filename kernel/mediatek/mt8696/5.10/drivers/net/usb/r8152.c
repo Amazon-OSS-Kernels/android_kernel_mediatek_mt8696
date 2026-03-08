@@ -4241,7 +4241,7 @@ static void rtl8152_disable(struct r8152 *tp)
 static void r8152b_hw_phy_cfg(struct r8152 *tp)
 {
 	rtl8152_apply_firmware(tp);
-	rtl_eee_enable(tp, tp->eee_en);
+	rtl_eee_enable(tp, false);
 	r8152_aldps_en(tp, true);
 	r8152b_enable_fc(tp);
 
@@ -6089,7 +6089,7 @@ static int r8152_set_eee(struct r8152 *tp, struct ethtool_eee *eee)
 	tp->eee_en = eee->eee_enabled;
 	tp->eee_adv = val;
 
-	rtl_eee_enable(tp, false);
+	rtl_eee_enable(tp, tp->eee_en);
 
 	return 0;
 }

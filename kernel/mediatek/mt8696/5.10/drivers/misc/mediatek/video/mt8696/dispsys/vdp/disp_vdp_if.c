@@ -924,7 +924,7 @@ int disp_vdp_change_resolution(const struct disp_hw_resolution *info)
 	disp_path_get_active_zone(0, info->res_mode, &h_start, &v_start_odd,
 				  &v_start_even);
 
-	if (video_layer[0].enable) {
+	if (video_layer[0].layer_start) {
 		/* set HTotal & VTotal pixel for spec resolution. */
 		fmt_hal_set_mode(DISP_FMT_MAIN, info->res_mode, true);
 		fmt_hal_set_tv_type(DISP_FMT_MAIN, tv_type);
@@ -942,7 +942,7 @@ int disp_vdp_change_resolution(const struct disp_hw_resolution *info)
 			disp_vdp_get_vsync_duration(info);
 	}
 
-	if (video_layer[1].enable) {
+	if (video_layer[1].layer_start) {
 		/* set HTotal & VTotal pixel for spec resolution. */
 		fmt_hal_set_mode(DISP_FMT_SUB, info->res_mode, true);
 		fmt_hal_set_tv_type(DISP_FMT_SUB, tv_type);

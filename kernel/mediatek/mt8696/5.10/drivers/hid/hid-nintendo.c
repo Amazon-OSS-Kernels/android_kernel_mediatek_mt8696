@@ -463,7 +463,7 @@ static void joycon_parse_report(struct joycon_ctlr *ctlr,
 		}
 		input_report_key(dev, BTN_SELECT, btns & JC_BTN_MINUS);
 		input_report_key(dev, BTN_THUMBL, btns & JC_BTN_LSTICK);
-		input_report_key(dev, BTN_Z, btns & JC_BTN_CAP);
+		input_report_key(dev, BTN_MODE, btns & JC_BTN_CAP);
 		input_report_key(dev, BTN_DPAD_DOWN, btns & JC_BTN_DOWN);
 		input_report_key(dev, BTN_DPAD_UP, btns & JC_BTN_UP);
 		input_report_key(dev, BTN_DPAD_RIGHT, btns & JC_BTN_RIGHT);
@@ -496,7 +496,7 @@ static void joycon_parse_report(struct joycon_ctlr *ctlr,
 		}
 		input_report_key(dev, BTN_START, btns & JC_BTN_PLUS);
 		input_report_key(dev, BTN_THUMBR, btns & JC_BTN_RSTICK);
-		input_report_key(dev, BTN_MODE, btns & JC_BTN_HOME);
+		input_report_key(dev, BTN_Z, btns & JC_BTN_HOME);
 		input_report_key(dev, BTN_WEST, btns & JC_BTN_Y);
 		input_report_key(dev, BTN_NORTH, btns & JC_BTN_X);
 		input_report_key(dev, BTN_EAST, btns & JC_BTN_A);
