@@ -437,7 +437,12 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		netif_tx_stop_all_queues(prP2pInfo->aprRoleHandler);
 
 		/* register for net device */
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+		if (cfg80211_register_netdevice(prP2pInfo->aprRoleHandler)
+			< 0) {
+#else
 		if (register_netdevice(prP2pInfo->aprRoleHandler) < 0) {
+#endif
 			DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface 456\n");
 			DBGLOG(INIT, WARN, "unable to register netdevice for p2p\n");
 			kfree(prWdev);
@@ -626,7 +631,12 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	netif_tx_stop_all_queues(UnregRoleHander);
 
 	/* Here are functions which need rtnl_lock */
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+	cfg80211_unregister_netdevice(UnregRoleHander);
+#else
 	unregister_netdevice(UnregRoleHander);
+#endif
+
 	/* free is called at destructor */
 	/* free_netdev(UnregRoleHander); */
 
